@@ -47,20 +47,32 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
 
   return (
     <div 
-      className={`rounded-lg border-2 ${selected ? 'border-blue-500 border-solid' : 'border-blue-400/80 border-dashed'} bg-blue-50/50 relative`}
+      className={`
+        relative flex rounded-2xl border
+        ${selected ? 'border-components-option-card-option-selected-border' : 'border-transparent'}
+      `}
       style={{ 
         width: groupNode?.width || dimensions?.width || 300, 
         height: groupNode?.height || dimensions?.height || 200 
       }}
     >
-      {/* 顶部目标句柄 */}
-      <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-10">
-        <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500" />
-      </div>
-      
-      <div className="h-full rounded-lg">
-        <div className={`py-2 px-4 ${selected ? 'bg-blue-100' : 'bg-blue-100/80'} rounded-t-lg`}>
-          <div className="text-sm font-semibold flex items-center justify-between">
+      <div 
+        className={`
+          group relative pb-1 shadow-xs
+          rounded-[15px] border border-transparent
+          flex h-full w-full flex-col 
+          ${selected ? 'border-blue-500 border-solid' : 'border-blue-400/80 border-dashed'}
+          bg-blue-50/50
+          hover:shadow-lg
+        `}
+      >
+        {/* 顶部目标句柄 */}
+        <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500 z-10" />
+        </div>
+        
+        <div className="flex items-center rounded-t-2xl px-3 pb-2 pt-3 bg-blue-100/80">
+          <div className="text-sm font-semibold flex items-center justify-between w-full">
             <div className="flex items-center">
               <span className="mr-2">📌</span>
               {isEditing ? (
@@ -88,17 +100,18 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
             </div>
           </div>
         </div>
-        <div className="p-2 h-[calc(100%-32px)] relative rounded-b-lg">
+        
+        <div className="grow pb-1 pl-1 pr-1 relative overflow-hidden">
           {/* 群组内容区域 - 这里将显示子节点 */}
           <div className="w-full h-full relative overflow-hidden">
             {children}
           </div>
         </div>
-      </div>
-      
-      {/* 底部源句柄 */}
-      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-10">
-        <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500" />
+        
+        {/* 底部源句柄 */}
+        <div className="absolute bottom-[-1px] left-1/2 -translate-x-1/2 translate-y-1/2">
+          <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500 z-10" />
+        </div>
       </div>
       
       {/* 尺寸调整器 - 使用ReactFlow的NodeResizeControl */}
