@@ -619,21 +619,23 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                   const group = change.node as Group;
                   const groupNodes = nodes.filter(node => node.groupId === group.id);
                   
-                  // 计算群组移动的偏移量
-                  const previousPosition = change?.previousPosition || group.position;
-                  const offsetX = change.position.x - previousPosition.x;
-                  const offsetY = change.position.y - previousPosition.y;
+                  // 只有在真正移动（位置变化）时才计算偏移量，避免大小调整时的错误计算
+                  if (change?.previousPosition) {
+                    // 计算群组移动的偏移量
+                    const offsetX = change.position.x - change.previousPosition.x;
+                    const offsetY = change.position.y - change.previousPosition.y;
 
-                  // 更新群组内所有节点的位置，保持相对位置关系
-                  groupNodes.forEach(node => {
-                    const { updateNode } = useGraphStore.getState();
-                    updateNode(node.id, {
-                      position: {
-                        x: node.position.x + offsetX,
-                        y: node.position.y + offsetY
-                      }
+                    // 更新群组内所有节点的位置，保持相对位置关系
+                    groupNodes.forEach(node => {
+                      const { updateNode } = useGraphStore.getState();
+                      updateNode(node.id, {
+                        position: {
+                          x: node.position.x + offsetX,
+                          y: node.position.y + offsetY
+                        }
+                      });
                     });
-                  });
+                  }
                 }
               }
             });
