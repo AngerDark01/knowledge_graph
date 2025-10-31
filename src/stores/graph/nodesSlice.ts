@@ -116,25 +116,48 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     return { nodes: updatedNodes };
   }),
   addNodeToGroup: (nodeId, groupId) => set((state: any) => {
+    // 检查节点是否已经在该群组中
+    const node = state.nodes.find((n: Node | Group) => n.id === nodeId);
+    if (node && node.groupId === groupId) {
+      // 节点已经在这个群组中，无需重复添加
+      return state;
+    }
+    
+    // 如果节点已在其他群组中，先将其从原群组中移除
+    let updatedNodes = [...state.nodes];
+    if (node && node.groupId) {
+      // 从原群组移除节点
+      updatedNodes = updatedNodes.map(n => {
+        if (n.id === node.groupId && n.type === BlockEnum.GROUP) {
+          const group = n as Group;
+          const updatedNodeIds = (group.nodeIds || []).filter(id => id !== nodeId);
+          return { ...group, nodeIds: updatedNodeIds };
+        }
+        return n;
+      });
+    }
+
     // 更新节点的groupId
-    const updatedNodes = state.nodes.map(node => {
-      if (node.id === nodeId) {
-        return { ...node, groupId };
+    updatedNodes = updatedNodes.map(n => {
+      if (n.id === nodeId) {
+        return { ...n, groupId };
       }
-      return node;
+      return n;
     });
 
-    // 更新群组的nodeIds
-    const updatedNodesWithGroup = updatedNodes.map(node => {
-      if (node.id === groupId && node.type === BlockEnum.GROUP) {
-        const group = node as Group;
-        const updatedNodeIds = [...(group.nodeIds || []), nodeId];
+    // 更新目标群组的nodeIds
+    updatedNodes = updatedNodes.map(n => {
+      if (n.id === groupId && n.type === BlockEnum.GROUP) {
+        const group = n as Group;
+        // 避免重复添加，先过滤再添加
+        const filteredNodeIds = (group.nodeIds || []).filter(id => id !== nodeId);
+        const updatedNodeIds = [...filteredNodeIds, nodeId];
         return { ...group, nodeIds: updatedNodeIds };
       }
-      return node;
+      return n;
     });
 
-    return { nodes: updatedNodesWithGroup };
+    return { nodes: updatedNodes };
   }),
   removeNodeFromGroup: (nodeId) => set((state: any) => {
     // 移除节点的groupId
