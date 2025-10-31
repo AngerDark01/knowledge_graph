@@ -48,13 +48,16 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
 
   return (
     <div 
-      className={`rounded-lg border-2 ${selected ? 'border-blue-500 border-solid' : 'border-blue-400/80 border-dashed'} bg-blue-50/50`}
+      className={`rounded-lg border-2 ${selected ? 'border-blue-500 border-solid' : 'border-blue-400/80 border-dashed'} bg-blue-50/50 relative`}
       style={{ 
         width: groupNode?.width || dimensions?.width || 300, 
         height: groupNode?.height || dimensions?.height || 200 
       }}
     >
-      <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500" />
+      {/* 顶部目标句柄 */}
+      <div className="absolute -top-1 left-1/2 -translate-x-1/2">
+        <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500 z-10" />
+      </div>
       
       <Card className="border-0 shadow-none bg-transparent h-full">
         <CardHeader className="py-2 px-4 bg-blue-100/80 rounded-t-lg">
@@ -94,7 +97,10 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
         </CardContent>
       </Card>
       
-      <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500" />
+      {/* 底部源句柄 */}
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+        <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500 z-10" />
+      </div>
       
       {/* 尺寸调整器 - 使用ReactFlow的NodeResizeControl */}
       <NodeResizeControl
