@@ -48,8 +48,8 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
   return (
     <div 
       className={`
-        relative flex rounded-2xl border
-        ${selected ? 'border-components-option-card-option-selected-border' : 'border-transparent'}
+        relative flex rounded-2xl
+        ${selected ? 'border-components-option-card-option-selected-border border' : 'border-transparent'}
       `}
       style={{ 
         width: groupNode?.width || dimensions?.width || 300, 
@@ -67,8 +67,8 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
         `}
       >
         {/* 顶部目标句柄 */}
-        <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500 z-10" />
+        <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500" />
         </div>
         
         <div className="flex items-center rounded-t-2xl px-3 pb-2 pt-3 bg-blue-100/80">
@@ -109,8 +109,8 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
         </div>
         
         {/* 底部源句柄 */}
-        <div className="absolute bottom-[-1px] left-1/2 -translate-x-1/2 translate-y-1/2">
-          <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500 z-10" />
+        <div className="absolute bottom-[-1px] left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+          <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500" />
         </div>
       </div>
       
