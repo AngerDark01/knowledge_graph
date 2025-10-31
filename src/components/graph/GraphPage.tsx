@@ -298,45 +298,36 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     );
   }, [nodes]);
 
-  // 处理节点拖拽，实现边界约束
-  const onNodeDrag = useCallback((event: React.MouseEvent, node: Node, nodesToDrag: Node[]) => {
+  // 处理群组子节点拖拽限制，参考Dify的实现
+  const restrictNodePositionToGroup = useCallback((node: Node) => {
     // 如果节点属于某个群组，检查边界约束
-    if (node.groupId) {
+    if (node.parentId) { // 使用parentId而不是groupId
       // 获取群组信息
-      const group = nodes.find(n => n.id === node.groupId) as Group;
+      const group = nodes.find(n => n.id === node.parentId) as Group;
       if (group) {
-        // 计算群组的实际边界
-        const groupBoundary = {
-          minX: group.position.x,
-          minY: group.position.y,
-          maxX: group.position.x + (group.width || 300),
-          maxY: group.position.y + (group.height || 200)
-        };
+        // 群组的内边距，参考Dify的ITERATION_PADDING
+        const padding = { top: 10, left: 10, right: 10, bottom: 10 };
 
-        // 考虑节点尺寸，这里假设节点大小为固定值
-        const nodeWidth = 150; // 节点宽度的估算值
-        const nodeHeight = 100; // 节点高度的估算值
+        const restrictPosition: { x?: number; y?: number } = { x: undefined, y: undefined };
 
-        // 限制节点位置在群组边界内
-        if (node.position.x < groupBoundary.minX) {
-          // 阻止节点拖出左侧边界
-          return false;
+        // 检查边界约束
+        if (node.position.y < padding.top) {
+          restrictPosition.y = padding.top;
         }
-        if (node.position.x + nodeWidth > groupBoundary.maxX) {
-          // 阻止节点拖出右侧边界
-          return false;
+        if (node.position.x < padding.left) {
+          restrictPosition.x = padding.left;
         }
-        if (node.position.y < groupBoundary.minY) {
-          // 阻止节点拖出顶部边界
-          return false;
+        if (node.position.x + (node.width || 150) > (group.width || 300) - padding.right) {
+          restrictPosition.x = (group.width || 300) - padding.right - (node.width || 150);
         }
-        if (node.position.y + nodeHeight > groupBoundary.maxY) {
-          // 阻止节点拖出底部边界
-          return false;
+        if (node.position.y + (node.height || 100) > (group.height || 200) - padding.bottom) {
+          restrictPosition.y = (group.height || 200) - padding.bottom - (node.height || 100);
         }
+
+        return restrictPosition;
       }
     }
-    return true; // 允许拖拽
+    return { x: undefined, y: undefined };
   }, [nodes]);
 
   // 处理群组拖拽，同步移动内部节点
@@ -582,78 +573,30 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           onDrop={onDrop}
           onNodeDragStop={(event, node) => {
             // 如果节点属于某个群组，检查节点是否超出了群组边界
-            if (node.groupId) {
-              const group = nodes.find(n => n.id === node.groupId) as Group;
-              if (group) {
-                // 计算群组的实际边界
-                const groupBoundary = {
-                  minX: group.position.x,
-                  minY: group.position.y,
-                  maxX: group.position.x + (group.width || 300),
-                  maxY: group.position.y + (group.height || 200)
-                };
+            const restrictPosition = restrictNodePositionToGroup(node);
+            
+            if (restrictPosition.x !== undefined || restrictPosition.y !== undefined) {
+              // 如果节点超出了边界，将其位置约束在边界内
+              const constrainedPosition = {
+                ...node.position,
+                ...(restrictPosition.x !== undefined && { x: restrictPosition.x }),
+                ...(restrictPosition.y !== undefined && { y: restrictPosition.y }),
+              };
 
-                // 考虑节点尺寸
-                const nodeWidth = 150; // 节点宽度的估算值
-                const nodeHeight = 100; // 节点高度的估算值
-
-                // 检查节点是否超出了群组边界
-                if (
-                  node.position.x < groupBoundary.minX ||
-                  node.position.x + nodeWidth > groupBoundary.maxX ||
-                  node.position.y < groupBoundary.minY ||
-                  node.position.y + nodeHeight > groupBoundary.maxY
-                ) {
-                  // 如果节点超出了边界，将其位置约束在边界内
-                  const constrainedPosition = {
-                    x: Math.max(
-                      groupBoundary.minX,
-                      Math.min(node.position.x, groupBoundary.maxX - nodeWidth)
-                    ),
-                    y: Math.max(
-                      groupBoundary.minY,
-                      Math.min(node.position.y, groupBoundary.maxY - nodeHeight)
-                    )
-                  };
-
-                  // 更新节点位置
-                  const { updateNode } = useGraphStore.getState();
-                  updateNode(node.id, {
-                    position: constrainedPosition
-                  });
-                }
-              }
+              // 更新节点位置
+              const { updateNode } = useGraphStore.getState();
+              updateNode(node.id, {
+                position: constrainedPosition
+              });
             }
           }}
           onNodeDrag={(event, node) => {
             // 处理节点拖拽边界约束
-            if (node.groupId) {
-              // 如果节点属于群组，检查边界约束
-              const group = nodes.find(n => n.id === node.groupId) as Group;
-              if (group) {
-                // 计算群组的实际边界
-                const groupBoundary = {
-                  minX: group.position.x,
-                  minY: group.position.y,
-                  maxX: group.position.x + (group.width || 300),
-                  maxY: group.position.y + (group.height || 200)
-                };
-
-                // 考虑节点尺寸，这里假设节点大小为固定值
-                const nodeWidth = 150; // 节点宽度的估算值
-                const nodeHeight = 100; // 节点高度的估算值
-
-                // 检查节点是否将要超出群组边界
-                if (
-                  node.position.x < groupBoundary.minX ||
-                  node.position.x + nodeWidth > groupBoundary.maxX ||
-                  node.position.y < groupBoundary.minY ||
-                  node.position.y + nodeHeight > groupBoundary.maxY
-                ) {
-                  // 暂时只是记录边界冲突，实际边界约束通过其他方式处理
-                  console.log(`Node ${node.id} is near group boundary and cannot move further`);
-                }
-              }
+            const restrictPosition = restrictNodePositionToGroup(node);
+            
+            // 如果需要限制位置，这里可以给用户视觉反馈
+            if (restrictPosition.x !== undefined || restrictPosition.y !== undefined) {
+              // 可以添加一些视觉反馈提示节点超出边界
             }
           }}
           onNodesChange={(changes) => {
