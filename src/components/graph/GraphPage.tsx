@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -35,15 +35,17 @@ import EdgeEditor from '@/components/graph/EdgeEditor';
 import { useGraphStore } from '@/stores/graph';
 import { Button } from '@/components/ui/button';
 
-// 定义节点和边类型映射
-const nodeTypes: import('reactflow').NodeTypes = {
+// 定义节点和边类型映射 - 在组件外部定义以避免重复创建
+const nodeTypes = {
   custom: CustomNode,
   group: CustomGroup,
 };
 
-const edgeTypes: import('reactflow').EdgeTypes = {
+const edgeTypes = {
   default: CustomEdge,
 };
+
+
 
 interface GraphPageProps {
   className?: string;
