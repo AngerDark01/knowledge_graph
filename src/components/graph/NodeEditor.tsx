@@ -89,9 +89,9 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="node-group">Group</Label>
+          <Label>Group</Label>
           <Select value={groupId} onValueChange={setGroupId}>
-            <SelectTrigger>
+            <SelectTrigger id="node-group">
               <SelectValue placeholder="Select a group" />
             </SelectTrigger>
             <SelectContent>
