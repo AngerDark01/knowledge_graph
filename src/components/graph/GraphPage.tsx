@@ -180,15 +180,58 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   // 处理节点移动到群组内部
   const onNodeMove = useCallback((nodeId: string, groupId: string) => {
-    // 将节点添加到群组
-    const { addNodeToGroup, updateGroupBoundary } = useGraphStore.getState();
-    addNodeToGroup(nodeId, groupId);
+    const node = nodes.find(n => n.id === nodeId);
+    const group = nodes.find(n => n.id === groupId) as Group;
     
-    // 更新群组边界
-    setTimeout(() => {
-      updateGroupBoundary(groupId);
-    }, 0);
-  }, []);
+    if (node && group) {
+      // 检查节点是否已经在该群组中，避免重复添加
+      if (node.groupId === groupId) {
+        console.log(`Node ${nodeId} is already in group ${groupId}`);
+        return;
+      }
+      
+      // 将节点添加到群组
+      const { addNodeToGroup, updateGroupBoundary } = useGraphStore.getState();
+      addNodeToGroup(nodeId, groupId);
+      
+      // 确保节点在群组边界内
+      const groupBoundary = {
+        minX: group.position.x,
+        minY: group.position.y,
+        maxX: group.position.x + (group.width || 300),
+        maxY: group.position.y + (group.height || 200)
+      };
+
+      // 考虑节点尺寸，这里假设节点大小为固定值
+      const nodeWidth = 150; // 节点宽度的估算值
+      const nodeHeight = 100; // 节点高度的估算值
+
+      // 如果节点位置超出了群组边界，将其约束在边界内
+      const constrainedPosition = {
+        x: Math.max(
+          groupBoundary.minX,
+          Math.min(node.position.x, groupBoundary.maxX - nodeWidth)
+        ),
+        y: Math.max(
+          groupBoundary.minY,
+          Math.min(node.position.y, groupBoundary.maxY - nodeHeight)
+        )
+      };
+
+      // 更新节点位置
+      if (constrainedPosition.x !== node.position.x || constrainedPosition.y !== node.position.y) {
+        const { updateNode } = useGraphStore.getState();
+        updateNode(nodeId, {
+          position: constrainedPosition
+        });
+      }
+      
+      // 更新群组边界
+      setTimeout(() => {
+        updateGroupBoundary(groupId);
+      }, 0);
+    }
+  }, [nodes]);
 
   // 处理节点从群组移出
   const onNodeRemoveFromGroup = useCallback((nodeId: string) => {
@@ -492,11 +535,15 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                 maxY: group.position.y + (group.height || 200)
               };
               
+              // 考虑节点尺寸
+              const nodeWidth = 150; // 节点宽度的估算值
+              const nodeHeight = 100; // 节点高度的估算值
+              
               if (
-                node.position.x >= groupBoundary.minX &&
-                node.position.x <= groupBoundary.maxX &&
-                node.position.y >= groupBoundary.minY &&
-                node.position.y <= groupBoundary.maxY
+                node.position.x + nodeWidth/2 >= groupBoundary.minX &&
+                node.position.x + nodeWidth/2 <= groupBoundary.maxX &&
+                node.position.y + nodeHeight/2 >= groupBoundary.minY &&
+                node.position.y + nodeHeight/2 <= groupBoundary.maxY
               ) {
                 // 将节点添加到群组
                 onNodeMove(node.id, group.id);
@@ -605,7 +652,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                   const offsetX = change.position.x - previousPosition.x;
                   const offsetY = change.position.y - previousPosition.y;
 
-                  // 更新群组内所有节点的位置
+                  // 更新群组内所有节点的位置，保持相对位置关系
                   groupNodes.forEach(node => {
                     const { updateNode } = useGraphStore.getState();
                     updateNode(node.id, {
