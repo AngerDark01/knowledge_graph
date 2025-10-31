@@ -562,7 +562,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           maxZoom={2}
           elementsSelectable={true}
           multiSelectionKeyCode={['Shift']}
-          collapseParent={true}
           onEdgesChange={(changes) => {
             // 处理边的选择和删除
             changes.forEach((change: EdgeChange) => {
