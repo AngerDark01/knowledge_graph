@@ -71,20 +71,52 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   // 添加节点的处理函数
   const onNodeAdd = useCallback(() => {
+    // 如果当前有选中的群组，将节点添加到该群组中
+    const selectedGroup = nodes.find(n => n.id === selectedNodeId && n.type === 'group') as Group;
+    
+    let position;
+    let groupId;
+    
+    if (selectedGroup) {
+      // 如果有选中的群组，将节点放在群组内部的随机位置
+      const groupBoundary = {
+        minX: selectedGroup.position.x + 20,
+        minY: selectedGroup.position.y + 50, // 为标题留出空间
+        maxX: selectedGroup.position.x + (selectedGroup.width || 300) - 170, // 考虑节点宽度
+        maxY: selectedGroup.position.y + (selectedGroup.height || 200) - 120  // 考虑节点高度
+      };
+      
+      // 确保边界有效
+      if (groupBoundary.maxX > groupBoundary.minX && groupBoundary.maxY > groupBoundary.minY) {
+        position = {
+          x: groupBoundary.minX + Math.random() * (groupBoundary.maxX - groupBoundary.minX),
+          y: groupBoundary.minY + Math.random() * (groupBoundary.maxY - groupBoundary.minY)
+        };
+        groupId = selectedGroup.id;
+      } else {
+        // 如果群组边界无效，使用默认位置
+        position = { x: Math.random() * 400, y: Math.random() * 400 };
+      }
+    } else {
+      // 没有选中群组时，使用默认位置
+      position = { x: Math.random() * 400, y: Math.random() * 400 };
+    }
+    
     const newNode = {
       id: `node_${Date.now()}`,
       type: 'custom',
-      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      position,
       data: { 
         title: `Node ${reactFlowNodes.length + 1}`, 
         content: 'Double click to edit' 
       },
       createdAt: new Date(),
       updatedAt: new Date(),
+      ...(groupId && { groupId, parentId: groupId }), // 设置群组ID和parentId
     } as const;
     
     addNode(newNode);
-  }, [addNode, reactFlowNodes.length]);
+  }, [addNode, reactFlowNodes.length, nodes, selectedNodeId]);
 
   // 添加群组的处理函数
   const onGroupAdd = useCallback(() => {
@@ -329,9 +361,25 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     (group as any).computedPosition = { ...group.position };
   }, [nodes]);
 
-  // 同步 store 状态到 ReactFlow 状态
+  // 同步 store 状态到 ReactFlow 状态，处理群组-节点关系
   useEffect(() => {
-    setReactFlowNodes(nodes as Node[]);
+    // 将群组的nodeIds转换为parentId形式
+    const processedNodes = nodes.map(node => {
+      if (node.type === 'group') {
+        // 群组节点本身
+        return {
+          ...node,
+          type: 'group',
+        };
+      } else {
+        // 普通节点，如果属于某个群组，设置parentId
+        return {
+          ...node,
+          parentId: node.groupId,
+        };
+      }
+    });
+    setReactFlowNodes(processedNodes as Node[]);
   }, [nodes, setReactFlowNodes]);
 
   useEffect(() => {
@@ -503,6 +551,16 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
           onEdgeClick={onEdgeClick}
+          fitView
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          connectionMode={ConnectionMode.Loose}
+          attributionPosition="bottom-left"
+          minZoom={0.1}
+          maxZoom={2}
+          elementsSelectable={true}
+          multiSelectionKeyCode={['Shift']}
+          collapseParent={true}
           onEdgesChange={(changes) => {
             // 处理边的选择和删除
             changes.forEach((change: EdgeChange) => {
@@ -522,38 +580,8 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           onDragOver={onDragOver}
           onDrop={onDrop}
           onNodeDragStop={(event, node) => {
-            // 检查节点是否被拖拽到群组内部
-            const groups = nodes.filter(n => n.type === 'group') as Group[];
-            let addedToGroup = false;
-            
-            for (const group of groups) {
-              // 计算群组的实际边界（考虑位置和尺寸）
-              const groupBoundary = {
-                minX: group.position.x,
-                minY: group.position.y,
-                maxX: group.position.x + (group.width || 300),
-                maxY: group.position.y + (group.height || 200)
-              };
-              
-              // 考虑节点尺寸
-              const nodeWidth = 150; // 节点宽度的估算值
-              const nodeHeight = 100; // 节点高度的估算值
-              
-              if (
-                node.position.x + nodeWidth/2 >= groupBoundary.minX &&
-                node.position.x + nodeWidth/2 <= groupBoundary.maxX &&
-                node.position.y + nodeHeight/2 >= groupBoundary.minY &&
-                node.position.y + nodeHeight/2 <= groupBoundary.maxY
-              ) {
-                // 将节点添加到群组
-                onNodeMove(node.id, group.id);
-                addedToGroup = true;
-                break;
-              }
-            }
-            
             // 如果节点属于某个群组，检查节点是否超出了群组边界
-            if (!addedToGroup && node.groupId) {
+            if (node.groupId) {
               const group = nodes.find(n => n.id === node.groupId) as Group;
               if (group) {
                 // 计算群组的实际边界

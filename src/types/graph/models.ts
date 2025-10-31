@@ -14,6 +14,7 @@ export interface CommonNodeType<T = any> {
   height?: number;
   selected?: boolean;
   dragging?: boolean;
+  parentId?: string; // 用于嵌套节点
   [key: string]: any;
 }
 

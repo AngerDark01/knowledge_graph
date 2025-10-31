@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback } from 'react';
-import { Handle, Position, NodeProps, useUpdateNodeInternals, Node, NodeResizer, ResizeParams } from 'reactflow';
+import { Handle, Position, NodeProps, Node, NodeResizer, ResizeParams } from 'reactflow';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGraphStore } from '@/stores/graph';
 import { Group } from '@/types/graph/models';
@@ -11,8 +11,7 @@ type CustomGroupNodeProps = NodeProps<{
   validationError?: string;
 }>;
 
-const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimensions }) => {
-  const updateNodeInternals = useUpdateNodeInternals();
+const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimensions, children }) => {
   const { updateNode, getNodeById, updateGroupBoundary } = useGraphStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(data.title);
@@ -44,17 +43,16 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
     }, 0);
   }, [id, updateNode, updateGroupBoundary]);
 
-  React.useEffect(() => {
-    updateNodeInternals(id);
-  }, [id, updateNodeInternals]);
-
   // 计算群组中节点的数量
   const nodeCount = groupNode?.nodeIds ? groupNode.nodeIds.length : 0;
 
   return (
     <div 
-      className={`rounded-lg border-2 ${selected ? 'border-blue-500 border-solid' : 'border-blue-400/80 border-dashed'} bg-blue-50/50 min-w-[300px] min-h-[200px]`}
-      style={{ width: groupNode?.width || dimensions?.width, height: groupNode?.height || dimensions?.height }}
+      className={`rounded-lg border-2 ${selected ? 'border-blue-500 border-solid' : 'border-blue-400/80 border-dashed'} bg-blue-50/50`}
+      style={{ 
+        width: groupNode?.width || dimensions?.width || 300, 
+        height: groupNode?.height || dimensions?.height || 200 
+      }}
     >
       <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500" />
       
@@ -88,9 +86,10 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 h-[calc(100%-32px)]">
-          <div className="text-xs text-gray-600 min-h-[100px] h-full">
-            {data.content || 'Drag nodes here to add them to the group'}
+        <CardContent className="p-2 h-[calc(100%-32px)] relative">
+          {/* 群组内容区域 - 这里将显示子节点 */}
+          <div className="w-full h-full relative overflow-hidden">
+            {children}
           </div>
         </CardContent>
       </Card>
