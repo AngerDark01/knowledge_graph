@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, HTMLAttributes } from 'react';
-import { Handle, Position, NodeProps, Node, ResizeControl, ResizeParams } from 'reactflow';
+import { Handle, Position, NodeProps, Node, ResizeControl, ResizeParams, NodeResizeControl } from 'reactflow';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGraphStore } from '@/stores/graph';
 import { Group } from '@/types/graph/models';
@@ -45,15 +45,6 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
 
   // 计算群组中节点的数量
   const nodeCount = groupNode?.nodeIds ? groupNode.nodeIds.length : 0;
-
-  // 自定义缩放控制图标
-  const ResizeControlIcon = useCallback(() => {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M5.19009 11.8398C8.26416 10.6196 10.7144 8.16562 11.9297 5.08904" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    );
-  }, []);
 
   return (
     <div 
@@ -105,23 +96,20 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
       
       <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500" />
       
-      {/* 尺寸调整器 - 使用 ResizeControl 替代 NodeResizer */}
-      <div 
-        className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ opacity: selected ? 1 : 0 }}
+      {/* 尺寸调整器 - 使用ReactFlow的NodeResizeControl */}
+      <NodeResizeControl
+        position='bottom-right'
+        className='!border-none !bg-transparent'
+        onResize={onResize}
+        minWidth={200}
+        minHeight={150}
       >
-        <ResizeControl
-          position="bottom-right"
-          className="!border-none !bg-transparent"
-          onResize={onResize}
-          minWidth={200}
-          minHeight={150}
-        >
-          <div className="w-4 h-4 flex items-center justify-center cursor-se-resize">
-            <ResizeControlIcon />
-          </div>
-        </ResizeControl>
-      </div>
+        <div className='absolute bottom-[1px] right-[1px]'>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M5.19009 11.8398C8.26416 10.6196 10.7144 8.16562 11.9297 5.08904" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </div>
+      </NodeResizeControl>
     </div>
   );
 };
