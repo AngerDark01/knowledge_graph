@@ -1,6 +1,5 @@
 import React, { memo, useState, useCallback, HTMLAttributes } from 'react';
 import { Handle, Position, NodeProps, Node, ResizeControl, ResizeParams, NodeResizeControl } from 'reactflow';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGraphStore } from '@/stores/graph';
 import { Group } from '@/types/graph/models';
 
