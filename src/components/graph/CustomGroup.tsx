@@ -55,13 +55,13 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
       }}
     >
       {/* 顶部目标句柄 */}
-      <div className="absolute -top-1 left-1/2 -translate-x-1/2">
-        <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500 z-10" />
+      <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-10">
+        <Handle type="target" position={Position.Top} className="w-3 h-3 bg-blue-500" />
       </div>
       
-      <Card className="border-0 shadow-none bg-transparent h-full">
-        <CardHeader className="py-2 px-4 bg-blue-100/80 rounded-t-lg">
-          <CardTitle className="text-sm font-semibold flex items-center justify-between">
+      <div className="h-full rounded-lg">
+        <div className={`py-2 px-4 ${selected ? 'bg-blue-100' : 'bg-blue-100/80'} rounded-t-lg`}>
+          <div className="text-sm font-semibold flex items-center justify-between">
             <div className="flex items-center">
               <span className="mr-2">📌</span>
               {isEditing ? (
@@ -87,19 +87,19 @@ const CustomGroup: React.FC<CustomGroupNodeProps> = ({ id, data, selected, dimen
             <div className="text-xs bg-blue-200 rounded-full px-2 py-0.5">
               {nodeCount} {nodeCount === 1 ? 'node' : 'nodes'}
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 h-[calc(100%-32px)] relative">
+          </div>
+        </div>
+        <div className="p-2 h-[calc(100%-32px)] relative rounded-b-lg">
           {/* 群组内容区域 - 这里将显示子节点 */}
           <div className="w-full h-full relative overflow-hidden">
             {children}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       
       {/* 底部源句柄 */}
-      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-        <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500 z-10" />
+      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-10">
+        <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-blue-500" />
       </div>
       
       {/* 尺寸调整器 - 使用ReactFlow的NodeResizeControl */}
