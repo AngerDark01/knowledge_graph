@@ -5,22 +5,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Group } from '@/types/graph/models';
 
 interface NodeEditorProps {
   nodeId: string;
 }
 
 const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
-  const { getNodeById, updateNode } = useGraphStore();
+  const { getNodeById, getNodes, updateNode } = useGraphStore();
   const node = getNodeById(nodeId);
+  const nodes = getNodes();
   
   const [title, setTitle] = useState(node?.data?.title || '');
   const [content, setContent] = useState(node?.data?.content || '');
+  const [groupId, setGroupId] = useState(node?.groupId || '');
+
+  // 获取所有群组
+  const groups = nodes.filter(n => n.type === 'group') as Group[];
 
   useEffect(() => {
     if (node) {
       setTitle(node.data?.title || '');
       setContent(node.data?.content || '');
+      setGroupId(node.groupId || '');
     }
   }, [node]);
 
@@ -35,7 +43,8 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
         ...node.data,
         title,
         content
-      }
+      },
+      groupId: groupId || undefined, // 如果groupId为空，则不设置
     });
   };
 
@@ -43,7 +52,15 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
     if (node) {
       setTitle(node.data?.title || '');
       setContent(node.data?.content || '');
+      setGroupId(node.groupId || '');
     }
+  };
+
+  const handleRemoveFromGroup = () => {
+    updateNode(nodeId, {
+      groupId: undefined,
+    });
+    setGroupId(''); // 更新本地状态
   };
 
   return (
@@ -70,6 +87,31 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
             placeholder="Enter node content"
             rows={4}
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="node-group">Group</Label>
+          <Select value={groupId} onValueChange={setGroupId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a group" />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map(group => (
+                <SelectItem key={group.id} value={group.id}>
+                  {group.data?.title || group.title || group.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {node.groupId && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2 w-full"
+              onClick={handleRemoveFromGroup}
+            >
+              Remove from Group
+            </Button>
+          )}
         </div>
         <div className="flex space-x-2">
           <Button onClick={handleSave}>Save</Button>

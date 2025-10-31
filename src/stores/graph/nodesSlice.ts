@@ -159,4 +159,54 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
 
     return { nodes: updatedNodesWithGroup };
   }),
+  updateGroupBoundary: (groupId: string) => set((state: any) => {
+    // 根据群组内节点的位置自动更新群组边界
+    const group = state.nodes.find((node: Node | Group) => node.id === groupId && node.type === BlockEnum.GROUP) as Group;
+    if (!group) return state;
+
+    // 获取群组内所有节点
+    const groupNodes = state.nodes.filter((node: Node | Group) => node.groupId === groupId);
+    
+    if (groupNodes.length === 0) {
+      // 如果群组内没有节点，不更新边界
+      return state;
+    }
+
+    // 计算群组边界
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    groupNodes.forEach((node: Node | Group) => {
+      // 假设节点的默认尺寸
+      const nodeWidth = node.width || 150;
+      const nodeHeight = node.height || 100;
+      
+      minX = Math.min(minX, node.position.x);
+      minY = Math.min(minY, node.position.y);
+      maxX = Math.max(maxX, node.position.x + nodeWidth);
+      maxY = Math.max(maxY, node.position.y + nodeHeight);
+    });
+
+    // 添加一些内边距
+    const padding = 20;
+    minX -= padding;
+    minY -= padding;
+    maxX += padding;
+    maxY += padding;
+
+    // 更新群组的边界和尺寸
+    const updatedNodes = state.nodes.map((node: Node | Group) => {
+      if (node.id === groupId) {
+        return {
+          ...node,
+          position: { x: minX, y: minY },
+          width: maxX - minX,
+          height: maxY - minY,
+          boundary: { minX, minY, maxX, maxY }
+        } as Group;
+      }
+      return node;
+    });
+
+    return { nodes: updatedNodes };
+  }),
 });
