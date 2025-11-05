@@ -5,18 +5,16 @@ import ReactFlow, {
   Background,
   useNodesState,
   useEdgesState,
-  Connection,
-  Edge as ReactFlowEdge,
-  Node as ReactFlowNode,
   BackgroundVariant,
-  Panel,
   useReactFlow,
   ReactFlowInstance,
   EdgeChange,
   NodeChange,
   ConnectionMode,
+  Node as ReactFlowNode,
+  Edge as ReactFlowEdge,
 } from 'reactflow';
-import { Group, Node, Edge, BlockEnum } from '@/types/graph/models';
+import { Group, Node, BlockEnum } from '@/types/graph/models';
 import 'reactflow/dist/style.css';
 
 import { NoteNode, GroupNode } from '../node';
@@ -24,26 +22,35 @@ import CustomEdge from '../CustomEdge';
 import NodeEditor from '../NodeEditor';
 import EdgeEditor from '../EdgeEditor';
 import { useGraphStore } from '@/stores/graph';
-import { Button } from '@/components/ui/button';
 
-// 导入拆分的功能模块
 import { useNodeHandling } from './hooks/useNodeHandling';
 import { useEdgeHandling } from './hooks/useEdgeHandling';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useViewportControls } from './hooks/useViewportControls';
-import { useSelectionHandling } from './hooks/useSelectionHandling';
 import { ZoomIndicator } from './components/ZoomIndicator';
 import { Toolbar } from './components/Toolbar';
-
-// 导入工具函数
-import { restrictNodePositionToGroup } from './utils/groupHandling';
 
 interface GraphPageProps {
   className?: string;
 }
 
+// 群组内边距常量
+const GROUP_PADDING = { 
+  top: 70,
+  left: 20, 
+  right: 20, 
+  bottom: 20 
+};
+
+const NODE_VISUAL_PADDING = 4;
+
+// 安全数值验证
+const safeNumber = (value: any, defaultValue: number = 0): number => {
+  const num = Number(value);
+  return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
+};
+
 const GraphPageContent = ({ className }: GraphPageProps) => {
-  // 使用 useMemo 确保对象引用稳定
   const nodeTypes = useMemo(() => ({
     custom: NoteNode,
     group: GroupNode,
@@ -56,88 +63,150 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const reactFlowInstance = useReactFlow();
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   
-  // 跟踪调整大小的状态
   const resizeTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   
   const {
-    nodes,
+    nodes: storeNodes,
     edges,
     updateNode,
+    updateNodePosition,
+    deleteNode,
     deleteEdge,
     selectedNodeId,
     selectedEdgeId,
     setSelectedNodeId,
-    setSelectedEdgeId
+    setSelectedEdgeId,
+    handleGroupMove,
+    updateGroupBoundary,
   } = useGraphStore();
   
   const [zoomValue, setZoomValue] = useState<number>(1);
-
-  // 将 store 中的 nodes 和 edges 同步到 ReactFlow 状态
   const [reactFlowNodes, setReactFlowNodes, onNodesChange] = useNodesState([]);
   const [reactFlowEdges, setReactFlowEdges, onEdgesChange] = useEdgesState([]);
+  const isDraggingRef = useRef<boolean>(false);
+  const lastDraggedNodeRef = useRef<string | null>(null);
 
-  // 使用拆分的 hooks
   const { onNodeAdd, onGroupAdd, onDragOver, onDrop } = useNodeHandling();
   const { onConnect } = useEdgeHandling();
   const { onRecenter, onClear } = useViewportControls();
-  const { 
-    onNodeClick, 
-    onEdgeClick, 
-    onNodeDoubleClick 
-  } = useSelectionHandling();
+  useKeyboardShortcuts(onRecenter);
 
-  // 同步 store 状态到 ReactFlow 状态
+  // 转换为相对坐标
+  const convertToRelativePosition = useCallback((node: Node | Group, parentGroup?: Group) => {
+    if (!parentGroup) return node.position;
+    
+    return {
+      x: safeNumber(node.position.x) - safeNumber(parentGroup.position.x),
+      y: safeNumber(node.position.y) - safeNumber(parentGroup.position.y)
+    };
+  }, []);
+
+  // 转换为绝对坐标
+  const convertToAbsolutePosition = useCallback((relativePos: { x: number; y: number }, parentGroup: Group) => {
+    return {
+      x: safeNumber(relativePos.x) + safeNumber(parentGroup.position.x),
+      y: safeNumber(relativePos.y) + safeNumber(parentGroup.position.y)
+    };
+  }, []);
+
+  // 同步store到ReactFlow
   useEffect(() => {
-    const processedNodes = nodes.map((node: Node | Group) => {
-      if (node.type === BlockEnum.GROUP) {
+    // 如果正在拖拽，跳过同步以避免覆盖用户操作
+    if (isDraggingRef.current) {
+      console.log('⏸️ 拖拽中，跳过同步');
+      return;
+    }
+
+    const processedNodes = storeNodes.map((node: Node | Group) => {
+      const isGroup = node.type === BlockEnum.GROUP;
+      
+      if (isGroup) {
         const groupNode = node as Group;
         return {
           ...groupNode,
+          id: groupNode.id,
           type: 'group',
+          position: {
+            x: safeNumber(groupNode.position.x),
+            y: safeNumber(groupNode.position.y),
+          },
+          selected: node.id === selectedNodeId,
+          draggable: true,
           style: {
             ...groupNode.style,
-            width: groupNode.width || 300,
-            height: groupNode.height || 200,
+            width: safeNumber(groupNode.width, 300),
+            height: safeNumber(groupNode.height, 200),
           },
+          data: groupNode.data,
         };
       } else {
-        const nodeWithGroupId = node as Node & { groupId?: string };
+        const regularNode = node as Node & { groupId?: string };
+        const parentGroup = regularNode.groupId 
+          ? storeNodes.find(n => n.id === regularNode.groupId) as Group
+          : undefined;
+        
+        const safeNodePosition = {
+          x: safeNumber(regularNode.position.x),
+          y: safeNumber(regularNode.position.y),
+        };
+        
+        // 如果在群组内，使用相对坐标
+        const position = parentGroup
+          ? convertToRelativePosition({ ...regularNode, position: safeNodePosition }, parentGroup)
+          : safeNodePosition;
+        
+        const finalPosition = {
+          x: safeNumber(position.x),
+          y: safeNumber(position.y),
+        };
+        
         return {
-          ...node,
-          type: 'custom', // 将 Node 类型设置为 'custom' 以匹配 nodeTypes 定义
-          ...(nodeWithGroupId.groupId && { parentId: nodeWithGroupId.groupId }),
+          ...regularNode,
+          id: regularNode.id,
+          type: 'custom',
+          position: finalPosition,
+          selected: node.id === selectedNodeId,
+          draggable: true,
+          ...(regularNode.groupId && { 
+            parentId: regularNode.groupId,
+            extent: 'parent' as const,
+            expandParent: true,
+          }),
           style: {
-            ...(node as any).style,
-            width: node.width || undefined,
-            height: node.height || undefined,
+            ...(regularNode as any).style,
+            width: safeNumber(regularNode.width, 150),
+            height: safeNumber(regularNode.height, 100),
           },
+          data: regularNode.data,
         };
       }
     });
+    
+    console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
     setReactFlowNodes(processedNodes as ReactFlowNode[]);
-  }, [nodes, setReactFlowNodes]);
+  }, [storeNodes, selectedNodeId, setReactFlowNodes, convertToRelativePosition]);
 
+  // 同步边
   useEffect(() => {
-    setReactFlowEdges(edges as ReactFlowEdge[]);
-  }, [edges, setReactFlowEdges]);
+    const processedEdges = edges.map(edge => ({
+      ...edge,
+      selected: edge.id === selectedEdgeId,
+    }));
+    setReactFlowEdges(processedEdges as ReactFlowEdge[]);
+  }, [edges, selectedEdgeId, setReactFlowEdges]);
 
-  // 处理键盘快捷键
-  useKeyboardShortcuts(onRecenter);
-
-  // 监听缩放变化
+  // 监听缩放
   useEffect(() => {
     if (!rfInstance) return;
 
     const onZoom = () => {
       if (rfInstance) {
-        const currentZoom = rfInstance.getZoom();
-        setZoomValue(currentZoom);
+        setZoomValue(rfInstance.getZoom());
       }
     };
 
     if ('on' in rfInstance && typeof rfInstance.on === 'function') {
       rfInstance.on('zoom', onZoom);
-
       return () => {
         if ('off' in rfInstance && typeof rfInstance.off === 'function') {
           rfInstance.off('zoom', onZoom);
@@ -146,26 +215,102 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     }
   }, [rfInstance]);
 
-  // 取消选择处理
-  const clearSelection = useCallback(() => {
-    if (rfInstance) {
-      // 取消所有节点和边的选中状态
-      rfInstance.getNodes().forEach(node => {
-        if (node.selected) {
-          rfInstance.setNodes(n => n.map(n => n.id === node.id ? { ...n, selected: false } : n));
-        }
-      });
-      rfInstance.getEdges().forEach(edge => {
-        if (edge.selected) {
-          rfInstance.setEdges(e => e.map(e => e.id === edge.id ? { ...e, selected: false } : e));
-        }
-      });
-    }
+  // 节点点击
+  const onNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    event.stopPropagation();
+    setSelectedNodeId(node.id);
+    setSelectedEdgeId(null);
+  }, [setSelectedNodeId, setSelectedEdgeId]);
+
+  // 节点双击
+  const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    event.stopPropagation();
+    setSelectedNodeId(node.id);
+    setSelectedEdgeId(null);
+  }, [setSelectedNodeId, setSelectedEdgeId]);
+
+  // 边点击
+  const onEdgeClick = useCallback((event: React.MouseEvent, edge: ReactFlowEdge) => {
+    event.stopPropagation();
+    setSelectedEdgeId(edge.id);
+    setSelectedNodeId(null);
+  }, [setSelectedEdgeId, setSelectedNodeId]);
+
+  // 画布点击
+  const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
-  }, [rfInstance, setSelectedNodeId, setSelectedEdgeId]);
+  }, [setSelectedNodeId, setSelectedEdgeId]);
 
-  // 组件卸载时清理定时器
+  // 拖拽开始
+  const onNodeDragStart = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    console.log('🚀 开始拖拽:', node.id);
+    isDraggingRef.current = true;
+    lastDraggedNodeRef.current = node.id;
+  }, []);
+
+  // 拖拽结束
+  const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
+    console.log('🎯 拖拽结束:', node.id);
+    
+    const currentNode = reactFlowInstance?.getNode(node.id);
+    if (!currentNode) {
+      isDraggingRef.current = false;
+      return;
+    }
+
+    if (currentNode.type === 'group') {
+      const safePosition = {
+        x: safeNumber(currentNode.position.x),
+        y: safeNumber(currentNode.position.y)
+      };
+      handleGroupMove(node.id, safePosition);
+      isDraggingRef.current = false;
+    } else {
+      const storeNode = storeNodes.find(n => n.id === node.id) as Node;
+      if (!storeNode) {
+        isDraggingRef.current = false;
+        return;
+      }
+
+      let absolutePosition = {
+        x: safeNumber(currentNode.position.x),
+        y: safeNumber(currentNode.position.y)
+      };
+      
+      if (storeNode.groupId) {
+        const parentGroup = storeNodes.find(n => n.id === storeNode.groupId) as Group;
+        if (parentGroup) {
+          absolutePosition = convertToAbsolutePosition(currentNode.position, parentGroup);
+          console.log('📍 相对→绝对:', currentNode.position, '→', absolutePosition);
+          console.log('  父群组位置:', parentGroup.position);
+        }
+      }
+      
+      console.log('💾 最终保存位置:', absolutePosition);
+      
+      // 先更新位置
+      updateNodePosition(node.id, absolutePosition);
+      
+      // 如果节点属于群组，更新群组边界
+      if (storeNode.groupId) {
+        updateGroupBoundary(storeNode.groupId!);
+      }
+      
+      // 延迟重置拖拽状态，确保更新完成
+      setTimeout(() => {
+        isDraggingRef.current = false;
+        lastDraggedNodeRef.current = null;
+      }, 100);
+    }
+  }, [reactFlowInstance, storeNodes, handleGroupMove, updateNodePosition, updateGroupBoundary, convertToAbsolutePosition]);
+
+  // MiniMap 节点颜色
+  const nodeColor = useCallback((node: ReactFlowNode) => {
+    return node.type === 'group' ? '#e0e7ff' : '#93c5fd';
+  }, []);
+
+  // 清理定时器
   useEffect(() => {
     return () => {
       Object.values(resizeTimeoutRef.current).forEach(timeout => {
@@ -176,7 +321,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   return (
     <div className={`flex w-full h-full ${className || ''}`}>
-      {/* 侧边栏 */}
       <div className="w-80 p-4 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Knowledge Graph Editor</h2>
         
@@ -198,7 +342,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         />
       </div>
       
-      {/* 主画布区域 */}
       <div className="flex-1 relative">
         <ReactFlow
           nodes={reactFlowNodes}
@@ -207,6 +350,9 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
           onEdgeClick={onEdgeClick}
+          onPaneClick={onPaneClick}
+          onNodeDragStart={onNodeDragStart}
+          onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}
@@ -214,17 +360,13 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           minZoom={0.1}
           maxZoom={2}
           elementsSelectable={true}
-          multiSelectionKeyCode={['Shift']}
-          selectionOnDrag={true}
-          selectNodesOnDrag={true}
-          onPaneClick={clearSelection}
+          selectNodesOnDrag={false}
+          panOnDrag={[2]} // 仅右键拖拽画布（或使用 [1, 2] 允许左键和中键）
+          nodesDraggable={true}
+          nodesConnectable={true}
           onEdgesChange={(changes) => {
-            // 处理边的选择和删除
+            onEdgesChange(changes);
             changes.forEach((change: EdgeChange) => {
-              if (change.type === 'select' && change.selected && change.id) {
-                setSelectedEdgeId(change.id);
-                setSelectedNodeId(null);
-              }
               if (change.type === 'remove') {
                 deleteEdge(change.id);
                 if (selectedEdgeId === change.id) {
@@ -232,132 +374,43 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                 }
               }
             });
-            onEdgesChange(changes);
           }}
           onDragOver={onDragOver}
           onDrop={onDrop}
-          onNodeDragStop={(event, node) => {
-            // 如果节点属于某个群组，检查节点是否超出了群组边界
-            const restrictPosition = restrictNodePositionToGroup(node, nodes as (Node | Group)[]);
-            
-            if (restrictPosition.x !== undefined || restrictPosition.y !== undefined) {
-              // 如果节点超出了边界，将其位置约束在边界内
-              const constrainedPosition = {
-                ...node.position,
-                ...(restrictPosition.x !== undefined && { x: restrictPosition.x }),
-                ...(restrictPosition.y !== undefined && { y: restrictPosition.y }),
-              };
-
-              // 更新节点位置
-              updateNode(node.id, {
-                position: constrainedPosition
-              });
-            }
-          }}
           onNodesChange={(changes) => {
-            console.log('📋 onNodesChange触发，变化数量:', changes.length);
-            
-            // 首先应用所有变化到 ReactFlow（这样 UI 立即响应）
             onNodesChange(changes);
             
-            // 然后处理需要同步到 store 的变化
             changes.forEach((change: NodeChange) => {
-              // 处理选择变化
-              if (change.type === 'select' && change.selected && change.id) {
-                setSelectedNodeId(change.id);
-                setSelectedEdgeId(null);
-              }
-              
-              // 处理删除变化
               if (change.type === 'remove') {
-                console.log(`🗑️ 删除节点: ${change.id}`);
-                const { deleteNode } = useGraphStore.getState();
                 deleteNode(change.id);
                 if (selectedNodeId === change.id) {
                   setSelectedNodeId(null);
                 }
               }
               
-              // 处理尺寸变化 - 使用防抖，只在调整结束后更新 store
-              if (change.type === 'dimensions' && change.dimensions) {
-                // 清除之前的定时器
+              if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
                 if (resizeTimeoutRef.current[change.id]) {
                   clearTimeout(resizeTimeoutRef.current[change.id]);
                 }
                 
-                // 如果还在调整中（resizing = true），不立即更新 store
-                if (change.resizing) {
-                  console.log(`🔄 节点 ${change.id} 正在调整大小...`);
-                  return;
-                }
-                
-                // 调整结束（resizing = false），延迟更新 store
-                console.log(`✅ 节点 ${change.id} 调整大小结束:`, change.dimensions);
-                
                 resizeTimeoutRef.current[change.id] = setTimeout(() => {
-                  const { updateNode, updateGroupBoundary } = useGraphStore.getState();
-                  
-                  // 获取当前节点的完整状态（包括位置）
                   const currentNode = reactFlowInstance?.getNode(change.id);
                   
                   if (currentNode) {
-                    // 关键：明确保留位置，只更新尺寸
                     updateNode(change.id, {
-                      position: currentNode.position,
-                      width: change.dimensions!.width,
-                      height: change.dimensions!.height,
+                      width: safeNumber(change.dimensions!.width, 150),
+                      height: safeNumber(change.dimensions!.height, 100),
                     });
                     
-                    // 无论节点类型，都更新边界
-                    setTimeout(() => {
-                      updateGroupBoundary(change.id);
-                    }, 50);
-                  }
-                  
-                  // 清理定时器引用
-                  delete resizeTimeoutRef.current[change.id];
-                }, 100);
-              }
-              
-              // 处理位置变化 - 立即保存移动后的位置
-              if (change.type === 'position' && change.id) {
-                // 拖拽结束时（dragging: false），获取节点当前位置并保存
-                if ('dragging' in change && change.dragging === false) {
-                  // 获取节点当前最终位置
-                  const currentNode = reactFlowInstance?.getNode(change.id);
-                  
-                  if (currentNode) {
-                    console.log(`🎯 拖拽结束 - 节点ID: ${change.id}, 最终位置:`, currentNode.position);
-                    
-                    // 检查是否是群组
                     if (currentNode.type === 'group') {
-                      const group = currentNode as any;
-                      const groupNodes = nodes.filter((node: Node | Group): node is Node => 
-                        node.type === BlockEnum.NODE && 'groupId' in node && node.groupId === group.id
-                      );
-                      
-                      // 更新群组本身的位置
-                      updateNode(change.id, {
-                        position: currentNode.position
-                      });
-                      
-                      // 同时更新群组内的节点位置
-                      groupNodes.forEach((node: Node) => {
-                        const currentInnerNode = reactFlowInstance?.getNode(node.id);
-                        if (currentInnerNode) {
-                          updateNode(node.id, {
-                            position: currentInnerNode.position
-                          });
-                        }
-                      });
-                    } else {
-                      // 普通节点位置变化，保存到store
-                      updateNode(change.id, {
-                        position: currentNode.position
-                      });
+                      setTimeout(() => {
+                        updateGroupBoundary(change.id);
+                      }, 50);
                     }
                   }
-                }
+                  
+                  delete resizeTimeoutRef.current[change.id];
+                }, 100);
               }
             });
           }}
@@ -367,7 +420,12 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         >
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           <Controls showInteractive={false} />
-          <MiniMap />
+          <MiniMap 
+            nodeColor={nodeColor}
+            maskColor="rgb(240, 240, 240, 0.6)"
+            pannable
+            zoomable
+          />
           <ZoomIndicator zoomValue={zoomValue} />
         </ReactFlow>
       </div>
