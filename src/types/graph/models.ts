@@ -46,6 +46,10 @@ export interface Edge {
   label?: string;
   groupId?: string;
   style?: React.CSSProperties;
+  data?: {
+    color?: string;
+    strokeWidth?: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

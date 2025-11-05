@@ -1,5 +1,6 @@
 // 简单的状态管理测试用例
 import { useGraphStore } from '@/stores/graph';
+import { Node, BlockEnum } from '@/types/graph/models';
 
 // 测试节点 CRUD 操作
 export const testNodeOperations = () => {
@@ -8,12 +9,17 @@ export const testNodeOperations = () => {
   console.log('初始节点数量:', getNodes().length);
   
   // 测试添加节点
-  const newNode = {
+  const newNode: Node = {
     id: 'test-node-1',
-    type: 'node',
+    type: BlockEnum.NODE,
     position: { x: 100, y: 100 },
+    data: { 
+      title: 'Test Node',
+      content: 'This is a test node'
+    },
     title: 'Test Node',
     content: 'This is a test node',
+    groupId: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

@@ -121,3 +121,354 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 隐藏 ReactFlow NodeResizer 的调整边框线 */
+.react-flow__resize-control-line,
+.react-flow__resize-control.line {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 针对 NodeResizer 的边框 */
+.react-flow__node-resizer {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 针对 NodeResizer 的边线 */
+.react-flow__node-resizer-line {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* 针对 NodeResizer 的手柄 */
+.react-flow__node-resizer-handle {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 移除 ReactFlow NodeResizeControl 的黑色边框 */
+.react-flow__resize-control.nodrag {
+  border: none !important;
+  background: transparent !important;
+  /* 如果还有黑色背景，添加这些 */
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 按照 Dify 的实现方式：隐藏所有 line 类型的 resize control（这些产生黑色框） */
+.react-flow__resize-control.line,
+.react-flow__resize-control.top.line,
+.react-flow__resize-control.right.line,
+.react-flow__resize-control.bottom.line,
+.react-flow__resize-control.left.line,
+div.react-flow__resize-control[class*="line"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* handle 类型的 resize control - 隐藏边框但保持交互功能（按照 Dify 的实现） */
+.react-flow__resize-control.handle,
+.react-flow__resize-control.bottom.right.handle,
+.react-flow__resize-control.nodrag.bottom.right.handle {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  /* 保持交互功能 */
+  pointer-events: auto !important;
+  cursor: nwse-resize !important;
+}
+
+/* 确保 resize control 的伪元素也不产生边框 */
+.react-flow__resize-control.handle::before,
+.react-flow__resize-control.handle::after {
+  display: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* 自定义调整手柄样式 */
+.custom-resize-handle {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background-color: #3b82f6 !important;
+  border: 2px solid white !important;
+}
+
+/* 移除 ReactFlow 默认选择框的黑色边框 - 完全隐藏 */
+.react-flow__nodesselection-rect {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 移除 ReactFlow 选择框的黑色边框 - 完全隐藏 */
+.react-flow__selection {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 移除节点选中时的默认outline */
+.react-flow__node.selected {
+  outline: none !important;
+}
+
+/* 移除节点focus时的默认outline */
+.react-flow__node:focus {
+  outline: none !important;
+}
+
+/* 移除所有ReactFlow节点的默认outline */
+.react-flow__node {
+  outline: none !important;
+}
+
+/* 移除ReactFlow画布元素的默认outline */
+.react-flow__pane,
+.react-flow__viewport {
+  outline: none !important;
+}
+
+/* 移除ReactFlow节点在拖拽时的默认outline */
+.react-flow__node.dragging,
+.react-flow__node.draggable {
+  outline: none !important;
+}
+
+/* 移除ReactFlow节点选中时的边框和outline */
+.react-flow__node.selected,
+.react-flow__node[data-selected="true"] {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 移除所有可能的选择框相关的边框 - 完全隐藏 */
+.react-flow__nodesselection,
+.react-flow__nodesselection-rect,
+.react-flow__selection {
+  display: none !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 确保选择框的伪元素也被隐藏 */
+.react-flow__nodesselection::before,
+.react-flow__nodesselection::after,
+.react-flow__nodesselection-rect::before,
+.react-flow__nodesselection-rect::after,
+.react-flow__selection::before,
+.react-flow__selection::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 确保所有 resize control 相关的 line 元素都被隐藏 */
+.react-flow__node .react-flow__resize-control.line,
+.react-flow__node .react-flow__resize-control.top.line,
+.react-flow__node .react-flow__resize-control.right.line,
+.react-flow__node .react-flow__resize-control.bottom.line,
+.react-flow__node .react-flow__resize-control.left.line,
+.react-flow__node div[class*="resize-control"][class*="line"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 确保自定义群组组件没有outline */
+.react-flow__node[data-type="group"] {
+  outline: none !important;
+}
+
+/* 完全隐藏所有可能的选择框和选择矩形 - 防止点击画布时出现 */
+.react-flow__nodesselection,
+.react-flow__nodesselection-rect,
+.react-flow__nodesselection-rect *,
+.react-flow__selection,
+.react-flow__selection * {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 确保选择框元素在所有状态下都被隐藏 */
+.react-flow__nodesselection-rect[style*="width"],
+.react-flow__nodesselection-rect[style*="height"],
+.react-flow__selection[style*="width"],
+.react-flow__selection[style*="height"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 移除所有ReactFlow元素的focus outline */
+.react-flow__node:focus,
+.react-flow__node:focus-visible,
+.react-flow__node:not(.selected),
+.react-flow__edge:focus,
+.react-flow__edge:focus-visible,
+.react-flow__resize-control:focus,
+.react-flow__resize-control:focus-visible,
+.react-flow__resize-control:active,
+.react-flow__resize-control:hover,
+.react-flow__resize-control:not(:hover) {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 确保 resize control 的伪元素也不产生边框 */
+.react-flow__resize-control.handle::before,
+.react-flow__resize-control.handle::after {
+  display: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* 完全隐藏画布选择功能，防止点击画布时出现黑色框 */
+.react-flow__selectionbox {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+/* 确保画布选择框的伪元素也被隐藏 */
+.react-flow__selectionbox::before,
+.react-flow__selectionbox::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+/* 进一步确保画布交互元素没有边框 */
+.react-flow__pane {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  user-select: none;
+}
+
+/* 与Dify类似的workflow selection样式覆盖 - 完全移除选择框的边框和背景 */
+.react-flow__nodesselection-rect,
+#workflow-container .react-flow__nodesselection-rect {
+  border: none !important;
+  background: transparent !important;
+  cursor: default !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.react-flow__selection,
+#workflow-container .react-flow__selection {
+  border: none !important;
+  background: transparent !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 确保这些元素在所有容器中都保持隐藏 */
+.react-flow__nodesselection-rect,
+.react-flow__selection {
+  border: none !important;
+  background: transparent !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 额外确保画布的选择功能被完全禁用 */
+.react-flow__pane,
+.react-flow__viewport {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* 完全禁用selection功能，防止点击画布时出现黑框 */
+.react-flow__pane {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 禁用框选功能 */
+.react-flow__pane:focus {
+  outline: none !important;
+}
+
+/* 防止拖拽和选择行为 */
+.react-flow__node {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 防止节点在调整大小时被意外拖拽 */
+.react-flow__node .react-flow__resize-control,
+.react-flow__node .react-flow__resize-control *,
+.react-flow__node .resize-control-handle {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  -moz-user-drag: none;
+  -ms-user-drag: none;
+  pointer-events: auto; /* 但仍允许指针事件用于调整大小 */
+}
+
+/* 防止在拖拽调整大小时意外移动节点 */
+.react-flow__resize-control {
+  touch-action: none;
+}
+

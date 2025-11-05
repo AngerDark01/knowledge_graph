@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Edge } from 'reactflow';
 
 interface EdgeEditorProps {
   edgeId: string;
@@ -15,14 +16,14 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
   const edge = getEdgeById(edgeId);
   
   const [label, setLabel] = useState(edge?.label || '');
-  const [color, setColor] = useState<string>(edge?.data?.color || '#000000');
-  const [strokeWidth, setStrokeWidth] = useState<string>(edge?.data?.strokeWidth?.toString() || '2');
+  const [color, setColor] = useState<string>(((edge as any)?.data as any)?.color || '#000000');
+  const [strokeWidth, setStrokeWidth] = useState<string>(((edge as any)?.data as any)?.strokeWidth?.toString() || '2');
 
   useEffect(() => {
     if (edge) {
       setLabel(edge.label || '');
-      setColor(edge.data?.color || '#000000');
-      setStrokeWidth(edge.data?.strokeWidth?.toString() || '2');
+      setColor(((edge as any)?.data as any)?.color || '#000000');
+      setStrokeWidth(((edge as any)?.data as any)?.strokeWidth?.toString() || '2');
     }
   }, [edge]);
 
@@ -34,19 +35,20 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
     updateEdge(edgeId, {
       ...edge,
       label,
+      // 扩展 edge 对象以支持 data 属性
       data: {
-        ...edge.data,
+        ...(edge as any).data,
         color,
         strokeWidth: Number(strokeWidth),
-      } as any // 临时修复类型问题，实际项目中应定义更精确的类型
+      }
     });
   };
 
   const handleReset = () => {
     if (edge) {
       setLabel(edge.label || '');
-      setColor(edge.data?.color || '#000000');
-      setStrokeWidth(edge.data?.strokeWidth?.toString() || '2');
+      setColor(((edge as any)?.data as any)?.color || '#000000');
+      setStrokeWidth(((edge as any)?.data as any)?.strokeWidth?.toString() || '2');
     }
   };
 

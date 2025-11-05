@@ -24,3 +24,5 @@ export const createCanvasViewSlice = (set: any): CanvasViewSlice => ({
   canvasSize: { width: 0, height: 0 },
   setCanvasSize: (size) => set({ canvasSize: size }),
 });
+
+export type { CanvasViewSlice };
