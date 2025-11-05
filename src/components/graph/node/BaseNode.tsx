@@ -106,19 +106,21 @@ const BaseNode: React.FC<BaseNodeProps> = ({
   const containerClass = isGroup 
     ? `group relative rounded-2xl
        ${selected ? 'border-blue-500 border-[3px] shadow-lg' : 'border-blue-200 border-[2px]'}
-       bg-blue-50
+       bg-blue-50 bg-opacity-70
        hover:shadow-lg
        outline-none
-       box-border` 
+       box-border
+       z-[1]` 
     : `group relative rounded-md
        ${selected ? 'border-blue-500 border-[2px] shadow-md' : 'border border-gray-200'}
        bg-white
        hover:shadow-lg
        outline-none
-       box-border`;
+       box-border
+       z-[2]`;
     
   const titleBarClass = isGroup
-    ? `flex items-center rounded-t-2xl px-4 py-3 ${selected ? 'bg-blue-200' : 'bg-blue-100'}`
+    ? `flex items-center rounded-t-2xl px-4 py-3 ${selected ? 'bg-blue-200 bg-opacity-80' : 'bg-blue-100 bg-opacity-80'}`
     : `flex items-center px-4 py-2 ${selected ? 'bg-blue-100' : 'bg-gray-100'}`;
 
   const containerStyle = { width: '100%', height: '100%' };

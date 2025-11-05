@@ -99,7 +99,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       x: safeNumber(node.position.x) - safeNumber(parentGroup.position.x),
       y: safeNumber(node.position.y) - safeNumber(parentGroup.position.y)
     };
-  }, []);
+  }, [safeNumber]);
 
   // 转换为绝对坐标
   const convertToAbsolutePosition = useCallback((relativePos: { x: number; y: number }, parentGroup: Group) => {
@@ -107,7 +107,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       x: safeNumber(relativePos.x) + safeNumber(parentGroup.position.x),
       y: safeNumber(relativePos.y) + safeNumber(parentGroup.position.y)
     };
-  }, []);
+  }, [safeNumber]);
 
   // 同步store到ReactFlow
   useEffect(() => {
@@ -188,12 +188,25 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   // 同步边
   useEffect(() => {
-    const processedEdges = edges.map(edge => ({
-      ...edge,
-      selected: edge.id === selectedEdgeId,
-    }));
+    const processedEdges = edges.map(edge => {
+      // 检查边的源节点和目标节点是否都在同一个群组内
+      const sourceNode = storeNodes.find(n => n.id === edge.source);
+      const targetNode = storeNodes.find(n => n.id === edge.target);
+      
+      // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
+      const isInSameGroup = sourceNode && targetNode && 
+                           sourceNode.groupId && 
+                           targetNode.groupId && 
+                           sourceNode.groupId === targetNode.groupId;
+      
+      return {
+        ...edge,
+        selected: edge.id === selectedEdgeId,
+        zIndex: isInSameGroup ? 100 : undefined, // 确保群组内的边显示在群组之上
+      };
+    });
     setReactFlowEdges(processedEdges as ReactFlowEdge[]);
-  }, [edges, selectedEdgeId, setReactFlowEdges]);
+  }, [edges, selectedEdgeId, setReactFlowEdges, storeNodes]);
 
   // 监听缩放
   useEffect(() => {

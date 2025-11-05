@@ -50,6 +50,7 @@ const CustomEdge = ({
               border: '1px solid #ddd',
               borderRadius: '3px',
               pointerEvents: 'all',
+              zIndex: 3, // 确保标签在边之上，但低于节点
             }}
             className="nodrag nopan"
           >
