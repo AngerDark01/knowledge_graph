@@ -30,3 +30,5 @@ export const createEdgesSlice = (set: any, get: any): EdgesSlice => ({
   getEdges: () => get().edges,
   getEdgeById: (id) => get().edges.find((edge: Edge) => edge.id === id),
 });
+
+export type { EdgesSlice };

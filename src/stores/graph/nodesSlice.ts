@@ -3,24 +3,35 @@ import { Node, Group, Edge, BlockEnum } from '@/types/graph/models';
 
 interface NodesSlice {
   nodes: (Node | Group)[];
+  selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   addNode: (node: Node | Group) => void;
   updateNode: (id: string, updates: Partial<Node | Group>) => void;
   deleteNode: (id: string) => void;
   getNodes: () => (Node | Group)[];
   getNodeById: (id: string) => (Node | Group) | undefined;
+  setSelectedNodeId: (id: string | null) => void;
+  setSelectedEdgeId: (id: string | null) => void;
   addGroup: (group: Group) => void;
   updateGroup: (id: string, updates: Partial<Group>) => void;
   deleteGroup: (id: string) => void;
   addNodeToGroup: (nodeId: string, groupId: string) => void;
   removeNodeFromGroup: (nodeId: string) => void;
+  updateGroupBoundary: (groupId: string) => void;
 }
 
 export const createNodesSlice = (set: any, get: any): NodesSlice => ({
   nodes: [],
+  selectedNodeId: null,
+  selectedEdgeId: null,
+  setSelectedNodeId: (id) => set({ selectedNodeId: id }),
+  setSelectedEdgeId: (id) => set({ selectedEdgeId: id }),
   addNode: (node) => set((state: any) => ({ 
     nodes: [...state.nodes, node] 
   })),
   updateNode: (id, updates) => set((state: any) => {
+    console.log(`📝 更新节点 ${id}:`, updates);
+    
     // 验证节点标题
     let validationError = undefined;
     if (updates.title !== undefined && updates.title.trim() === '') {
@@ -28,16 +39,37 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     }
 
     return {
-      nodes: state.nodes.map((node: Node | Group) => 
-        node.id === id 
-          ? { 
-              ...node, 
-              ...updates, 
-              validationError,
-              updatedAt: new Date()
-            } 
-          : node
-      )
+      nodes: state.nodes.map((node: Node | Group) => {
+        if (node.id === id) {
+          // 关键：深度合并，确保不丢失任何属性
+          const updatedNode = {
+            ...node,
+            ...updates,
+            // 明确处理嵌套对象
+            data: updates.data !== undefined 
+              ? { ...node.data, ...updates.data }
+              : node.data,
+            style: updates.style !== undefined
+              ? { ...node.style, ...updates.style }
+              : node.style,
+            // 位置必须明确处理，避免被覆盖
+            position: updates.position !== undefined
+              ? { ...node.position, ...updates.position }
+              : node.position,
+            validationError,
+            updatedAt: new Date(),
+          };
+          
+          console.log(`  ✅ 节点 ${id} 更新后:`, {
+            position: updatedNode.position,
+            width: updatedNode.width,
+            height: updatedNode.height,
+          });
+          
+          return updatedNode;
+        }
+        return node;
+      })
     };
   }),
   deleteNode: (id) => set((state: any) => ({
@@ -49,6 +81,8 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     nodes: [...state.nodes, group]
   })),
   updateGroup: (id, updates) => set((state: any) => {
+    console.log(`📝 更新群组 ${id}:`, updates);
+    
     // 验证群组标题
     let validationError = undefined;
     if (updates.title !== undefined && updates.title.trim() === '') {
@@ -62,9 +96,26 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
           const updatedGroup = {
             ...group,
             ...updates,
+            // 明确处理嵌套对象
+            data: updates.data !== undefined 
+              ? { ...group.data, ...updates.data }
+              : group.data,
+            style: updates.style !== undefined
+              ? { ...group.style, ...updates.style }
+              : group.style,
+            // 位置必须明确处理，避免被覆盖
+            position: updates.position !== undefined
+              ? { ...group.position, ...updates.position }
+              : group.position,
             validationError,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           };
+          
+          console.log(`  ✅ 群组 ${id} 更新后:`, {
+            position: updatedGroup.position,
+            width: updatedGroup.width,
+            height: updatedGroup.height,
+          });
           
           // 如果更新了nodeIds，需要更新相关节点的groupId
           if (updates.nodeIds) {
@@ -72,12 +123,12 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
             const newNodeIds = updates.nodeIds as string[] || [];
             
             // 找出新增的节点ID
-            const addedNodeIds = newNodeIds.filter(nodeId => !oldNodeIds.includes(nodeId));
+            const addedNodeIds = newNodeIds.filter((nodeId: string) => !oldNodeIds.includes(nodeId));
             // 找出被移除的节点ID
-            const removedNodeIds = oldNodeIds.filter(nodeId => !newNodeIds.includes(nodeId));
+            const removedNodeIds = oldNodeIds.filter((nodeId: string) => !newNodeIds.includes(nodeId));
             
             // 更新相关节点的groupId
-            const updatedNodes = state.nodes.map(n => {
+            const updatedNodes = state.nodes.map((n: Node | Group) => {
               if (addedNodeIds.includes(n.id)) {
                 return { ...n, groupId: id };
               } else if (removedNodeIds.includes(n.id) && n.groupId === id) {
@@ -98,12 +149,12 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     };
   }),
   deleteGroup: (id) => set((state: any) => {
-    const group = state.nodes.find(node => node.id === id && node.type === BlockEnum.GROUP) as Group;
+    const group = state.nodes.find((node: Node | Group) => node.id === id && node.type === BlockEnum.GROUP) as Group;
     if (!group) return state;
 
     // 从群组中移除节点的groupId引用
     const updatedNodes = state.nodes
-      .map(node => {
+      .map((node: Node | Group) => {
         if (node.groupId === id) {
           const nodeCopy = { ...node };
           delete nodeCopy.groupId;
@@ -111,7 +162,7 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
         }
         return node;
       })
-      .filter(node => node.id !== id); // 移除群组本身
+      .filter((node: Node | Group) => node.id !== id); // 移除群组本身
 
     return { nodes: updatedNodes };
   }),
@@ -127,10 +178,10 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     let updatedNodes = [...state.nodes];
     if (node && node.groupId) {
       // 从原群组移除节点
-      updatedNodes = updatedNodes.map(n => {
+      updatedNodes = updatedNodes.map((n: Node | Group) => {
         if (n.id === node.groupId && n.type === BlockEnum.GROUP) {
           const group = n as Group;
-          const updatedNodeIds = (group.nodeIds || []).filter(id => id !== nodeId);
+          const updatedNodeIds = (group.nodeIds || []).filter((id: string) => id !== nodeId);
           return { ...group, nodeIds: updatedNodeIds };
         }
         return n;
@@ -138,7 +189,7 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     }
 
     // 更新节点的groupId
-    updatedNodes = updatedNodes.map(n => {
+    updatedNodes = updatedNodes.map((n: Node | Group) => {
       if (n.id === nodeId) {
         return { ...n, groupId };
       }
@@ -146,11 +197,11 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     });
 
     // 更新目标群组的nodeIds
-    updatedNodes = updatedNodes.map(n => {
+    updatedNodes = updatedNodes.map((n: Node | Group) => {
       if (n.id === groupId && n.type === BlockEnum.GROUP) {
         const group = n as Group;
         // 避免重复添加，先过滤再添加
-        const filteredNodeIds = (group.nodeIds || []).filter(id => id !== nodeId);
+        const filteredNodeIds = (group.nodeIds || []).filter((id: string) => id !== nodeId);
         const updatedNodeIds = [...filteredNodeIds, nodeId];
         return { ...group, nodeIds: updatedNodeIds };
       }
@@ -161,7 +212,7 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
   }),
   removeNodeFromGroup: (nodeId) => set((state: any) => {
     // 移除节点的groupId
-    const updatedNodes = state.nodes.map(node => {
+    const updatedNodes = state.nodes.map((node: Node | Group) => {
       if (node.id === nodeId && node.groupId) {
         const nodeCopy = { ...node };
         delete nodeCopy.groupId;
@@ -171,10 +222,10 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     });
 
     // 从群组的nodeIds中移除该节点
-    const updatedNodesWithGroup = updatedNodes.map(node => {
+    const updatedNodesWithGroup = updatedNodes.map((node: Node | Group) => {
       if (node.type === BlockEnum.GROUP) {
         const group = node as Group;
-        const updatedNodeIds = (group.nodeIds || []).filter(id => id !== nodeId);
+        const updatedNodeIds = (group.nodeIds || []).filter((id: string) => id !== nodeId);
         return { ...group, nodeIds: updatedNodeIds };
       }
       return node;
@@ -233,3 +284,5 @@ export const createNodesSlice = (set: any, get: any): NodesSlice => ({
     return { nodes: updatedNodes };
   }),
 });
+
+export type { NodesSlice };

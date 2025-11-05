@@ -22,7 +22,7 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
   const [groupId, setGroupId] = useState(node?.groupId || '');
 
   // 获取所有群组
-  const groups = nodes.filter(n => n.type === 'group') as Group[];
+  const groups = nodes.filter((n: any): n is Group => n.type === 'group');
 
   useEffect(() => {
     if (node) {
@@ -95,7 +95,7 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
               <SelectValue placeholder="Select a group" />
             </SelectTrigger>
             <SelectContent>
-              {groups.map(group => (
+              {groups.map((group: Group) => (
                 <SelectItem key={group.id} value={group.id}>
                   {group.data?.title || group.title || group.id}
                 </SelectItem>
