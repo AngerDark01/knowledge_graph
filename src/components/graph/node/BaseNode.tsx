@@ -105,13 +105,13 @@ const BaseNode: React.FC<BaseNodeProps> = ({
 
   const containerClass = isGroup 
     ? `group relative rounded-2xl
-       ${selected ? 'border-components-option-card-option-selected-border border-[2px]' : 'border-blue-200 border-[2px]'}
+       ${selected ? 'border-blue-500 border-[3px] shadow-lg' : 'border-blue-200 border-[2px]'}
        bg-blue-50
        hover:shadow-lg
        outline-none
        box-border` 
     : `group relative rounded-md
-       ${selected ? 'border-components-option-card-option-selected-border border' : 'border border-gray-200'}
+       ${selected ? 'border-blue-500 border-[2px] shadow-md' : 'border border-gray-200'}
        bg-white
        hover:shadow-lg
        outline-none

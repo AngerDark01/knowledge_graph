@@ -1,100 +1,226 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useReactFlow } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 
+// 群组内边距常量 - 标题高度约40px，所以顶部需要更多空间
+const GROUP_PADDING = { 
+  top: 70,    // 增加顶部边距，避免与标题重叠
+  left: 20, 
+  right: 20, 
+  bottom: 20 
+};
+
+// 安全的数值验证和默认值函数
+const safeNumber = (value: any, defaultValue: number = 0): number => {
+  const num = Number(value);
+  return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
+};
+
 export const useNodeHandling = () => {
   const reactFlowInstance = useReactFlow();
-  const { nodes, addNode, setSelectedNodeId } = useGraphStore();
+  const { 
+    nodes, 
+    addNode, 
+    setSelectedNodeId, 
+    selectedNodeId,
+    updateGroupBoundary 
+  } = useGraphStore();
   
   const onNodeAdd = useCallback(() => {
-    // 如果当前有选中的群组，将节点添加到该群组中
-    const selectedGroup = nodes.find((n: Node | Group) => n.id === useGraphStore.getState().selectedNodeId && n.type === BlockEnum.GROUP) as Group;
+    console.log('➕ 创建新节点，当前选中:', selectedNodeId);
+    
+    // 检查当前是否有选中的群组
+    const selectedGroup = nodes.find((n: Node | Group) => 
+      n.id === selectedNodeId && n.type === BlockEnum.GROUP
+    ) as Group;
     
     let position;
     let groupId;
     
     if (selectedGroup) {
-      // 如果有选中的群组，将节点放在群组内部的固定位置（左上角偏移）
-      const groupBoundary = {
-        minX: selectedGroup.position.x + 20,
-        minY: selectedGroup.position.y + 50, // 为标题留出空间
-        maxX: selectedGroup.position.x + (selectedGroup.width || 300) - 170, // 考虑节点宽度
-        maxY: selectedGroup.position.y + (selectedGroup.height || 200) - 120  // 考虑节点高度
+      console.log('📦 在选中的群组内创建节点:', selectedGroup.id);
+      
+      // 确保群组位置有效，使用安全的数值转换
+      const safeGroupPosition = {
+        x: safeNumber(selectedGroup.position?.x, 0),
+        y: safeNumber(selectedGroup.position?.y, 0)
       };
       
-      // 确保边界有效
-      if (groupBoundary.maxX > groupBoundary.minX && groupBoundary.maxY > groupBoundary.minY) {
-        position = {
-          x: groupBoundary.minX + 20, // 固定偏移，而不是随机位置
-          y: groupBoundary.minY + 20  // 固定偏移，而不是随机位置
-        };
-        groupId = selectedGroup.id;
-      } else {
-        // 如果群组边界无效，使用默认位置
-        position = { x: selectedGroup.position.x + 50, y: selectedGroup.position.y + 50 };
-      }
-    } else {
-      // 没有选中群组时，在当前视图中心偏移处创建节点
-      const viewPort = reactFlowInstance?.getViewport();
+      // 确保群组尺寸有效
+      const safeGroupWidth = safeNumber(selectedGroup.width, 300);
+      const safeGroupHeight = safeNumber(selectedGroup.height, 200);
+      
+      console.log('  📍 群组安全位置:', safeGroupPosition);
+      console.log('  📏 群组安全尺寸:', { width: safeGroupWidth, height: safeGroupHeight });
+      
+      // 计算群组内当前已有节点的数量
+      const existingNodesInGroup = nodes.filter((n: Node | Group) => 
+        n.type === BlockEnum.NODE && (n as Node).groupId === selectedGroup.id
+      );
+      
+      // 使用网格布局避免节点重叠
+      const nodesPerRow = 3;
+      const nodeIndex = existingNodesInGroup.length;
+      const row = Math.floor(nodeIndex / nodesPerRow);
+      const col = nodeIndex % nodesPerRow;
+      
+      const nodeSpacingX = 180; // 节点宽度 + 间距
+      const nodeSpacingY = 130; // 节点高度 + 间距
+      
+      // 计算节点在群组内的相对位置
+      const relativeX = GROUP_PADDING.left + (col * nodeSpacingX);
+      const relativeY = GROUP_PADDING.top + (row * nodeSpacingY);
+      
+      // 计算绝对位置：群组位置 + 相对位置
       position = {
-        x: viewPort ? viewPort.x + 200 : 100, // 相对于视图的位置，而不是完全随机
-        y: viewPort ? viewPort.y + 100 : 100  // 相对于视图的位置，而不是完全随机
+        x: safeNumber(safeGroupPosition.x + relativeX, relativeX),
+        y: safeNumber(safeGroupPosition.y + relativeY, relativeY)
       };
+      
+      // 确保节点不会超出群组边界
+      const nodeWidth = 150;
+      const nodeHeight = 100;
+      const maxX = safeGroupPosition.x + safeGroupWidth - GROUP_PADDING.right - nodeWidth;
+      const maxY = safeGroupPosition.y + safeGroupHeight - GROUP_PADDING.bottom - nodeHeight;
+      
+      // 如果超出边界，约束到边界内
+      position.x = Math.max(
+        safeGroupPosition.x + GROUP_PADDING.left,
+        Math.min(position.x, maxX)
+      );
+      position.y = Math.max(
+        safeGroupPosition.y + GROUP_PADDING.top,
+        Math.min(position.y, maxY)
+      );
+      
+      // 最后的安全检查
+      position.x = safeNumber(position.x, safeGroupPosition.x + GROUP_PADDING.left);
+      position.y = safeNumber(position.y, safeGroupPosition.y + GROUP_PADDING.top);
+      
+      groupId = selectedGroup.id;
+      
+      console.log('  📍 新节点位置（绝对坐标）:', position);
+      console.log('  📊 群组内已有节点数:', existingNodesInGroup.length);
+      console.log('  🎯 相对位置:', { x: relativeX, y: relativeY });
+    } else {
+      // 没有选中群组时，在当前视图中心创建节点
+      try {
+        const viewPort = reactFlowInstance?.getViewport();
+        const center = reactFlowInstance?.screenToFlowPosition({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2
+        });
+        
+        position = {
+          x: safeNumber(center?.x, safeNumber(viewPort?.x, 0) + 200),
+          y: safeNumber(center?.y, safeNumber(viewPort?.y, 0) + 100)
+        };
+      } catch (error) {
+        console.error('计算视图中心位置失败:', error);
+        position = { x: 200, y: 100 };
+      }
+      
+      console.log('  📍 新节点位置（画布中心）:', position);
     }
     
-    // 获取当前节点数量用于标题，但不作为依赖项
-    const nodeCount = nodes.filter((n: Node | Group) => n.type === BlockEnum.NODE).length;
+    // 最终验证位置有效性
+    if (!position || isNaN(position.x) || isNaN(position.y)) {
+      console.error('❌ 位置计算错误，使用默认值');
+      position = { x: 100, y: 100 };
+    }
     
+    // 获取当前节点数量用于标题
+    const nodeCount = nodes.filter((n: Node | Group) => 
+      n.type === BlockEnum.NODE
+    ).length;
+    
+    // 创建新节点
     const newNode: Node = {
       id: `node_${Date.now()}`,
       type: BlockEnum.NODE,
-      position, // 使用计算好的位置
+      position: {
+        x: safeNumber(position.x),
+        y: safeNumber(position.y)
+      },
       data: { 
         title: `Node ${nodeCount + 1}`, 
         content: 'Double click to edit' 
       },
-      title: `Node ${nodeCount + 1}`, // 必需字段
-      content: 'Double click to edit', // 必需字段
-      groupId: groupId,
+      title: `Node ${nodeCount + 1}`,
+      content: 'Double click to edit',
+      width: 150,  // 明确设置宽度
+      height: 100, // 明确设置高度
       createdAt: new Date(),
       updatedAt: new Date(),
-      ...(groupId && { groupId, parentId: groupId }), // 设置群组ID和parentId
+      ...(groupId && { groupId }) // 如果有群组ID，添加groupId属性
     };
     
+    console.log('✅ 创建节点:', newNode);
+    
+    // 添加节点到store
     addNode(newNode);
     setSelectedNodeId(newNode.id);
-  }, [addNode, nodes, setSelectedNodeId, reactFlowInstance]);
+    
+    // 如果节点属于群组，延迟更新群组边界以确保节点被包含
+    if (groupId) {
+      setTimeout(() => {
+        console.log('📐 更新群组边界:', groupId);
+        updateGroupBoundary(groupId);
+      }, 100);
+    }
+  }, [addNode, nodes, selectedNodeId, setSelectedNodeId, reactFlowInstance, updateGroupBoundary]);
 
   // 添加群组的处理函数
   const onGroupAdd = useCallback(() => {
-    // 在当前视图中心偏移处创建群组
-    const viewPort = reactFlowInstance?.getViewport();
-    const newGroup: Group = {
-      id: `group_${Date.now()}`,
-      type: BlockEnum.GROUP,
-      position: {
-        x: viewPort ? viewPort.x + 200 : 100, // 相对于视图的位置
-        y: viewPort ? viewPort.y + 100 : 100
-      },
-      data: { 
-        title: `Group ${(nodes as (Node | Group)[]).filter((n: Node | Group) => n.type === BlockEnum.GROUP).length + 1}`, 
-        content: 'Drag nodes here to add them to the group' 
-      },
-      title: `Group ${(nodes as (Node | Group)[]).filter((n: Node | Group) => n.type === BlockEnum.GROUP).length + 1}`,
-      content: 'Drag nodes here to add them to the group',
-      collapsed: false,
-      nodeIds: [],
-      boundary: { minX: 0, minY: 0, maxX: 300, maxY: 200 },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      // 关键：必须设置初始尺寸
-      width: 300,
-      height: 200,
-    };
+    console.log('➕ 创建新群组');
     
-    addNode(newGroup);
-    setSelectedNodeId(newGroup.id);
+    try {
+      // 在当前视图中心创建群组
+      const viewPort = reactFlowInstance?.getViewport();
+      const center = reactFlowInstance?.screenToFlowPosition({
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2
+      });
+      
+      let position = {
+        x: safeNumber(center?.x, safeNumber(viewPort?.x, 0) + 200),
+        y: safeNumber(center?.y, safeNumber(viewPort?.y, 0) + 100)
+      };
+      
+      const groupCount = nodes.filter((n: Node | Group) => 
+        n.type === BlockEnum.GROUP
+      ).length;
+      
+      const newGroup: Group = {
+        id: `group_${Date.now()}`,
+        type: BlockEnum.GROUP,
+        position: {
+          x: safeNumber(position.x),
+          y: safeNumber(position.y)
+        },
+        data: { 
+          title: `Group ${groupCount + 1}`, 
+          content: 'Select this group and click "Add Node" to add nodes inside' 
+        },
+        title: `Group ${groupCount + 1}`,
+        content: 'Select this group and click "Add Node" to add nodes inside',
+        collapsed: false,
+        nodeIds: [],
+        boundary: { minX: 0, minY: 0, maxX: 300, maxY: 200 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        width: 300,
+        height: 200,
+      };
+      
+      console.log('✅ 创建群组:', newGroup);
+      
+      addNode(newGroup);
+      setSelectedNodeId(newGroup.id);
+    } catch (error) {
+      console.error('创建群组失败:', error);
+    }
   }, [addNode, nodes, setSelectedNodeId, reactFlowInstance]);
 
   // 处理节点拖拽
@@ -114,99 +240,47 @@ export const useNodeHandling = () => {
         return;
       }
 
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
+      try {
+        let position = reactFlowInstance.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
 
-      const newNode: Node = {
-        id: `node_${Date.now()}`,
-        type: BlockEnum.NODE,
-        position,
-        data: { 
-          title: `New Node`, 
-          content: 'Double click to edit' 
-        },
-        title: 'New Node',
-        content: 'Double click to edit',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        // 确保位置坐标有效
+        position = {
+          x: safeNumber(position?.x, 0),
+          y: safeNumber(position?.y, 0)
+        };
 
-      addNode(newNode);
-      setSelectedNodeId(newNode.id);
+        const newNode: Node = {
+          id: `node_${Date.now()}`,
+          type: BlockEnum.NODE,
+          position,
+          data: { 
+            title: `New Node`, 
+            content: 'Double click to edit' 
+          },
+          title: 'New Node',
+          content: 'Double click to edit',
+          width: 150,
+          height: 100,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        addNode(newNode);
+        setSelectedNodeId(newNode.id);
+      } catch (error) {
+        console.error('放置节点失败:', error);
+      }
     },
     [reactFlowInstance, addNode, setSelectedNodeId]
   );
-
-  // 处理节点移动到群组内部
-  const onNodeMove = useCallback((nodeId: string, groupId: string) => {
-    const node = nodes.find((n: Node | Group): n is Node => n.id === nodeId && n.type === BlockEnum.NODE);
-    const group = nodes.find((n: Node | Group) => n.id === groupId) as Group;
-    
-    if (node && group) {
-      // 检查节点是否已经在该群组中，避免重复添加
-      if (node.groupId === groupId) {
-        console.log(`Node ${nodeId} is already in group ${groupId}`);
-        return;
-      }
-      
-      // 将节点添加到群组
-      const { addNodeToGroup, updateGroupBoundary } = useGraphStore.getState();
-      addNodeToGroup(nodeId, groupId);
-      
-      // 确保节点在群组边界内
-      const groupBoundary = {
-        minX: group.position.x,
-        minY: group.position.y,
-        maxX: group.position.x + (group.width || 300),
-        maxY: group.position.y + (group.height || 200)
-      };
-
-      // 考虑节点尺寸，这里假设节点大小为固定值
-      const nodeWidth = 150; // 节点宽度的估算值
-      const nodeHeight = 100; // 节点高度的估算值
-
-      // 如果节点位置超出了群组边界，将其约束在边界内
-      const constrainedPosition = {
-        x: Math.max(
-          groupBoundary.minX,
-          Math.min(node.position.x, groupBoundary.maxX - nodeWidth)
-        ),
-        y: Math.max(
-          groupBoundary.minY,
-          Math.min(node.position.y, groupBoundary.maxY - nodeHeight)
-        )
-      };
-
-      // 更新节点位置
-      if (constrainedPosition.x !== node.position.x || constrainedPosition.y !== node.position.y) {
-        const { updateNode } = useGraphStore.getState();
-        updateNode(nodeId, {
-          position: constrainedPosition
-        });
-      }
-      
-      // 更新群组边界
-      setTimeout(() => {
-        updateGroupBoundary(groupId);
-      }, 0);
-    }
-  }, [nodes]);
-
-  // 处理节点从群组移出
-  const onNodeRemoveFromGroup = useCallback((nodeId: string) => {
-    // 将节点从群组中移出
-    const { removeNodeFromGroup } = useGraphStore.getState();
-    removeNodeFromGroup(nodeId);
-  }, []);
 
   return {
     onNodeAdd,
     onGroupAdd,
     onDragOver,
-    onDrop,
-    onNodeMove,
-    onNodeRemoveFromGroup
+    onDrop
   };
 };
