@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { Connection, Edge } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
+import { BlockEnum } from '@/types/graph/models';
 
 export const useEdgeHandling = () => {
-  const { addEdge, edges } = useGraphStore();
+  const { addEdge, edges, getNodes } = useGraphStore();
 
   // 处理连接
   const onConnect = useCallback(
@@ -25,11 +26,31 @@ export const useEdgeHandling = () => {
         return;
       }
 
+      // 获取所有节点信息
+      const allNodes = getNodes();
+      const sourceNode = allNodes.find(n => n.id === params.source);
+      const targetNode = allNodes.find(n => n.id === params.target);
+
       // 确保 source 和 target 不是 null
       if (!params.source || !params.target) {
         console.error("Invalid connection: source or target is null");
         return;
       }
+
+      // 检查子节点与父节点的连接限制
+      // 阻止子节点与自己的父群组连接
+      if (sourceNode?.type === BlockEnum.NODE && sourceNode.groupId === params.target) {
+        console.log("Cannot connect child node to its parent group");
+        return;
+      }
+      
+      if (targetNode?.type === BlockEnum.NODE && targetNode.groupId === params.source) {
+        console.log("Cannot connect child node to its parent group");
+        return;
+      }
+      
+      // 允许子节点之间的连接
+      // 允许子节点连接到不是自己父群组的其他节点
 
       const newEdge = {
         id: `edge_${Date.now()}`,
@@ -42,7 +63,7 @@ export const useEdgeHandling = () => {
       };
       addEdge(newEdge);
     },
-    [addEdge, edges]
+    [addEdge, edges, getNodes]
   );
 
   return {

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createNodesSlice, NodesSlice } from './nodesSlice';
+import { createNodesSlice, NodesSlice } from './nodes';
 import { createEdgesSlice, EdgesSlice } from './edgesSlice';
 import { createCanvasViewSlice, CanvasViewSlice } from './canvasViewSlice';
 
