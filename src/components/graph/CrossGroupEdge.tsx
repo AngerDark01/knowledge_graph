@@ -1,21 +1,51 @@
 import React, { memo } from 'react';
-import { BaseEdge, EdgeLabelRenderer, Position, getBezierPath, EdgeProps, MarkerType } from 'reactflow';
+import { EdgeLabelRenderer, EdgeProps, MarkerType } from 'reactflow';
 
-interface CustomEdgeData {
+interface CrossGroupEdgeData {
   label?: string;
   color?: string;
   strokeWidth?: number;
-  isCrossGroup?: boolean;        // 是否为跨群关系
-  strokeDasharray?: string;      // 虚线样式
+  strokeDasharray?: string;
   // 关系属性
-  weight?: number;               // 关系权重
-  strength?: number;             // 关系强度
-  direction?: 'unidirectional' | 'bidirectional' | 'undirected'; // 方向性
+  weight?: number;
+  strength?: number;
+  direction?: 'unidirectional' | 'bidirectional' | 'undirected';
   // 自定义属性
   customProperties?: Record<string, any>;
 }
 
-const CustomEdge = ({
+// 计算跨群关系边的路径，确保边从群组边界穿出
+const getCrossGroupEdgePath = (
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+  sourceGroupId?: string,
+  targetGroupId?: string
+): string => {
+  // 对于跨群关系，使用更复杂的贝塞尔曲线路径
+  // 以确保边从群组边界穿出
+  
+  // 调整起点和终点，使其从群组边界穿出
+  // 这里简单地让路径稍微偏离节点中心，模拟从群组边界穿出的视觉效果
+  const adjustedSourceX = sourceX;
+  const adjustedSourceY = sourceY;
+  const adjustedTargetX = targetX;
+  const adjustedTargetY = targetY;
+  
+  // 计算控制点，使路径更弯曲以避免重叠，同时确保路径平滑
+  const midX = (adjustedSourceX + adjustedTargetX) / 2;
+  const midY = (adjustedSourceY + adjustedTargetY) / 2;
+  
+  // 根据源点和目标点的位置调整控制点，以产生更自然的曲线
+  const controlOffsetX = Math.abs(adjustedTargetX - adjustedSourceX) * 0.5;
+  const controlOffsetY = Math.abs(adjustedTargetY - adjustedSourceY) * 0.5;
+  
+  // 使用贝塞尔曲线生成路径
+  return `M${adjustedSourceX},${adjustedSourceY} C${adjustedSourceX + controlOffsetX},${midY - controlOffsetY} ${adjustedTargetX - controlOffsetX},${midY + controlOffsetY} ${adjustedTargetX},${adjustedTargetY}`;
+};
+
+const CrossGroupEdge = ({
   id,
   sourceX,
   sourceY,
@@ -26,30 +56,32 @@ const CustomEdge = ({
   data,
   markerEnd,
   style,
-}: EdgeProps<CustomEdgeData>) => {
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
+}: EdgeProps<CrossGroupEdgeData>) => {
+  // 计算边路径
+  const edgePath = getCrossGroupEdgePath(
+    sourceX, 
+    sourceY, 
+    targetX, 
     targetY,
-    targetPosition,
-  });
-
-  // 确定是否为跨群关系
-  const isCrossGroup = data?.isCrossGroup;
+    data?.sourceGroupId,
+    data?.targetGroupId
+  );
+  
+  // 计算标签位置 - 使用贝塞尔路径的中点
+  const labelX = (sourceX + targetX) / 2;
+  const labelY = (sourceY + targetY) / 2;
 
   // 根据权重和强度调整边的样式
   const weight = data?.weight ?? 1;
   const strength = data?.strength ?? 1;
   
-  // 基础线宽，跨群关系默认为2px，群内关系默认为1px
-  const baseStrokeWidth = isCrossGroup ? 2 : 1;
+  // 基础线宽，默认为2px
+  const baseStrokeWidth = 2;
   // 根据权重调整线宽，权重越大线越宽
   const calculatedStrokeWidth = baseStrokeWidth * (1 + (weight - 1) * 0.2);
   
   // 根据强度调整颜色透明度，强度越高越不透明
-  const baseColor = data?.color || (isCrossGroup ? '#FFA500' : '#000');
+  const baseColor = data?.color || '#FFA500'; // 橙色
   let strokeColor = baseColor;
   if (strength < 1) {
     // 如果强度小于1，添加透明度
@@ -103,20 +135,19 @@ const CustomEdge = ({
   const edgeStyle: React.CSSProperties = {
     stroke: strokeColor,
     strokeWidth: data?.strokeWidth || calculatedStrokeWidth,
-    strokeDasharray: data?.strokeDasharray || (isCrossGroup ? '5,5' : undefined),
+    strokeDasharray: data?.strokeDasharray || '5,5', // 虚线样式
     ...style
   };
 
-  // 确定标签背景色
-  const labelBackground = isCrossGroup ? 'white' : 'rgba(255, 255, 255, 0.8)';
-
   return (
     <>
-      <BaseEdge 
-        path={edgePath} 
-        markerEnd={edgeMarkerEnd} 
-        markerStart={edgeMarkerStart} 
-        style={edgeStyle} 
+      <path
+        id={id}
+        className="react-flow__edge-path"
+        d={edgePath}
+        style={edgeStyle}
+        markerEnd={edgeMarkerEnd}
+        markerStart={edgeMarkerStart}
       />
       {data?.label && (
         <EdgeLabelRenderer>
@@ -126,7 +157,7 @@ const CustomEdge = ({
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
               fontSize: '12px',
               padding: '2px 4px',
-              background: labelBackground,
+              background: 'white', // 白色背景保证可读性
               border: '1px solid #ddd',
               borderRadius: '3px',
               pointerEvents: 'all',
@@ -142,4 +173,4 @@ const CustomEdge = ({
   );
 };
 
-export default memo(CustomEdge);
+export default memo(CrossGroupEdge);

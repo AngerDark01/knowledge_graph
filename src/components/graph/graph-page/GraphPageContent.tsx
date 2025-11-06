@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef, memo } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -19,8 +19,11 @@ import 'reactflow/dist/style.css';
 
 import { NoteNode, GroupNode } from '../node';
 import CustomEdge from '../CustomEdge';
+import CrossGroupEdge from '../CrossGroupEdge';
 import NodeEditor from '../NodeEditor';
 import EdgeEditor from '../EdgeEditor';
+import EdgeFilterControl from '../EdgeFilterControl';
+import HistoryControl from '../HistoryControl';
 import { useGraphStore } from '@/stores/graph';
 
 import { useNodeHandling } from './hooks/useNodeHandling';
@@ -58,6 +61,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   const edgeTypes = useMemo(() => ({
     default: CustomEdge,
+    crossGroup: CrossGroupEdge,
   }), []);
   
   const reactFlowInstance = useReactFlow();
@@ -68,6 +72,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const {
     nodes: storeNodes,
     edges,
+    visibleEdgeIds,
     updateNode,
     updateNodePosition,
     deleteNode,
@@ -89,7 +94,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const { onNodeAdd, onGroupAdd, onDragOver, onDrop } = useNodeHandling();
   const { onConnect } = useEdgeHandling();
   const { onRecenter, onClear } = useViewportControls();
-  useKeyboardShortcuts(onRecenter);
+  useKeyboardShortcuts(onRecenter, rfInstance);
 
   // 转换为相对坐标
   const convertToRelativePosition = useCallback((node: Node | Group, parentGroup?: Group) => {
@@ -137,7 +142,15 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
             width: safeNumber(groupNode.width, 300),
             height: safeNumber(groupNode.height, 200),
           },
-          data: groupNode.data,
+          data: {
+            ...groupNode.data,
+            title: groupNode.title,
+            content: groupNode.content,
+            summary: groupNode.summary,
+            tags: groupNode.tags,
+            attributes: groupNode.attributes,
+            validationError: groupNode.validationError,
+          },
         };
       } else {
         const regularNode = node as Node & { groupId?: string };
@@ -174,10 +187,18 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           }),
           style: {
             ...(regularNode as any).style,
-            width: safeNumber(regularNode.width, 150),
-            height: safeNumber(regularNode.height, 100),
+            width: safeNumber(regularNode.width, 350),  // 🔧 NoteNode初始宽度
+            height: safeNumber(regularNode.height, 280), // 🔧 NoteNode初始高度
           },
-          data: regularNode.data,
+          data: {
+            ...regularNode.data,
+            title: regularNode.title,
+            content: regularNode.content,
+            summary: regularNode.summary,
+            tags: regularNode.tags,
+            attributes: regularNode.attributes,
+            validationError: regularNode.validationError,
+          },
         };
       }
     });
@@ -188,29 +209,44 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   // 同步边
   useEffect(() => {
-    const processedEdges = edges.map(edge => {
-      // 检查边的源节点和目标节点是否都在同一个群组内
-      const sourceNode = storeNodes.find(n => n.id === edge.source);
-      const targetNode = storeNodes.find(n => n.id === edge.target);
-      
-      // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
-      const isInSameGroup = sourceNode && targetNode && 
-                           sourceNode.groupId && 
-                           targetNode.groupId && 
-                           sourceNode.groupId === targetNode.groupId;
-      
-      return {
-        ...edge,
-        selected: edge.id === selectedEdgeId,
-        zIndex: isInSameGroup ? 100 : undefined, // 确保群组内的边显示在群组之上
-      };
-    });
+    const processedEdges = edges
+      .filter(edge => visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id)) // 根据可见性过滤
+      .map(edge => {
+        // 检查边的源节点和目标节点是否都在同一个群组内
+        const sourceNode = storeNodes.find(n => n.id === edge.source);
+        const targetNode = storeNodes.find(n => n.id === edge.target);
+        
+        // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
+        const isInSameGroup = sourceNode && targetNode && 
+                             sourceNode.groupId && 
+                             targetNode.groupId && 
+                             sourceNode.groupId === targetNode.groupId;
+        
+        // 确定边的类型
+        const isCrossGroup = sourceNode && targetNode && 
+                             sourceNode.groupId && 
+                             targetNode.groupId && 
+                             sourceNode.groupId !== targetNode.groupId;
+        
+        // 设置边类型
+        const edgeType = isCrossGroup ? 'crossGroup' : 'default';
+        
+        return {
+          ...edge,
+          selected: edge.id === selectedEdgeId,
+          type: edgeType, // 设置边类型
+          zIndex: isInSameGroup ? 100 : undefined, // 确保群组内的边显示在群组之上
+        };
+      });
     setReactFlowEdges(processedEdges as ReactFlowEdge[]);
-  }, [edges, selectedEdgeId, setReactFlowEdges, storeNodes]);
+  }, [edges, selectedEdgeId, setReactFlowEdges, storeNodes, visibleEdgeIds]);
 
   // 监听缩放
   useEffect(() => {
-    if (!rfInstance) return;
+    if (!rfInstance) {
+      // 即使在条件不满足时也保持相同的hook调用顺序
+      return;
+    }
 
     const onZoom = () => {
       if (rfInstance) {
@@ -337,6 +373,8 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       <div className="w-80 p-4 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Knowledge Graph Editor</h2>
         
+        <EdgeFilterControl />
+        
         {selectedNodeId ? (
           <NodeEditor nodeId={selectedNodeId} />
         ) : selectedEdgeId ? (
@@ -347,12 +385,15 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           </div>
         )}
         
-        <Toolbar 
-          onNodeAdd={onNodeAdd} 
-          onGroupAdd={onGroupAdd} 
-          onRecenter={onRecenter} 
-          onClear={onClear} 
-        />
+        <div className="space-y-4">
+          <HistoryControl />
+          <Toolbar 
+            onNodeAdd={onNodeAdd} 
+            onGroupAdd={onGroupAdd} 
+            onRecenter={onRecenter} 
+            onClear={onClear} 
+          />
+        </div>
       </div>
       
       <div className="flex-1 relative">
@@ -410,9 +451,18 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                   const currentNode = reactFlowInstance?.getNode(change.id);
                   
                   if (currentNode) {
+                    const newWidth = safeNumber(change.dimensions!.width, 350);
+                    const newHeight = safeNumber(change.dimensions!.height, 280);
+                    
+                    // 🔧 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
                     updateNode(change.id, {
-                      width: safeNumber(change.dimensions!.width, 150),
-                      height: safeNumber(change.dimensions!.height, 100),
+                      width: newWidth,
+                      height: newHeight,
+                      style: {
+                        ...(currentNode.style || {}),
+                        width: newWidth,
+                        height: newHeight,
+                      }
                     });
                     
                     if (currentNode.type === 'group') {
@@ -446,4 +496,4 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   );
 };
 
-export default GraphPageContent;
+export default memo(GraphPageContent);

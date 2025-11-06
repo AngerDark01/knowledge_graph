@@ -1,21 +1,24 @@
-import React, { memo, useState } from 'react';
-import { Handle, Position, NodeProps, NodeResizeControl } from 'reactflow';
+import React, { memo, useState, useCallback } from 'react';
+import { Handle, Position, NodeResizeControl } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
+import { Node as NodeType } from '@/types/graph/models';
+import { validateNodeContent } from '@/utils/validation';
 
 interface BaseNodeData {
   title: string;
   content?: string;
   validationError?: string;
+  isExpanded?: boolean;
 }
 
-// 定义通用的连接点组件
+// 定义通用的连接点组件 - 保持原始可见样式
 const ConnectionHandles = ({ isGroup = false, selected = false }) => {
   const groupHandleClass = isGroup 
     ? 'w-4 h-4 bg-blue-500 rounded-full border-2 border-white' 
     : 'w-3 h-3 bg-gray-500 hover:bg-blue-500 rounded-full border-2 border-white';
   
   const handleStyle = {
-    zIndex: 50, // 确保在最上层
+    zIndex: 50,
   };
   
   return (
@@ -73,6 +76,16 @@ export interface BaseNodeProps<T = BaseNodeData, U = any> {
   minWidth?: number;
   minHeight?: number;
   children?: React.ReactNode;
+  node?: NodeType;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  renderContent?: (props: {
+    isExpanded: boolean;
+    isEditing: boolean;
+    content: string;
+    onContentChange: (content: string) => void;
+    onToggleEdit: () => void;
+  }) => React.ReactNode;
 }
 
 const BaseNode: React.FC<BaseNodeProps> = ({ 
@@ -84,24 +97,49 @@ const BaseNode: React.FC<BaseNodeProps> = ({
   groupNode,
   showResizeControl = false,
   minWidth = 150,
-  minHeight = 100
+  minHeight = 100,
+  node,
+  isExpanded: externalIsExpanded,
+  onToggleExpand,
+  renderContent
 }) => {
   const { updateNode } = useGraphStore();
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(data.title);
+  const [editValue, setEditValue] = useState((node as NodeType)?.title || data.title);
+  const [editContent, setEditContent] = useState((node as NodeType)?.content || data.content || '');
+  const [internalIsExpanded, setInternalIsExpanded] = useState(data.isExpanded ?? true);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditValue(e.target.value);
-  };
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
 
-  const handleTitleBlur = () => {
-    updateNode(id, { title: editValue });
-    setIsEditing(false);
-  };
+  const handleToggleExpand = useCallback(() => {
+    if (onToggleExpand) {
+      onToggleExpand();
+    } else {
+      setInternalIsExpanded(prev => !prev);
+      updateNode(id, { isExpanded: !internalIsExpanded });
+    }
+  }, [onToggleExpand, internalIsExpanded, id, updateNode]);
 
-  const handleTitleDoubleClick = () => {
-    setIsEditing(true);
-  };
+  const handleContentChange = useCallback((newContent: string) => {
+    setEditContent(newContent);
+  }, []);
+
+  const handleToggleEdit = useCallback(() => {
+    if (isEditing) {
+      const nodeToUpdate = { 
+        ...(node as NodeType), 
+        title: editValue,
+        content: editContent 
+      };
+      const validation = validateNodeContent(nodeToUpdate);
+      
+      updateNode(id, { 
+        ...nodeToUpdate,
+        validationError: !validation.isValid ? validation.errors[0] : undefined
+      });
+    }
+    setIsEditing(!isEditing);
+  }, [isEditing, editValue, editContent, node, id, updateNode]);
 
   const containerClass = isGroup 
     ? `group relative rounded-2xl
@@ -111,17 +149,13 @@ const BaseNode: React.FC<BaseNodeProps> = ({
        outline-none
        box-border
        z-[1]` 
-    : `group relative rounded-md
+    : `group relative rounded-xl
        ${selected ? 'border-blue-500 border-[2px] shadow-md' : 'border border-gray-200'}
-       bg-white
+       bg-white dark:bg-gray-800
        hover:shadow-lg
        outline-none
        box-border
        z-[2]`;
-    
-  const titleBarClass = isGroup
-    ? `flex items-center rounded-t-2xl px-4 py-3 ${selected ? 'bg-blue-200 bg-opacity-80' : 'bg-blue-100 bg-opacity-80'}`
-    : `flex items-center px-4 py-2 ${selected ? 'bg-blue-100' : 'bg-gray-100'}`;
 
   const containerStyle = { width: '100%', height: '100%' };
 
@@ -129,45 +163,30 @@ const BaseNode: React.FC<BaseNodeProps> = ({
     <div className={containerClass} style={containerStyle}>
       <ConnectionHandles isGroup={isGroup} selected={selected} />
       
-      {/* 标题栏 */}
-      <div className={titleBarClass}>
-        <div className="text-sm font-semibold flex items-center justify-between w-full">
-          <div className="flex items-center">
-            {isGroup && <span className="mr-2">📌</span>}
-            {isEditing ? (
-              <input
-                className={`w-full bg-transparent border-b focus:border-solid focus:outline-none ${
-                  isGroup ? 'border-blue-500 nodrag' : 'border-gray-300'
-                }`}
-                value={editValue}
-                onChange={handleTitleChange}
-                onBlur={handleTitleBlur}
-                autoFocus
-              />
-            ) : (
-              <div 
-                onDoubleClick={handleTitleDoubleClick}
-                className="cursor-text w-full"
-              >
-                {data.title}
-                {data.validationError && (
-                  <div className="text-xs text-red-500 mt-1">{data.validationError}</div>
-                )}
+      {isGroup ? (
+        children
+      ) : (
+        <>
+          {renderContent ? (
+            renderContent({
+              isExpanded,
+              isEditing,
+              content: editContent,
+              onContentChange: handleContentChange,
+              onToggleEdit: handleToggleEdit
+            })
+          ) : (
+            <div className="p-4">
+              <div className="font-semibold text-gray-900 dark:text-gray-100">
+                {(node as NodeType)?.title || data.title}
               </div>
-            )}
-          </div>
-          {isGroup && (
-            <div className="text-xs bg-blue-200 rounded-full px-2 py-0.5">
-              {groupNode && 'nodeIds' in groupNode ? (groupNode as any).nodeIds.length : 0} nodes
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                {editContent || 'No content...'}
+              </div>
             </div>
           )}
-        </div>
-      </div>
-      
-      {/* 内容区域 */}
-      <div className={`${isGroup ? 'h-[calc(100%-60px)] pb-2' : 'h-[calc(100%-40px)] p-2'} px-2 rounded-b-2xl overflow-hidden`}>
-        {children}
-      </div>
+        </>
+      )}
       
       {/* 尺寸调整器 */}
       {showResizeControl && (

@@ -22,15 +22,29 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
       set({ selectedEdgeId: id });
     },
     
-    addNode: (node) => set((state: any) => {
+    addNode: (node) => {
+      const state = get();
       console.log('➕ 添加节点:', node.id, node);
       
-      // 验证并修复节点位置
+      // 🔧 根据节点类型确定默认尺寸
+      let defaultWidth = 150;
+      let defaultHeight = 100;
+      
+      if (node.type === BlockEnum.NODE) {
+        // 普通节点使用 NoteNode 的初始尺寸
+        defaultWidth = 350;
+        defaultHeight = 280;
+      } else if (node.type === BlockEnum.GROUP) {
+        defaultWidth = 300;
+        defaultHeight = 200;
+      }
+      
+      // 验证并修复节点位置和尺寸
       const safeNode = {
         ...node,
         position: safePosition(node.position),
-        width: safeNumber(node.width, node.type === BlockEnum.GROUP ? 300 : 150),
-        height: safeNumber(node.height, node.type === BlockEnum.GROUP ? 200 : 100)
+        width: safeNumber(node.width, defaultWidth),
+        height: safeNumber(node.height, defaultHeight)
       };
       
       // 如果节点属于群组，确保位置在群组内
@@ -46,10 +60,17 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
         }
       }
       
-      return { nodes: [...state.nodes, safeNode] };
-    }),
+      // 添加历史记录快照
+      const newState = { nodes: [...state.nodes, safeNode] };
+      set(newState);
+      if (get().addHistorySnapshot) {
+        get().addHistorySnapshot();
+      }
+      return newState;
+    },
     
-    updateNode: (id, updates) => set((state: any) => {
+    updateNode: (id, updates) => {
+      const state = get();
       console.log(`🔧 更新节点 ${id}:`, updates);
       
       let validationError = undefined;
@@ -57,7 +78,12 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
         validationError = 'Title cannot be empty';
       }
 
-      return {
+      // 检查是否只更新了位置或尺寸，这些变化不需要保存历史记录
+      const isPositionOrSizeUpdateOnly = Object.keys(updates).every(key => 
+        ['position', 'width', 'height', 'style'].includes(key)
+      );
+
+      const newState = {
         nodes: state.nodes.map((node: Node | Group) => {
           if (node.id === id) {
             let updatedNode = {
@@ -66,15 +92,31 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
               data: updates.data !== undefined 
                 ? { ...node.data, ...updates.data }
                 : node.data,
-              style: updates.style !== undefined
-                ? { ...node.style, ...updates.style }
-                : node.style,
               position: updates.position !== undefined
                 ? safePosition(updates.position)
                 : safePosition(node.position),
               validationError,
               updatedAt: new Date(),
             };
+            
+            // 🔧 如果更新了 width 或 height,自动同步到 style
+            if (updates.width !== undefined || updates.height !== undefined) {
+              const newWidth = updates.width ?? node.width ?? 350;
+              const newHeight = updates.height ?? node.height ?? 280;
+              
+              updatedNode.style = {
+                ...(node.style || {}),
+                ...(updates.style || {}),
+                width: newWidth,
+                height: newHeight,
+              };
+              
+              updatedNode.width = newWidth;
+              updatedNode.height = newHeight;
+            } else if (updates.style !== undefined) {
+              // 如果只更新了 style,保持原有的合并逻辑
+              updatedNode.style = { ...node.style, ...updates.style };
+            }
             
             // 如果是普通节点且属于群组，确保位置在群组边界内
             if (updatedNode.type === BlockEnum.NODE && 'groupId' in updatedNode && updatedNode.groupId) {
@@ -93,6 +135,7 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
               position: updatedNode.position,
               width: updatedNode.width,
               height: updatedNode.height,
+              style: updatedNode.style,
             });
             
             return updatedNode;
@@ -100,14 +143,28 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
           return node;
         })
       };
-    }),
+      
+      set(newState);
+      // 只在非位置/尺寸更新时添加历史记录快照
+      if (!isPositionOrSizeUpdateOnly && get().addHistorySnapshot) {
+        get().addHistorySnapshot();
+      }
+      return newState;
+    },
     
-    deleteNode: (id) => set((state: any) => {
+    deleteNode: (id) => {
+      const state = get();
       console.log(`🗑️ 删除节点: ${id}`);
-      return {
+      const newState = {
         nodes: state.nodes.filter((node: Node | Group) => node.id !== id)
       };
-    }),
+      set(newState);
+      // 添加历史记录快照
+      if (get().addHistorySnapshot) {
+        get().addHistorySnapshot();
+      }
+      return newState;
+    },
     
     getNodes: () => get().nodes,
     getNodeById: (id) => get().nodes.find((node: Node | Group) => node.id === id),

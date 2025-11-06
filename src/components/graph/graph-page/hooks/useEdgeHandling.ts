@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Connection, Edge } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
-import { BlockEnum } from '@/types/graph/models';
+import { BlockEnum, Node } from '@/types/graph/models';
 
 export const useEdgeHandling = () => {
   const { addEdge, edges, getNodes } = useGraphStore();
@@ -28,8 +28,8 @@ export const useEdgeHandling = () => {
 
       // 获取所有节点信息
       const allNodes = getNodes();
-      const sourceNode = allNodes.find(n => n.id === params.source);
-      const targetNode = allNodes.find(n => n.id === params.target);
+      const sourceNode = allNodes.find(n => n.id === params.source) as Node | undefined;
+      const targetNode = allNodes.find(n => n.id === params.target) as Node | undefined;
 
       // 确保 source 和 target 不是 null
       if (!params.source || !params.target) {
@@ -49,10 +49,11 @@ export const useEdgeHandling = () => {
         return;
       }
       
-      // 允许子节点之间的连接
-      // 允许子节点连接到不是自己父群组的其他节点
-
-      const newEdge = {
+      // 确定是否为跨群关系
+      const isCrossGroup = sourceNode?.groupId && targetNode?.groupId && sourceNode.groupId !== targetNode.groupId;
+      
+      // 构建边数据
+      const newEdgeData: any = {
         id: `edge_${Date.now()}`,
         source: params.source,
         target: params.target,
@@ -61,7 +62,28 @@ export const useEdgeHandling = () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      addEdge(newEdge);
+      
+      // 如果是跨群关系，添加特殊样式和属性
+      if (isCrossGroup) {
+        newEdgeData.data = {
+          isCrossGroup: true,
+          sourceGroupId: sourceNode?.groupId,
+          targetGroupId: targetNode?.groupId,
+          strokeDasharray: '5,5',  // 虚线样式
+          color: '#FFA500',        // 橙色
+          strokeWidth: 2,          // 线宽2px
+          direction: 'unidirectional' as const,  // 默认方向性
+        };
+      } else {
+        // 群内关系使用默认样式，但确保线宽较细
+        newEdgeData.data = {
+          isCrossGroup: false,
+          strokeWidth: 1,          // 线宽1px
+          direction: 'unidirectional' as const,  // 默认方向性
+        };
+      }
+      
+      addEdge(newEdgeData);
     },
     [addEdge, edges, getNodes]
   );
