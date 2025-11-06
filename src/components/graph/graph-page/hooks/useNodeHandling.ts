@@ -17,6 +17,17 @@ const safeNumber = (value: any, defaultValue: number = 0): number => {
   return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
 };
 
+// 🆕 根据节点类型获取默认尺寸
+const getDefaultNodeSize = (nodeType: BlockEnum) => {
+  if (nodeType === BlockEnum.NODE) {
+    // NoteNode 的初始尺寸
+    return { width: 350, height: 280 };
+  } else if (nodeType === BlockEnum.GROUP) {
+    return { width: 300, height: 200 };
+  }
+  return { width: 150, height: 100 };
+};
+
 export const useNodeHandling = () => {
   const reactFlowInstance = useReactFlow();
   const { 
@@ -37,6 +48,9 @@ export const useNodeHandling = () => {
     
     let position;
     let groupId;
+    
+    // 🆕 获取正确的节点尺寸
+    const defaultSize = getDefaultNodeSize(BlockEnum.NODE);
     
     if (selectedGroup) {
       console.log('📦 在选中的群组内创建节点:', selectedGroup.id);
@@ -60,13 +74,13 @@ export const useNodeHandling = () => {
       );
       
       // 使用网格布局避免节点重叠
-      const nodesPerRow = 3;
+      const nodesPerRow = 2; // 🔧 从3改为2,因为节点变大了
       const nodeIndex = existingNodesInGroup.length;
       const row = Math.floor(nodeIndex / nodesPerRow);
       const col = nodeIndex % nodesPerRow;
       
-      const nodeSpacingX = 180; // 节点宽度 + 间距
-      const nodeSpacingY = 130; // 节点高度 + 间距
+      const nodeSpacingX = 380; // 🔧 节点宽度(350) + 间距(30)
+      const nodeSpacingY = 310; // 🔧 节点高度(280) + 间距(30)
       
       // 计算节点在群组内的相对位置
       const relativeX = GROUP_PADDING.left + (col * nodeSpacingX);
@@ -79,10 +93,8 @@ export const useNodeHandling = () => {
       };
       
       // 确保节点不会超出群组边界
-      const nodeWidth = 150;
-      const nodeHeight = 100;
-      const maxX = safeGroupPosition.x + safeGroupWidth - GROUP_PADDING.right - nodeWidth;
-      const maxY = safeGroupPosition.y + safeGroupHeight - GROUP_PADDING.bottom - nodeHeight;
+      const maxX = safeGroupPosition.x + safeGroupWidth - GROUP_PADDING.right - defaultSize.width;
+      const maxY = safeGroupPosition.y + safeGroupHeight - GROUP_PADDING.bottom - defaultSize.height;
       
       // 如果超出边界，约束到边界内
       position.x = Math.max(
@@ -145,12 +157,13 @@ export const useNodeHandling = () => {
       },
       data: { 
         title: `Node ${nodeCount + 1}`, 
-        content: 'Double click to edit' 
+        content: 'Double click to edit',
+        isExpanded: false, // 🆕 默认收缩状态
       },
       title: `Node ${nodeCount + 1}`,
       content: 'Double click to edit',
-      width: 150,  // 明确设置宽度
-      height: 100, // 明确设置高度
+      width: defaultSize.width,   // 🔧 使用正确的尺寸 350
+      height: defaultSize.height, // 🔧 使用正确的尺寸 280
       createdAt: new Date(),
       updatedAt: new Date(),
       ...(groupId && { groupId }) // 如果有群组ID，添加groupId属性
@@ -252,18 +265,22 @@ export const useNodeHandling = () => {
           y: safeNumber(position?.y, 0)
         };
 
+        // 🆕 获取正确的节点尺寸
+        const defaultSize = getDefaultNodeSize(BlockEnum.NODE);
+
         const newNode: Node = {
           id: `node_${Date.now()}`,
           type: BlockEnum.NODE,
           position,
           data: { 
             title: `New Node`, 
-            content: 'Double click to edit' 
+            content: 'Double click to edit',
+            isExpanded: false, // 🆕 默认收缩状态
           },
           title: 'New Node',
           content: 'Double click to edit',
-          width: 150,
-          height: 100,
+          width: defaultSize.width,   // 🔧 使用正确的尺寸 350
+          height: defaultSize.height, // 🔧 使用正确的尺寸 280
           createdAt: new Date(),
           updatedAt: new Date(),
         };
