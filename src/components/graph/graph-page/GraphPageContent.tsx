@@ -149,6 +149,12 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         const sourceNode = storeNodes.find(n => n.id === edge.source) as BaseNode | undefined;
         const targetNode = storeNodes.find(n => n.id === edge.target) as BaseNode | undefined;
 
+        // 检查是否在同一个父节点内
+        const isInSameGroup = sourceNode && targetNode &&
+                              sourceNode.parentId &&
+                              targetNode.parentId &&
+                              sourceNode.parentId === targetNode.parentId;
+
         // 检查是否为跨父节点的边
         const isCrossGroup = sourceNode && targetNode &&
                              sourceNode.parentId &&
@@ -157,7 +163,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
         // 设置边类型
         const edgeType = isCrossGroup ? 'crossGroup' : 'default';
-        
+
         return {
           ...edge,
           selected: edge.id === selectedEdgeId,
