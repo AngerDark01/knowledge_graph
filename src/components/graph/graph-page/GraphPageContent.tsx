@@ -14,10 +14,10 @@ import ReactFlow, {
   Node as ReactFlowNode,
   Edge as ReactFlowEdge,
 } from 'reactflow';
-import { Group, Node, BlockEnum } from '@/types/graph/models';
+import { Group, Node, BaseNode } from '@/types/graph/models';
 import 'reactflow/dist/style.css';
 
-import { NoteNode, GroupNode } from '../node';
+import SmartNode from '../node';
 import CustomEdge from '../CustomEdge';
 import CrossGroupEdge from '../CrossGroupEdge';
 import NodeEditor from '../NodeEditor';
@@ -55,8 +55,8 @@ const safeNumber = (value: any, defaultValue: number = 0): number => {
 
 const GraphPageContent = ({ className }: GraphPageProps) => {
   const nodeTypes = useMemo(() => ({
-    custom: NoteNode,
-    group: GroupNode,
+    custom: SmartNode,
+    group: SmartNode,
   }), []);
 
   const edgeTypes = useMemo(() => ({
@@ -81,8 +81,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     selectedEdgeId,
     setSelectedNodeId,
     setSelectedEdgeId,
-    handleGroupMove,
-    updateGroupBoundary,
   } = useGraphStore();
   
   const [zoomValue, setZoomValue] = useState<number>(1);
@@ -95,24 +93,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const { onConnect } = useEdgeHandling();
   const { onRecenter, onClear } = useViewportControls();
   useKeyboardShortcuts(onRecenter, rfInstance);
-
-  // 转换为相对坐标
-  const convertToRelativePosition = useCallback((node: Node | Group, parentGroup?: Group) => {
-    if (!parentGroup) return node.position;
-    
-    return {
-      x: safeNumber(node.position.x) - safeNumber(parentGroup.position.x),
-      y: safeNumber(node.position.y) - safeNumber(parentGroup.position.y)
-    };
-  }, [safeNumber]);
-
-  // 转换为绝对坐标
-  const convertToAbsolutePosition = useCallback((relativePos: { x: number; y: number }, parentGroup: Group) => {
-    return {
-      x: safeNumber(relativePos.x) + safeNumber(parentGroup.position.x),
-      y: safeNumber(relativePos.y) + safeNumber(parentGroup.position.y)
-    };
-  }, [safeNumber]);
 
   // 同步store到ReactFlow
   useEffect(() => {
@@ -153,42 +133,23 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           },
         };
       } else {
-        const regularNode = node as Node & { groupId?: string };
-        const parentGroup = regularNode.groupId 
-          ? storeNodes.find(n => n.id === regularNode.groupId) as Group
-          : undefined;
-        
-        const safeNodePosition = {
-          x: safeNumber(regularNode.position.x),
-          y: safeNumber(regularNode.position.y),
-        };
-        
-        // 如果在群组内，使用相对坐标
-        const position = parentGroup
-          ? convertToRelativePosition({ ...regularNode, position: safeNodePosition }, parentGroup)
-          : safeNodePosition;
-        
-        const finalPosition = {
-          x: safeNumber(position.x),
-          y: safeNumber(position.y),
-        };
-        
+        // TODO: 简化版本 - 需要进一步重构以支持完整的父子关系
+        const regularNode = node as BaseNode;
+
         return {
           ...regularNode,
           id: regularNode.id,
           type: 'custom',
-          position: finalPosition,
+          position: {
+            x: safeNumber(regularNode.position.x),
+            y: safeNumber(regularNode.position.y),
+          },
           selected: node.id === selectedNodeId,
           draggable: true,
-          ...(regularNode.groupId && { 
-            parentId: regularNode.groupId,
-            extent: 'parent' as const,
-            expandParent: true,
-          }),
           style: {
-            ...(regularNode as any).style,
-            width: safeNumber(regularNode.width, 350),  // 🔧 NoteNode初始宽度
-            height: safeNumber(regularNode.height, 280), // 🔧 NoteNode初始高度
+            ...regularNode.style,
+            width: safeNumber(regularNode.width, 350),
+            height: safeNumber(regularNode.height, 280),
           },
           data: {
             ...regularNode.data,
@@ -205,29 +166,23 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     
     console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
     setReactFlowNodes(processedNodes as ReactFlowNode[]);
-  }, [storeNodes, selectedNodeId, setReactFlowNodes, convertToRelativePosition]);
+  }, [storeNodes, selectedNodeId, setReactFlowNodes]);
 
   // 同步边
   useEffect(() => {
     const processedEdges = edges
       .filter(edge => visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id)) // 根据可见性过滤
       .map(edge => {
-        // 检查边的源节点和目标节点是否都在同一个群组内
-        const sourceNode = storeNodes.find(n => n.id === edge.source);
-        const targetNode = storeNodes.find(n => n.id === edge.target);
-        
-        // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
-        const isInSameGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
-                             sourceNode.groupId === targetNode.groupId;
-        
-        // 确定边的类型
-        const isCrossGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
-                             sourceNode.groupId !== targetNode.groupId;
-        
+        // TODO: 简化版本 - 需要进一步重构以支持跨群组边的检测
+        const sourceNode = storeNodes.find(n => n.id === edge.source) as BaseNode | undefined;
+        const targetNode = storeNodes.find(n => n.id === edge.target) as BaseNode | undefined;
+
+        // 检查是否为跨父节点的边
+        const isCrossGroup = sourceNode && targetNode &&
+                             sourceNode.parentId &&
+                             targetNode.parentId &&
+                             sourceNode.parentId !== targetNode.parentId;
+
         // 设置边类型
         const edgeType = isCrossGroup ? 'crossGroup' : 'default';
         
@@ -301,58 +256,29 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   // 拖拽结束
   const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     console.log('🎯 拖拽结束:', node.id);
-    
+
     const currentNode = reactFlowInstance?.getNode(node.id);
     if (!currentNode) {
       isDraggingRef.current = false;
       return;
     }
 
-    if (currentNode.type === 'group') {
-      const safePosition = {
-        x: safeNumber(currentNode.position.x),
-        y: safeNumber(currentNode.position.y)
-      };
-      handleGroupMove(node.id, safePosition);
-      isDraggingRef.current = false;
-    } else {
-      const storeNode = storeNodes.find(n => n.id === node.id) as Node;
-      if (!storeNode) {
-        isDraggingRef.current = false;
-        return;
-      }
+    const safePosition = {
+      x: safeNumber(currentNode.position.x),
+      y: safeNumber(currentNode.position.y)
+    };
 
-      let absolutePosition = {
-        x: safeNumber(currentNode.position.x),
-        y: safeNumber(currentNode.position.y)
-      };
-      
-      if (storeNode.groupId) {
-        const parentGroup = storeNodes.find(n => n.id === storeNode.groupId) as Group;
-        if (parentGroup) {
-          absolutePosition = convertToAbsolutePosition(currentNode.position, parentGroup);
-          console.log('📍 相对→绝对:', currentNode.position, '→', absolutePosition);
-          console.log('  父群组位置:', parentGroup.position);
-        }
-      }
-      
-      console.log('💾 最终保存位置:', absolutePosition);
-      
-      // 先更新位置
-      updateNodePosition(node.id, absolutePosition);
-      
-      // 如果节点属于群组，更新群组边界
-      if (storeNode.groupId) {
-        updateGroupBoundary(storeNode.groupId!);
-      }
-      
-      // 延迟重置拖拽状态，确保更新完成
-      setTimeout(() => {
-        isDraggingRef.current = false;
-        lastDraggedNodeRef.current = null;
-      }, 100);
-    }
-  }, [reactFlowInstance, storeNodes, handleGroupMove, updateNodePosition, updateGroupBoundary, convertToAbsolutePosition]);
+    console.log('💾 最终保存位置:', safePosition);
+
+    // 更新节点位置（所有节点统一处理）
+    updateNodePosition(node.id, safePosition);
+
+    // 延迟重置拖拽状态，确保更新完成
+    setTimeout(() => {
+      isDraggingRef.current = false;
+      lastDraggedNodeRef.current = null;
+    }, 100);
+  }, [reactFlowInstance, updateNodePosition]);
 
   // MiniMap 节点颜色
   const nodeColor = useCallback((node: ReactFlowNode) => {

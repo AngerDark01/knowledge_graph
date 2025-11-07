@@ -7,7 +7,7 @@
 import React, { memo, useState, useCallback, useEffect } from 'react';
 import { BaseNode } from '@/types/graph/models';
 import { useGraphStore } from '@/stores/graph';
-import BaseNode as BaseNodeComponent from '../BaseNode';
+import BaseNodeComponent from '../BaseNode';
 import NodeToolbar from '../NodeToolbar';
 import MarkdownRenderer from '../../MarkdownRenderer';
 
