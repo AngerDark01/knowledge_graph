@@ -1,0 +1,527 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Markdown内容样式 */
+.prose {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  @apply font-semibold text-gray-900 dark:text-gray-100;
+}
+
+.prose h1 {
+  @apply text-lg mb-2;
+}
+
+.prose h2 {
+  @apply text-base mb-2;
+}
+
+.prose h3 {
+  @apply text-sm mb-1;
+}
+
+.prose p {
+  @apply mb-2 text-sm leading-relaxed;
+}
+
+.prose ul,
+.prose ol {
+  @apply mb-2 ml-4 text-sm;
+}
+
+.prose li {
+  @apply mb-1;
+}
+
+.prose code {
+  @apply px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-xs font-mono;
+}
+
+.prose pre {
+  @apply p-2 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-x-auto mb-2 text-xs;
+}
+
+.prose pre code {
+  @apply p-0 bg-transparent;
+}
+
+.prose blockquote {
+  @apply pl-3 border-l-4 border-gray-300 dark:border-gray-600 italic mb-2 text-sm;
+}
+
+.prose a {
+  @apply text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+.prose table {
+  @apply w-full mb-2 border-collapse text-sm;
+}
+
+.prose th,
+.prose td {
+  @apply border border-gray-300 dark:border-gray-600 px-2 py-1 text-left;
+}
+
+.prose th {
+  @apply bg-gray-100 dark:bg-gray-800 font-semibold;
+}
+
+/* 自定义滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.4);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6);
+}
+
+/* 隐藏 ReactFlow NodeResizer 的调整边框线 */
+.react-flow__resize-control-line,
+.react-flow__resize-control.line {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__node-resizer {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.react-flow__node-resizer-line {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.react-flow__node-resizer-handle {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.react-flow__resize-control.nodrag {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.react-flow__resize-control.line,
+.react-flow__resize-control.top.line,
+.react-flow__resize-control.right.line,
+.react-flow__resize-control.bottom.line,
+.react-flow__resize-control.left.line,
+div.react-flow__resize-control[class*="line"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.react-flow__resize-control.handle,
+.react-flow__resize-control.bottom.right.handle,
+.react-flow__resize-control.nodrag.bottom.right.handle {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  pointer-events: auto !important;
+  cursor: nwse-resize !important;
+}
+
+.react-flow__resize-control.handle::before,
+.react-flow__resize-control.handle::after {
+  display: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.custom-resize-handle {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background-color: #3b82f6 !important;
+  border: 2px solid white !important;
+}
+
+/* 移除 ReactFlow 默认选择框的黑色边框 - 完全隐藏 */
+.react-flow__nodesselection-rect {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.react-flow__selection {
+  display: none !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.react-flow__node.selected {
+  outline: none !important;
+}
+
+.react-flow__node:focus {
+  outline: none !important;
+}
+
+.react-flow__node {
+  outline: none !important;
+}
+
+.react-flow__pane,
+.react-flow__viewport {
+  outline: none !important;
+}
+
+.react-flow__node.dragging,
+.react-flow__node.draggable {
+  outline: none !important;
+}
+
+.react-flow__node.selected,
+.react-flow__node[data-selected="true"] {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__nodesselection,
+.react-flow__nodesselection-rect,
+.react-flow__selection {
+  display: none !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.react-flow__nodesselection::before,
+.react-flow__nodesselection::after,
+.react-flow__nodesselection-rect::before,
+.react-flow__nodesselection-rect::after,
+.react-flow__selection::before,
+.react-flow__selection::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.react-flow__node .react-flow__resize-control.line,
+.react-flow__node .react-flow__resize-control.top.line,
+.react-flow__node .react-flow__resize-control.right.line,
+.react-flow__node .react-flow__resize-control.bottom.line,
+.react-flow__node .react-flow__resize-control.left.line,
+.react-flow__node div[class*="resize-control"][class*="line"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.react-flow__node[data-type="group"] {
+  outline: none !important;
+}
+
+.react-flow__nodesselection,
+.react-flow__nodesselection-rect,
+.react-flow__nodesselection-rect *,
+.react-flow__selection,
+.react-flow__selection * {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.react-flow__nodesselection-rect[style*="width"],
+.react-flow__nodesselection-rect[style*="height"],
+.react-flow__selection[style*="width"],
+.react-flow__selection[style*="height"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.react-flow__node:focus,
+.react-flow__node:focus-visible,
+.react-flow__node:not(.selected),
+.react-flow__edge:focus,
+.react-flow__edge:focus-visible,
+.react-flow__resize-control:focus,
+.react-flow__resize-control:focus-visible,
+.react-flow__resize-control:active,
+.react-flow__resize-control:hover,
+.react-flow__resize-control:not(:hover) {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__selectionbox {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+.react-flow__selectionbox::before,
+.react-flow__selectionbox::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+.react-flow__pane {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  user-select: none;
+}
+
+.react-flow__nodesselection-rect,
+#workflow-container .react-flow__nodesselection-rect {
+  border: none !important;
+  background: transparent !important;
+  cursor: default !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.react-flow__selection,
+#workflow-container .react-flow__selection {
+  border: none !important;
+  background: transparent !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.react-flow__nodesselection-rect,
+.react-flow__selection {
+  border: none !important;
+  background: transparent !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.react-flow__pane,
+.react-flow__viewport {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.react-flow__pane {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.react-flow__pane:focus {
+  outline: none !important;
+}
+
+.react-flow__node {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.react-flow__node .react-flow__resize-control,
+.react-flow__node .react-flow__resize-control *,
+.react-flow__node .resize-control-handle {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  -moz-user-drag: none;
+  -ms-user-drag: none;
+  pointer-events: auto;
+}
+
+.react-flow__resize-control {
+  touch-action: none;
+}
