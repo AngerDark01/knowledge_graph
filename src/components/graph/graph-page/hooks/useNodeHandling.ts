@@ -9,26 +9,41 @@ import { useGraphStore } from '@/stores/graph';
 import { createNode } from '@/utils/graph/nodeFactory';
 import type { DragEvent } from 'react';
 
+interface NodeAddOptions {
+  viewMode?: 'note' | 'container';
+  parentId?: string;
+}
+
 export const useNodeHandling = () => {
-  const { addNode } = useGraphStore();
+  const { addNode, addChildToParent } = useGraphStore();
 
   const onNodeAdd = useCallback(
-    (position: { x: number; y: number }, viewMode: 'note' | 'container' = 'note') => {
+    (position: { x: number; y: number }, options?: NodeAddOptions) => {
+      const viewMode = options?.viewMode || 'note';
+      const parentId = options?.parentId;
+
       const newNode = createNode({
         position,
         viewMode,
         title: viewMode === 'note' ? 'New Note' : 'New Container',
       });
 
+      // 先添加节点
       addNode(newNode);
+
+      // 如果指定了 parentId，建立父子关系
+      if (parentId) {
+        addChildToParent(newNode.id, parentId);
+      }
+
       return newNode;
     },
-    [addNode]
+    [addNode, addChildToParent]
   );
 
   const onGroupAdd = useCallback(
     (position: { x: number; y: number }) => {
-      return onNodeAdd(position, 'container');
+      return onNodeAdd(position, { viewMode: 'container' });
     },
     [onNodeAdd]
   );
@@ -51,7 +66,7 @@ export const useNodeHandling = () => {
       };
 
       if (type === 'note') {
-        onNodeAdd(position, 'note');
+        onNodeAdd(position, { viewMode: 'note' });
       } else if (type === 'container') {
         onGroupAdd(position);
       }

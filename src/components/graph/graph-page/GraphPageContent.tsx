@@ -351,7 +351,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                   if (currentNode) {
                     const newWidth = safeNumber(change.dimensions!.width, 350);
                     const newHeight = safeNumber(change.dimensions!.height, 280);
-                    
+
                     // 🔧 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
                     updateNode(change.id, {
                       width: newWidth,
@@ -362,12 +362,8 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                         height: newHeight,
                       }
                     });
-                    
-                    if (currentNode.type === 'group') {
-                      setTimeout(() => {
-                        updateGroupBoundary(change.id);
-                      }, 50);
-                    }
+
+                    // 新架构：不再需要手动更新边界，父子关系会自动处理
                   }
                   
                   delete resizeTimeoutRef.current[change.id];
