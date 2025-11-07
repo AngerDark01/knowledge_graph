@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Node } from '../../types/graph/models';
-import { useStore } from '../../stores/graph';
+import { useGraphStore } from '../../stores/graph';
 
 interface ContentEditorProps {
   node: Node;
@@ -11,7 +11,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ node }) => {
   const [title, setTitle] = useState(node.title);
   const [isEditing, setIsEditing] = useState(!!node.isEditing);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const updateNode = useStore(state => state.updateNode);
+  const { updateNode } = useGraphStore();
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
