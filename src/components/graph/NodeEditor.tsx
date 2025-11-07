@@ -15,13 +15,13 @@ interface NodeEditorProps {
 }
 
 const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
-  const { getNodeById, getNodes, updateNode } = useGraphStore();
+  const { getNodeById, getNodes, updateNode, addChildToParent, removeChildFromParent } = useGraphStore();
   const node = getNodeById(nodeId) as Node | undefined;
   const nodes = getNodes();
-  
+
   const [title, setTitle] = useState(node?.title || '');
   const [content, setContent] = useState(node?.content || '');
-  const [groupId, setGroupId] = useState(node?.groupId || '');
+  const [parentId, setParentId] = useState(node?.parentId || ''); // 新架构：使用 parentId
   const [summary, setSummary] = useState(node?.summary || '');
   const [tags, setTags] = useState(node?.tags?.join(', ') || '');
   const [attributes, setAttributes] = useState(node?.attributes || {});
@@ -33,7 +33,7 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
     if (node) {
       setTitle(node.title || '');
       setContent(node.content || '');
-      setGroupId(node.groupId || '');
+      setParentId(node.parentId || ''); // 新架构：使用 parentId
       setSummary(node.summary || '');
       setTags(node.tags?.join(', ') || '');
       setAttributes(node.attributes || {});
@@ -53,27 +53,34 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
       summary,
       tags: tagsList,
       attributes,
-      groupId: groupId || undefined, // 如果groupId为空，则不设置
     };
-    
+
     const validation = validateNodeContent(nodeToUpdate);
-    
+
     if (!validation.isValid) {
       alert(`验证错误: ${validation.errors.join(', ')}`);
       return;
     }
-    
+
+    // 更新节点内容
     updateNode(nodeId, {
       ...nodeToUpdate,
       validationError: undefined, // 清除之前的验证错误
     });
-  }, [node, title, content, summary, tags, attributes, groupId, nodeId, updateNode]);
+
+    // 新架构：使用 addChildToParent 管理父子关系
+    if (parentId && parentId !== node.parentId) {
+      addChildToParent(nodeId, parentId);
+    } else if (!parentId && node.parentId) {
+      removeChildFromParent(nodeId);
+    }
+  }, [node, title, content, summary, tags, attributes, parentId, nodeId, updateNode, addChildToParent, removeChildFromParent]);
 
   const handleReset = () => {
     if (node) {
       setTitle(node.title || '');
       setContent(node.content || '');
-      setGroupId(node.groupId || '');
+      setParentId(node.parentId || ''); // 新架构：使用 parentId
       setSummary(node.summary || '');
       setTags(node.tags?.join(', ') || '');
       setAttributes(node.attributes || {});
@@ -81,10 +88,9 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
   };
 
   const handleRemoveFromGroup = () => {
-    updateNode(nodeId, {
-      groupId: undefined,
-    });
-    setGroupId(''); // 更新本地状态
+    // 新架构：使用 removeChildFromParent
+    removeChildFromParent(nodeId);
+    setParentId(''); // 更新本地状态
   };
 
   return (
@@ -139,10 +145,10 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
           />
         </div>
         <div className="space-y-2">
-          <Label>Group</Label>
-          <Select value={groupId} onValueChange={setGroupId}>
-            <SelectTrigger id="node-group">
-              <SelectValue placeholder="Select a group" />
+          <Label>Parent Container</Label>
+          <Select value={parentId} onValueChange={setParentId}>
+            <SelectTrigger id="node-parent">
+              <SelectValue placeholder="Select a parent container" />
             </SelectTrigger>
             <SelectContent>
               {groups.map((group: Group) => (
@@ -152,14 +158,14 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
               ))}
             </SelectContent>
           </Select>
-          {node.groupId && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+          {node.parentId && (
+            <Button
+              variant="outline"
+              size="sm"
               className="mt-2 w-full"
               onClick={handleRemoveFromGroup}
             >
-              Remove from Group
+              Remove from Parent
             </Button>
           )}
         </div>
