@@ -1,41 +1,44 @@
 // 简单的状态管理测试用例
 import { useGraphStore } from '@/stores/graph';
-import { Node, BlockEnum } from '@/types/graph/models';
+import { BaseNode } from '@/types/graph/models';
 
 // 测试节点 CRUD 操作
 export const testNodeOperations = () => {
   const { addNode, updateNode, deleteNode, getNodes, getNodeById } = useGraphStore.getState();
-  
+
   console.log('初始节点数量:', getNodes().length);
-  
-  // 测试添加节点
-  const newNode: Node = {
+
+  // 测试添加节点（使用新架构）
+  const newNode: BaseNode = {
     id: 'test-node-1',
-    type: BlockEnum.NODE,
+    viewMode: 'note', // 新架构：使用 viewMode 替代 type
+    expanded: false,
     position: { x: 100, y: 100 },
-    data: { 
+    width: 350,
+    height: 280,
+    childrenIds: [], // 新架构：必需字段
+    title: 'Test Node',
+    content: 'This is a test node',
+    data: {
       title: 'Test Node',
       content: 'This is a test node'
     },
-    title: 'Test Node',
-    content: 'This is a test node',
-    groupId: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  
+
   addNode(newNode);
   console.log('添加节点后数量:', getNodes().length);
   console.log('获取测试节点:', getNodeById('test-node-1'));
-  
+
   // 测试更新节点
   updateNode('test-node-1', { title: 'Updated Test Node' });
   console.log('更新后的节点:', getNodeById('test-node-1'));
-  
+
   // 测试删除节点
   deleteNode('test-node-1');
   console.log('删除节点后数量:', getNodes().length);
-  
+
   console.log('节点 CRUD 操作测试完成');
 };
 

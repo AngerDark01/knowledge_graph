@@ -102,66 +102,38 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       return;
     }
 
-    const processedNodes = storeNodes.map((node: Node | Group) => {
-      const isGroup = node.type === BlockEnum.GROUP;
-      
-      if (isGroup) {
-        const groupNode = node as Group;
-        return {
-          ...groupNode,
-          id: groupNode.id,
-          type: 'group',
-          position: {
-            x: safeNumber(groupNode.position.x),
-            y: safeNumber(groupNode.position.y),
-          },
-          selected: node.id === selectedNodeId,
-          draggable: true,
-          style: {
-            ...groupNode.style,
-            width: safeNumber(groupNode.width, 300),
-            height: safeNumber(groupNode.height, 200),
-          },
-          data: {
-            ...groupNode.data,
-            title: groupNode.title,
-            content: groupNode.content,
-            summary: groupNode.summary,
-            tags: groupNode.tags,
-            attributes: groupNode.attributes,
-            validationError: groupNode.validationError,
-          },
-        };
-      } else {
-        // TODO: 简化版本 - 需要进一步重构以支持完整的父子关系
-        const regularNode = node as BaseNode;
+    const processedNodes = storeNodes.map((node: BaseNode) => {
+      // 在新架构中，使用 viewMode 判断节点类型
+      const isContainer = node.viewMode === 'container';
 
-        return {
-          ...regularNode,
-          id: regularNode.id,
-          type: 'custom',
-          position: {
-            x: safeNumber(regularNode.position.x),
-            y: safeNumber(regularNode.position.y),
-          },
-          selected: node.id === selectedNodeId,
-          draggable: true,
-          style: {
-            ...regularNode.style,
-            width: safeNumber(regularNode.width, 350),
-            height: safeNumber(regularNode.height, 280),
-          },
-          data: {
-            ...regularNode.data,
-            title: regularNode.title,
-            content: regularNode.content,
-            summary: regularNode.summary,
-            tags: regularNode.tags,
-            attributes: regularNode.attributes,
-            validationError: regularNode.validationError,
-          },
-        };
-      }
+      // ReactFlow 需要区分 'group' 和 'custom' 类型
+      const reactFlowType = isContainer ? 'group' : 'custom';
+
+      return {
+        ...node,
+        id: node.id,
+        type: reactFlowType,
+        position: {
+          x: safeNumber(node.position.x),
+          y: safeNumber(node.position.y),
+        },
+        selected: node.id === selectedNodeId,
+        draggable: true,
+        style: {
+          ...node.style,
+          width: safeNumber(node.width, isContainer ? 300 : 350),
+          height: safeNumber(node.height, isContainer ? 200 : 280),
+        },
+        data: {
+          ...node.data,
+          title: node.title,
+          content: node.content,
+          summary: node.summary,
+          tags: node.tags,
+          attributes: node.attributes,
+          validationError: node.validationError,
+        },
+      };
     });
     
     console.log('🔄 同步节点到ReactFlow:', processedNodes.length);

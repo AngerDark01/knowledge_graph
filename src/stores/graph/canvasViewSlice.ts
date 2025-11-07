@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Node, Group, Edge, BlockEnum } from '@/types/graph/models';
+import { Node, Group, Edge } from '@/types/graph/models';
 
 interface ViewportState {
   x: number;

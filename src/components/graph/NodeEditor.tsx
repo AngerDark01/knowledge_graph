@@ -26,8 +26,8 @@ const NodeEditor: React.FC<NodeEditorProps> = ({ nodeId }) => {
   const [tags, setTags] = useState(node?.tags?.join(', ') || '');
   const [attributes, setAttributes] = useState(node?.attributes || {});
 
-  // 获取所有群组
-  const groups = nodes.filter((n: any): n is Group => n.type === 'group');
+  // 获取所有容器节点（群组）
+  const groups = nodes.filter((n: any): n is Group => n.viewMode === 'container'); // 新架构：使用 viewMode
 
   useEffect(() => {
     if (node) {

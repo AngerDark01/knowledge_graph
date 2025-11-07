@@ -25,7 +25,7 @@ const EdgeFilterControl: React.FC = () => {
       case 'internal':
         // 这里需要指定一个群组ID来获取内部边，我们暂时只获取第一个群组的内部边
         // 在实际应用中，用户可能需要选择特定的群组
-        const groups = nodes.filter(n => n.type === 'group');
+        const groups = nodes.filter(n => n.viewMode === 'container'); // 新架构：使用 viewMode
         if (groups.length > 0) {
           // 获取所有群组的内部边
           const internalEdges = [];
