@@ -8,10 +8,9 @@
 import React, { memo } from 'react';
 import { NodeProps } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
-import { toBaseNode } from '@/utils/graph/nodeAdapter';
 import NoteView from './viewModes/NoteView';
 import ContainerView from './viewModes/ContainerView';
-import { Node, Group } from '@/types/graph/models';
+import { BaseNode } from '@/types/graph/models';
 
 /**
  * 视图组件映射表
@@ -28,21 +27,18 @@ const VIEW_COMPONENTS = {
  */
 const SmartNode: React.FC<NodeProps> = ({ id, data, selected, ...rest }) => {
   const { getNodeById } = useGraphStore();
-  const node = getNodeById(id);
+  const node = getNodeById(id) as BaseNode;
 
   if (!node) {
     console.error(`Node ${id} not found`);
     return null;
   }
 
-  // 转换为统一的 BaseNode
-  const baseNode = toBaseNode(node);
-
   // 根据 viewMode 选择合适的视图组件
-  const ViewComponent = VIEW_COMPONENTS[baseNode.viewMode];
+  const ViewComponent = VIEW_COMPONENTS[node.viewMode];
 
   if (!ViewComponent) {
-    console.error(`Unknown view mode: ${baseNode.viewMode}`);
+    console.error(`Unknown view mode: ${node.viewMode}`);
     return null;
   }
 
@@ -50,7 +46,7 @@ const SmartNode: React.FC<NodeProps> = ({ id, data, selected, ...rest }) => {
   return (
     <ViewComponent
       id={id}
-      node={baseNode}
+      node={node}
       selected={selected}
       {...rest}
     />

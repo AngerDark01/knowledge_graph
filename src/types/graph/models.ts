@@ -1,57 +1,97 @@
 import { z } from 'zod';
 import type { CSSProperties } from 'react';
 
-export enum BlockEnum {
-  NODE = 'node',
-  GROUP = 'group'
-}
+/**
+ * 视图模式类型
+ */
+export type ViewMode = 'note' | 'container';
 
-export interface CommonNodeType<T = any> {
+/**
+ * 统一节点模型 - BaseNode
+ *
+ * 设计理念：
+ * - 不再区分 Node 和 Group，使用统一的数据结构
+ * - 通过 viewMode 控制显示方式
+ * - 通过 expanded 控制子节点可见性
+ * - 使用 parentId 和 childrenIds 构建层级关系
+ */
+export interface BaseNode {
+  // ==================== 基础属性 ====================
   id: string;
-  type: BlockEnum;
   position: { x: number; y: number };
-  data?: T;
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
+
+  // ==================== 视图模式 ====================
+  /**
+   * 视图模式：决定节点如何显示
+   * - note: 笔记模式，显示详细内容，可以展开/折叠
+   * - container: 容器模式，显示为群组，包含子节点
+   */
+  viewMode: ViewMode;
+
+  /**
+   * 展开状态：控制子节点是否可见
+   * - true: 展开，子节点可见
+   * - false: 折叠，子节点隐藏
+   */
+  expanded: boolean;
+
+  // ==================== 内容属性 ====================
+  title: string;
+  content?: string;
+  summary?: string;
+  tags?: string[];
+  attributes?: Record<string, any>;
+
+  // ==================== 层级关系 ====================
+  /**
+   * 父节点 ID
+   * 用于构建层级关系，子节点不能超出父节点边界
+   */
+  parentId?: string;
+
+  /**
+   * 子节点 ID 列表
+   * 有序列表，记录所有直接子节点
+   */
+  childrenIds: string[];
+
+  // ==================== 状态属性 ====================
   selected?: boolean;
   dragging?: boolean;
-  parentId?: string; // 用于嵌套节点
-  [key: string]: any;
-}
-
-export interface Node extends CommonNodeType {
-  type: BlockEnum.NODE;
-  title: string;
-  content?: string;
-  attributes?: Record<string, any>; // 结构化属性
-  tags?: string[]; // 标签
-  summary?: string; // 摘要
-  isEditing?: boolean; // 编辑状态
-  groupId?: string;
+  isEditing?: boolean;
   validationError?: string;
-  isExpanded?: boolean; // 是否展开状态
-  customExpandedSize?: { width: number; height: number }; // 用户自定义的展开尺寸
-  style?: CSSProperties; // 样式属性
+
+  // ==================== 样式属性 ====================
+  style?: CSSProperties;
+
+  /**
+   * 用户自定义的展开尺寸（仅 note 模式）
+   * 用户手动调整尺寸后保存
+   */
+  customExpandedSize?: { width: number; height: number };
+
+  // ==================== 元数据 ====================
   createdAt: Date;
   updatedAt: Date;
+
+  // ==================== ReactFlow 兼容性 ====================
+  data?: Record<string, any>;
 }
 
-export interface Group extends CommonNodeType {
-  type: BlockEnum.GROUP;
-  title: string;
-  content?: string;
-  attributes?: Record<string, any>; // 结构化属性
-  tags?: string[]; // 标签
-  summary?: string; // 摘要
-  isEditing?: boolean; // 编辑状态
-  collapsed: boolean;
-  nodeIds: string[];
-  boundary: { minX: number; minY: number; maxX: number; maxY: number };
-  style?: CSSProperties; // 样式属性
-  createdAt: Date;
-  updatedAt: Date;
-}
+// ==================== 类型别名（方便使用） ====================
+/**
+ * Note 节点（viewMode = 'note'）
+ */
+export type Node = BaseNode & { viewMode: 'note' };
 
+/**
+ * Container 节点（viewMode = 'container'）
+ */
+export type Group = BaseNode & { viewMode: 'container' };
+
+// ==================== Edge (边) 模型 ====================
 export interface Edge {
   id: string;
   source: string;
@@ -59,7 +99,6 @@ export interface Edge {
   sourceHandle?: string;
   targetHandle?: string;
   label?: string;
-  groupId?: string;
   style?: CSSProperties;
   data?: {
     color?: string;
@@ -81,55 +120,38 @@ export interface Edge {
   updatedAt: Date;
 }
 
-// Zod 验证 schema
-export const NodeSchema = z.object({
+// ==================== Zod 验证 Schema ====================
+export const BaseNodeSchema = z.object({
   id: z.string(),
-  type: z.literal(BlockEnum.NODE),
   position: z.object({
     x: z.number(),
-    y: z.number()
+    y: z.number(),
   }),
-  title: z.string().min(1),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  viewMode: z.enum(['note', 'container']),
+  expanded: z.boolean(),
+  title: z.string().min(1, 'Title cannot be empty'),
   content: z.string().optional(),
-  attributes: z.record(z.string(), z.any()).optional(),
-  tags: z.array(z.string()).optional(),
   summary: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  attributes: z.record(z.string(), z.any()).optional(),
+  parentId: z.string().optional(),
+  childrenIds: z.array(z.string()),
+  selected: z.boolean().optional(),
+  dragging: z.boolean().optional(),
   isEditing: z.boolean().optional(),
-  isExpanded: z.boolean().optional(),
-  customExpandedSize: z.object({
-    width: z.number(),
-    height: z.number()
-  }).optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-  groupId: z.string().optional(),
+  validationError: z.string().optional(),
+  style: z.any().optional(),
+  customExpandedSize: z
+    .object({
+      width: z.number(),
+      height: z.number(),
+    })
+    .optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
-});
-
-export const GroupSchema = z.object({
-  id: z.string(),
-  type: z.literal(BlockEnum.GROUP),
-  position: z.object({
-    x: z.number(),
-    y: z.number()
-  }),
-  title: z.string().min(1),
-  content: z.string().optional(),
-  attributes: z.record(z.string(), z.any()).optional(),
-  tags: z.array(z.string()).optional(),
-  summary: z.string().optional(),
-  isEditing: z.boolean().optional(),
-  collapsed: z.boolean(),
-  nodeIds: z.array(z.string()),
-  boundary: z.object({
-    minX: z.number(),
-    minY: z.number(),
-    maxX: z.number(),
-    maxY: z.number()
-  }),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  data: z.record(z.string(), z.any()).optional(),
 });
 
 export const EdgeSchema = z.object({
@@ -139,7 +161,6 @@ export const EdgeSchema = z.object({
   sourceHandle: z.string().optional(),
   targetHandle: z.string().optional(),
   label: z.string().optional(),
-  groupId: z.string().optional(),
   style: z.any().optional(),
   data: z.object({
     color: z.string().optional(),
@@ -156,3 +177,54 @@ export const EdgeSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
 });
+
+// ==================== 类型守卫 ====================
+/**
+ * 检查是否为有效的 BaseNode
+ */
+export const isBaseNode = (node: any): node is BaseNode => {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    typeof node.id === 'string' &&
+    typeof node.title === 'string' &&
+    ['note', 'container'].includes(node.viewMode) &&
+    typeof node.expanded === 'boolean' &&
+    Array.isArray(node.childrenIds)
+  );
+};
+
+/**
+ * 检查节点是否为容器模式
+ */
+export const isContainerNode = (node: BaseNode): node is Group => {
+  return node.viewMode === 'container';
+};
+
+/**
+ * 检查节点是否为笔记模式
+ */
+export const isNoteNode = (node: BaseNode): node is Node => {
+  return node.viewMode === 'note';
+};
+
+/**
+ * 检查节点是否有子节点
+ */
+export const hasChildren = (node: BaseNode): boolean => {
+  return node.childrenIds.length > 0;
+};
+
+/**
+ * 检查节点是否为根节点（无父节点）
+ */
+export const isRootNode = (node: BaseNode): boolean => {
+  return !node.parentId;
+};
+
+/**
+ * 检查节点是否应该显示子节点
+ */
+export const shouldShowChildren = (node: BaseNode): boolean => {
+  return hasChildren(node) && node.expanded;
+};

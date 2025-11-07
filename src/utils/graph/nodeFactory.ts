@@ -7,9 +7,23 @@
  * 3. 验证节点数据
  */
 
-import { BaseNode, CreateNodeParams, BaseNodeSchema } from '@/types/graph/unifiedNode';
-import { ViewMode, getDefaultSize, getViewModeConfig } from '@/types/graph/viewModes';
+import { BaseNode, BaseNodeSchema, ViewMode } from '@/types/graph/models';
+import { getDefaultSize, getViewModeConfig } from '@/types/graph/viewModes';
 import { nanoid } from 'nanoid';
+
+/**
+ * 节点创建参数
+ */
+export interface CreateNodeParams {
+  id?: string;
+  position: { x: number; y: number };
+  title: string;
+  viewMode?: ViewMode;
+  parentId?: string;
+  content?: string;
+  tags?: string[];
+  attributes?: Record<string, any>;
+}
 
 /**
  * 创建新节点

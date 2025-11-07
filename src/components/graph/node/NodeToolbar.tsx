@@ -6,8 +6,7 @@
  */
 
 import React, { memo, useCallback } from 'react';
-import { BaseNode } from '@/types/graph/unifiedNode';
-import { ViewMode } from '@/types/graph/viewModes';
+import { BaseNode, ViewMode } from '@/types/graph/models';
 import { useGraphStore } from '@/stores/graph';
 
 interface NodeToolbarProps {

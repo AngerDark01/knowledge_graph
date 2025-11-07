@@ -8,9 +8,7 @@
  * 4. 位置约束
  */
 
-import { BaseNode } from '@/types/graph/unifiedNode';
-import { toBaseNode, fromBaseNode } from '@/utils/graph/nodeAdapter';
-import { Node, Group, BlockEnum } from '@/types/graph/models';
+import { BaseNode } from '@/types/graph/models';
 import { constrainNodeToGroupBoundary, GROUP_PADDING } from './types';
 
 export interface HierarchyOperationsSlice {
@@ -20,11 +18,11 @@ export interface HierarchyOperationsSlice {
   moveNodeToParent: (nodeId: string, newParentId: string | null) => void;
 
   // 查询
-  getChildNodes: (parentId: string) => (Node | Group)[];
-  getParentNode: (childId: string) => (Node | Group) | undefined;
-  getAncestors: (nodeId: string) => (Node | Group)[];
-  getDescendants: (nodeId: string) => (Node | Group)[];
-  getRootNodes: () => (Node | Group)[];
+  getChildNodes: (parentId: string) => BaseNode[];
+  getParentNode: (childId: string) => BaseNode | undefined;
+  getAncestors: (nodeId: string) => BaseNode[];
+  getDescendants: (nodeId: string) => BaseNode[];
+  getRootNodes: () => BaseNode[];
 
   // 层级验证
   canBeParent: (nodeId: string, childId: string) => boolean;
@@ -37,20 +35,16 @@ export interface HierarchyOperationsSlice {
 
 export const createHierarchyOperationsSlice = (set: any, get: any): HierarchyOperationsSlice => {
   return {
-    /**
-     * 添加子节点到父节点
-     */
     addChildToParent: (childId: string, parentId: string) => {
       const state = get();
-      const childNode = state.getNodeById(childId);
-      const parentNode = state.getNodeById(parentId);
+      const childNode = state.getNodeById(childId) as BaseNode;
+      const parentNode = state.getNodeById(parentId) as BaseNode;
 
       if (!childNode || !parentNode) {
         console.error('Child or parent node not found');
         return;
       }
 
-      // 检查是否会形成循环引用
       if (!get().canBeParent(parentId, childId)) {
         console.error('Cannot add child: would create circular reference');
         return;
@@ -58,41 +52,32 @@ export const createHierarchyOperationsSlice = (set: any, get: any): HierarchyOpe
 
       console.log(`👨‍👧 添加子节点: ${childId} -> ${parentId}`);
 
-      const baseChild = toBaseNode(childNode);
-      const baseParent = toBaseNode(parentNode);
-
-      // 如果子节点已有父节点，先移除
-      if (baseChild.parentId) {
+      if (childNode.parentId) {
         get().removeChildFromParent(childId);
       }
 
-      // 更新子节点
       const updatedChild: BaseNode = {
-        ...baseChild,
+        ...childNode,
         parentId: parentId,
         updatedAt: new Date(),
       };
 
-      // 约束子节点位置到父节点边界内
-      const constrainedChild = constrainChildPosition(updatedChild, baseParent);
+      const constrainedChild = constrainChildPosition(updatedChild, parentNode);
 
-      // 更新父节点的 childrenIds
       const updatedParent: BaseNode = {
-        ...baseParent,
-        childrenIds: [...new Set([...baseParent.childrenIds, childId])],
+        ...parentNode,
+        childrenIds: [...new Set([...parentNode.childrenIds, childId])],
         updatedAt: new Date(),
       };
 
-      // 转换回原始类型并更新状态
       set({
-        nodes: state.nodes.map((n: Node | Group) => {
-          if (n.id === childId) return fromBaseNode(constrainedChild);
-          if (n.id === parentId) return fromBaseNode(updatedParent);
+        nodes: state.nodes.map((n: BaseNode) => {
+          if (n.id === childId) return constrainedChild;
+          if (n.id === parentId) return updatedParent;
           return n;
         }),
       });
 
-      // 添加历史记录
       if (get().addHistorySnapshot) {
         get().addHistorySnapshot();
       }
@@ -100,53 +85,40 @@ export const createHierarchyOperationsSlice = (set: any, get: any): HierarchyOpe
       console.log(`✅ 子节点已添加`);
     },
 
-    /**
-     * 从父节点移除子节点
-     */
     removeChildFromParent: (childId: string) => {
       const state = get();
-      const childNode = state.getNodeById(childId);
+      const childNode = state.getNodeById(childId) as BaseNode;
 
-      if (!childNode) return;
-
-      const baseChild = toBaseNode(childNode);
-
-      if (!baseChild.parentId) {
+      if (!childNode || !childNode.parentId) {
         console.log(`Node ${childId} has no parent`);
         return;
       }
 
-      console.log(`👨‍👧 移除子节点: ${childId} <- ${baseChild.parentId}`);
+      console.log(`👨‍👧 移除子节点: ${childId} <- ${childNode.parentId}`);
 
-      const parentNode = state.getNodeById(baseChild.parentId);
+      const parentNode = state.getNodeById(childNode.parentId) as BaseNode;
       if (!parentNode) return;
 
-      const baseParent = toBaseNode(parentNode);
-
-      // 更新子节点
       const updatedChild: BaseNode = {
-        ...baseChild,
+        ...childNode,
         parentId: undefined,
         updatedAt: new Date(),
       };
 
-      // 更新父节点的 childrenIds
       const updatedParent: BaseNode = {
-        ...baseParent,
-        childrenIds: baseParent.childrenIds.filter((id) => id !== childId),
+        ...parentNode,
+        childrenIds: parentNode.childrenIds.filter((id) => id !== childId),
         updatedAt: new Date(),
       };
 
-      // 转换回原始类型并更新状态
       set({
-        nodes: state.nodes.map((n: Node | Group) => {
-          if (n.id === childId) return fromBaseNode(updatedChild);
-          if (n.id === baseParent.id) return fromBaseNode(updatedParent);
+        nodes: state.nodes.map((n: BaseNode) => {
+          if (n.id === childId) return updatedChild;
+          if (n.id === parentNode.id) return updatedParent;
           return n;
         }),
       });
 
-      // 添加历史记录
       if (get().addHistorySnapshot) {
         get().addHistorySnapshot();
       }
@@ -154,9 +126,6 @@ export const createHierarchyOperationsSlice = (set: any, get: any): HierarchyOpe
       console.log(`✅ 子节点已移除`);
     },
 
-    /**
-     * 移动节点到新父节点
-     */
     moveNodeToParent: (nodeId: string, newParentId: string | null) => {
       if (newParentId) {
         get().addChildToParent(nodeId, newParentId);
@@ -165,41 +134,26 @@ export const createHierarchyOperationsSlice = (set: any, get: any): HierarchyOpe
       }
     },
 
-    /**
-     * 获取所有子节点
-     */
     getChildNodes: (parentId: string) => {
       const state = get();
-      const parentNode = state.getNodeById(parentId);
+      const parentNode = state.getNodeById(parentId) as BaseNode;
 
       if (!parentNode) return [];
 
-      const baseParent = toBaseNode(parentNode);
-
-      return state.nodes.filter((n: Node | Group) => baseParent.childrenIds.includes(n.id));
+      return state.nodes.filter((n: BaseNode) => parentNode.childrenIds.includes(n.id));
     },
 
-    /**
-     * 获取父节点
-     */
     getParentNode: (childId: string) => {
       const state = get();
-      const childNode = state.getNodeById(childId);
+      const childNode = state.getNodeById(childId) as BaseNode;
 
-      if (!childNode) return undefined;
+      if (!childNode || !childNode.parentId) return undefined;
 
-      const baseChild = toBaseNode(childNode);
-
-      if (!baseChild.parentId) return undefined;
-
-      return state.getNodeById(baseChild.parentId);
+      return state.getNodeById(childNode.parentId) as BaseNode;
     },
 
-    /**
-     * 获取所有祖先节点（从直接父节点到根节点）
-     */
     getAncestors: (nodeId: string) => {
-      const ancestors: (Node | Group)[] = [];
+      const ancestors: BaseNode[] = [];
       let currentId: string | undefined = nodeId;
 
       while (currentId) {
@@ -213,19 +167,16 @@ export const createHierarchyOperationsSlice = (set: any, get: any): HierarchyOpe
       return ancestors;
     },
 
-    /**
-     * 获取所有后代节点（递归获取所有子孙节点）
-     */
     getDescendants: (nodeId: string) => {
-      const descendants: (Node | Group)[] = [];
+      const descendants: BaseNode[] = [];
       const visited = new Set<string>();
 
       const collectDescendants = (id: string) => {
-        if (visited.has(id)) return; // 防止循环引用
+        if (visited.has(id)) return;
         visited.add(id);
 
         const children = get().getChildNodes(id);
-        children.forEach((child: Node | Group) => {
+        children.forEach((child: BaseNode) => {
           descendants.push(child);
           collectDescendants(child.id);
         });
@@ -236,58 +187,39 @@ export const createHierarchyOperationsSlice = (set: any, get: any): HierarchyOpe
       return descendants;
     },
 
-    /**
-     * 获取所有根节点（没有父节点的节点）
-     */
     getRootNodes: () => {
       const state = get();
-      return state.nodes.filter((n: Node | Group) => {
-        const baseNode = toBaseNode(n);
-        return !baseNode.parentId;
-      });
+      return state.nodes.filter((n: BaseNode) => !n.parentId);
     },
 
-    /**
-     * 检查节点是否可以作为另一个节点的父节点
-     */
     canBeParent: (parentId: string, childId: string) => {
       if (parentId === childId) {
-        return false; // 不能自己是自己的父节点
+        return false;
       }
 
-      // 检查是否会形成循环引用
       const ancestors = get().getAncestors(parentId);
-      return !ancestors.some((ancestor: Node | Group) => ancestor.id === childId);
+      return !ancestors.some((ancestor: BaseNode) => ancestor.id === childId);
     },
 
-    /**
-     * 检查节点是否为另一个节点的祖先
-     */
     isAncestor: (ancestorId: string, descendantId: string) => {
       const ancestors = get().getAncestors(descendantId);
-      return ancestors.some((ancestor: Node | Group) => ancestor.id === ancestorId);
+      return ancestors.some((ancestor: BaseNode) => ancestor.id === ancestorId);
     },
 
-    /**
-     * 移除所有子节点的父子关系（使子节点成为孤儿）
-     */
     orphanAllChildren: (parentId: string) => {
       const children = get().getChildNodes(parentId);
       console.log(`🚫 移除 ${parentId} 的所有子节点关系 (${children.length} 个)`);
 
-      children.forEach((child: Node | Group) => {
+      children.forEach((child: BaseNode) => {
         get().removeChildFromParent(child.id);
       });
     },
 
-    /**
-     * 将所有子节点移动到新父节点
-     */
     reparentChildren: (oldParentId: string, newParentId: string) => {
       const children = get().getChildNodes(oldParentId);
       console.log(`🔄 重新分配 ${oldParentId} 的子节点到 ${newParentId} (${children.length} 个)`);
 
-      children.forEach((child: Node | Group) => {
+      children.forEach((child: BaseNode) => {
         get().addChildToParent(child.id, newParentId);
       });
     },
@@ -303,13 +235,11 @@ function constrainChildPosition(child: BaseNode, parent: BaseNode): BaseNode {
   const parentWidth = parent.width;
   const parentHeight = parent.height;
 
-  // 计算允许的最小和最大位置
   const minX = parent.position.x + GROUP_PADDING.left;
   const minY = parent.position.y + GROUP_PADDING.top;
   const maxX = parent.position.x + parentWidth - GROUP_PADDING.right - childWidth;
   const maxY = parent.position.y + parentHeight - GROUP_PADDING.bottom - childHeight;
 
-  // 约束节点位置
   const constrainedX = Math.max(minX, Math.min(child.position.x, maxX));
   const constrainedY = Math.max(minY, Math.min(child.position.y, maxY));
 
