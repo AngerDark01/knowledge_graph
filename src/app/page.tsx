@@ -1,6 +1,6 @@
 'use client';
 
-import GraphPage from '@/components/graph/graph-page';
+import GraphPage from '@/components/graph/core';
 
 export default function Home() {
   return (
