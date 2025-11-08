@@ -1,0 +1,123 @@
+import { Node, Group, BlockEnum } from '@/types/graph/models';
+import { ReactFlowNode } from 'reactflow';
+
+// 安全数值验证
+export const safeNumber = (value: any, defaultValue: number = 0): number => {
+  const num = Number(value);
+  return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
+};
+
+// 转换为相对坐标
+export const convertToRelativePosition = (
+  node: Node | Group, 
+  parentGroup?: Group,
+  safeNumberImpl: (value: any, defaultValue: number) => number = safeNumber
+): { x: number; y: number } => {
+  if (!parentGroup) return node.position;
+  
+  return {
+    x: safeNumberImpl(node.position.x) - safeNumberImpl(parentGroup.position.x),
+    y: safeNumberImpl(node.position.y) - safeNumberImpl(parentGroup.position.y)
+  };
+};
+
+// 转换为绝对坐标
+export const convertToAbsolutePosition = (
+  relativePos: { x: number; y: number }, 
+  parentGroup: Group,
+  safeNumberImpl: (value: any, defaultValue: number) => number = safeNumber
+): { x: number; y: number } => {
+  return {
+    x: safeNumberImpl(relativePos.x) + safeNumberImpl(parentGroup.position.x),
+    y: safeNumberImpl(relativePos.y) + safeNumberImpl(parentGroup.position.y)
+  };
+};
+
+// 将 store 节点同步到 ReactFlow 节点
+export const syncStoreToReactFlowNodes = (
+  storeNodes: (Node | Group)[],
+  selectedNodeId: string | null,
+  convertToRelativePositionImpl = convertToRelativePosition,
+  safeNumberImpl = safeNumber
+): ReactFlowNode[] => {
+  return storeNodes.map((node: Node | Group) => {
+    const isGroup = node.type === BlockEnum.GROUP;
+    
+    if (isGroup) {
+      const groupNode = node as Group;
+      return {
+        ...groupNode,
+        id: groupNode.id,
+        type: 'group',
+        position: {
+          x: safeNumberImpl(groupNode.position.x),
+          y: safeNumberImpl(groupNode.position.y),
+        },
+        selected: node.id === selectedNodeId,
+        draggable: true,
+        style: {
+          ...groupNode.style,
+          width: safeNumberImpl(groupNode.width, 300),
+          height: safeNumberImpl(groupNode.height, 200),
+        },
+        data: {
+          ...groupNode.data,
+          title: groupNode.title,
+          content: groupNode.content,
+          summary: groupNode.summary,
+          tags: groupNode.tags,
+          attributes: groupNode.attributes,
+          validationError: groupNode.validationError,
+        },
+      };
+    } else {
+      const regularNode = node as Node & { groupId?: string };
+      const parentGroup = regularNode.groupId 
+        ? storeNodes.find(n => n.id === regularNode.groupId) as Group
+        : undefined;
+      
+      const safeNodePosition = {
+        x: safeNumberImpl(regularNode.position.x),
+        y: safeNumberImpl(regularNode.position.y),
+      };
+      
+      // 如果在群组内，使用相对坐标
+      const position = parentGroup
+        ? convertToRelativePositionImpl({ ...regularNode, position: safeNodePosition }, parentGroup, safeNumberImpl)
+        : safeNodePosition;
+      
+      const finalPosition = {
+        x: safeNumberImpl(position.x),
+        y: safeNumberImpl(position.y),
+      };
+      
+      return {
+        ...regularNode,
+        id: regularNode.id,
+        type: 'custom',
+        position: finalPosition,
+        selected: node.id === selectedNodeId,
+        draggable: true,
+        ...(regularNode.groupId && { 
+          parentId: regularNode.groupId,
+          extent: 'parent' as const,
+          expandParent: true,
+        }),
+        style: {
+          ...(regularNode as any).style,
+          width: safeNumberImpl(regularNode.width, 350),  // 🔧 NoteNode初始宽度
+          height: safeNumberImpl(regularNode.height, 280), // 🔧 NoteNode初始高度
+        },
+        data: {
+          ...regularNode.data,
+          title: regularNode.title,
+          content: regularNode.content,
+          summary: regularNode.summary,
+          tags: regularNode.tags,
+          attributes: regularNode.attributes,
+          validationError: regularNode.validationError,
+        },
+      };
+    }
+  });
+};
