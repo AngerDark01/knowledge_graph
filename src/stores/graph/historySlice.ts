@@ -1,10 +1,10 @@
 import { StateCreator } from 'zustand';
 import { GraphStore } from '.';
-import { Node } from '../../types/graph/models';
+import { Node, Group } from '../../types/graph/models';
 import { Edge } from '../../types/graph/models';
 
 export interface HistoryState {
-  history: Array<{ nodes: Node[]; edges: Edge[] }>;
+  history: Array<{ nodes: (Node | Group)[]; edges: Edge[] }>;
   historyIndex: number;
   maxSize: number;
   addHistorySnapshot: () => void;
@@ -17,10 +17,10 @@ export interface HistoryState {
 
 export const createHistorySlice: StateCreator<
   GraphStore,
-  [['zustand/devtools', never]],
+  [],
   [],
   HistoryState
-> = (set, get) => ({
+> = (set, get, _api) => ({
   history: [],
   historyIndex: -1,
   maxSize: 50, // 最多保存50个历史记录

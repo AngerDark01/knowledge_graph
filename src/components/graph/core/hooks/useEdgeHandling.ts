@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { Connection, Edge } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
-import { BlockEnum, Node } from '@/types/graph/models';
+import { BlockEnum, Node, Group } from '@/types/graph/models';
+import { getLowestCommonAncestor } from '@/utils/graph/nestingHelpers';
 
 export const useEdgeHandling = () => {
   const { addEdge, edges, getNodes } = useGraphStore();
@@ -28,8 +29,8 @@ export const useEdgeHandling = () => {
 
       // 获取所有节点信息
       const allNodes = getNodes();
-      const sourceNode = allNodes.find(n => n.id === params.source) as Node | undefined;
-      const targetNode = allNodes.find(n => n.id === params.target) as Node | undefined;
+      const sourceNode = allNodes.find(n => n.id === params.source) as Node | Group | undefined;
+      const targetNode = allNodes.find(n => n.id === params.target) as Node | Group | undefined;
 
       // 确保 source 和 target 不是 null
       if (!params.source || !params.target) {
@@ -38,19 +39,47 @@ export const useEdgeHandling = () => {
       }
 
       // 检查子节点与父节点的连接限制
-      // 阻止子节点与自己的父群组连接
-      if (sourceNode?.type === BlockEnum.NODE && sourceNode.groupId === params.target) {
-        console.log("Cannot connect child node to its parent group");
+      // 阻止子节点与自己的直接父群组连接
+      if ('groupId' in (sourceNode || {}) && sourceNode?.groupId === params.target) {
+        console.log("Cannot connect child to its direct parent group");
         return;
       }
-      
-      if (targetNode?.type === BlockEnum.NODE && targetNode.groupId === params.source) {
-        console.log("Cannot connect child node to its parent group");
+
+      if ('groupId' in (targetNode || {}) && targetNode?.groupId === params.source) {
+        console.log("Cannot connect child to its direct parent group");
         return;
       }
-      
-      // 确定是否为跨群关系
-      const isCrossGroup = sourceNode?.groupId && targetNode?.groupId && sourceNode.groupId !== targetNode.groupId;
+
+      // 🔧 支持多层嵌套的跨群组判断
+      // 只要两个节点不在同一个直接父群组中，就算跨群组
+      let isCrossGroup = false;
+      let sourceGroupId: string | undefined;
+      let targetGroupId: string | undefined;
+
+      // 获取直接父群组ID
+      if ('groupId' in (sourceNode || {})) {
+        sourceGroupId = sourceNode?.groupId;
+      }
+      if ('groupId' in (targetNode || {})) {
+        targetGroupId = targetNode?.groupId;
+      }
+
+      // 判断是否跨群组
+      if (sourceGroupId && targetGroupId) {
+        // 两个节点都有父群组，检查是否是同一个直接父群组
+        isCrossGroup = sourceGroupId !== targetGroupId;
+      } else if (sourceGroupId || targetGroupId) {
+        // 一个在群组内，一个在顶层，也算跨群组
+        isCrossGroup = true;
+      }
+
+      console.log('🔗 创建连接:', {
+        source: params.source,
+        target: params.target,
+        sourceGroupId,
+        targetGroupId,
+        isCrossGroup
+      });
       
       // 构建边数据
       const newEdgeData: any = {
@@ -63,12 +92,12 @@ export const useEdgeHandling = () => {
         updatedAt: new Date(),
       };
       
-      // 如果是跨群关系，添加特殊样式和属性
+      // 🔧 根据是否跨群组设置边的样式和属性
       if (isCrossGroup) {
         newEdgeData.data = {
           isCrossGroup: true,
-          sourceGroupId: sourceNode?.groupId,
-          targetGroupId: targetNode?.groupId,
+          sourceGroupId,
+          targetGroupId,
           strokeDasharray: '5,5',  // 虚线样式
           color: '#FFA500',        // 橙色
           strokeWidth: 2,          // 线宽2px

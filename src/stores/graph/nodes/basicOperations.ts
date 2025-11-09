@@ -125,7 +125,7 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
               ) as Group;
 
               if (parentGroup) {
-                const constrainedPos = constrainNodeToGroupBoundary(updatedNode, parentGroup);
+                const constrainedPos = constrainNodeToGroupBoundary(updatedNode as Node | Group, parentGroup);
                 updatedNode.position = constrainedPos;
                 console.log('  🔒 更新时约束位置到群组内:', constrainedPos);
               }

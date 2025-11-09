@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node } from '../../types/graph/models';
+import { Node } from '@/types/graph/models';
 
 interface SummaryViewProps {
   node: Node;

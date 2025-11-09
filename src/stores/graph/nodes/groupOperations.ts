@@ -1,6 +1,6 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 import { GroupOperationsSlice, safePosition, safeNumber, constrainNodeToGroupBoundary } from './types';
-import { hasCircularNesting, validateNestingDepth } from '@/utils/graph/nestingHelpers';
+import { hasCircularNesting, validateNestingDepth, getAllDescendants } from '@/utils/graph/nestingHelpers';
 
 export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsSlice => {
   return {
@@ -120,21 +120,27 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
     }),
     
     deleteGroup: (id) => set((state: any) => {
-      const group = state.nodes.find((node: Node | Group) => 
+      const group = state.nodes.find((node: Node | Group) =>
         node.id === id && node.type === BlockEnum.GROUP
       ) as Group;
       if (!group) return state;
 
-      const updatedNodes = state.nodes
-        .map((node: Node | Group) => {
-          if ('groupId' in node && node.groupId === id) {
-            const nodeCopy = { ...node };
-            delete nodeCopy.groupId;
-            return nodeCopy;
-          }
-          return node;
-        })
-        .filter((node: Node | Group) => node.id !== id);
+      // 🔧 级联删除：获取所有后代节点（包括嵌套的群组和节点）
+      const allDescendants = getAllDescendants(id, state.nodes);
+      const descendantIds = new Set(allDescendants.map(d => d.id));
+
+      console.log(`🗑️ 删除群组 ${id} 及其所有后代:`, {
+        群组: id,
+        后代数量: descendantIds.size - 1, // 减去群组自己
+        后代ID列表: Array.from(descendantIds).filter(did => did !== id)
+      });
+
+      // 删除群组和所有后代节点
+      const updatedNodes = state.nodes.filter((node: Node | Group) =>
+        !descendantIds.has(node.id)
+      );
+
+      console.log(`  ✅ 删除完成，剩余节点数: ${updatedNodes.length}`);
 
       return { nodes: updatedNodes };
     }),

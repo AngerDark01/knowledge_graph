@@ -6,9 +6,9 @@ import { createHistorySlice, HistoryState } from './historySlice';
 
 export type GraphStore = NodesSlice & EdgesSlice & CanvasViewSlice & HistoryState;
 
-export const useGraphStore = create<GraphStore>()((set, get) => ({
+export const useGraphStore = create<GraphStore>()((set, get, api) => ({
   ...createNodesSlice(set, get),
   ...createEdgesSlice(set, get),
   ...createCanvasViewSlice(set),
-  ...createHistorySlice(set, get),
+  ...createHistorySlice(set, get, api),
 }));

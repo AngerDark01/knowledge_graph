@@ -68,8 +68,8 @@ const CustomEdge = ({
   }
 
   // 根据方向性设置marker
-  let edgeMarkerEnd = markerEnd;
-  let edgeMarkerStart;
+  let edgeMarkerEnd: string | { type: MarkerType; color: string; width: number; height: number } | undefined = markerEnd;
+  let edgeMarkerStart: { type: MarkerType; color: string; width: number; height: number } | undefined;
   
   if (data?.direction === 'bidirectional') {
     // 双向箭头
@@ -112,11 +112,11 @@ const CustomEdge = ({
 
   return (
     <>
-      <BaseEdge 
-        path={edgePath} 
-        markerEnd={edgeMarkerEnd} 
-        markerStart={edgeMarkerStart} 
-        style={edgeStyle} 
+      <BaseEdge
+        path={edgePath}
+        markerEnd={edgeMarkerEnd as any}
+        markerStart={edgeMarkerStart as any}
+        style={edgeStyle}
       />
       {data?.label && (
         <EdgeLabelRenderer>

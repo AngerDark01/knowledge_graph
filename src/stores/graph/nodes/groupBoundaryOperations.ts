@@ -161,7 +161,7 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
       let tempGroupId: string | undefined = groupId;
       while (tempGroupId) {
         groupChain.unshift(tempGroupId); // 添加到数组开头，这样最顶层的在前面
-        const tempGroup = updatedNodes.find(n => n.id === tempGroupId) as Group | undefined;
+        const tempGroup = updatedNodes.find((n: Node | Group) => n.id === tempGroupId) as Group | undefined;
         tempGroupId = tempGroup?.groupId;
       }
 

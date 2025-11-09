@@ -191,7 +191,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   // 拖拽结束
   const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     console.log('🎯 拖拽结束:', node.id);
-    
+
     const currentNode = reactFlowInstance?.getNode(node.id);
     if (!currentNode) {
       isDraggingRef.current = false;
@@ -199,11 +199,39 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     }
 
     if (currentNode.type === 'group') {
-      const position = {
+      const storeGroup = storeNodes.find(n => n.id === node.id) as Group;
+      if (!storeGroup) {
+        isDraggingRef.current = false;
+        return;
+      }
+
+      // 🔧 计算绝对位置（如果是嵌套群组）
+      let absolutePosition = {
         x: Number(currentNode.position.x),
         y: Number(currentNode.position.y)
       };
-      handleGroupMove(node.id, position);
+
+      if (storeGroup.groupId) {
+        const parentGroup = storeNodes.find(n => n.id === storeGroup.groupId) as Group;
+        if (parentGroup) {
+          absolutePosition = {
+            x: Number(currentNode.position.x) + Number(parentGroup.position.x),
+            y: Number(currentNode.position.y) + Number(parentGroup.position.y)
+          };
+          console.log('📍 群组 相对→绝对:', currentNode.position, '→', absolutePosition);
+        }
+      }
+
+      handleGroupMove(node.id, absolutePosition);
+
+      // 🔧 如果是嵌套群组，更新父群组边界
+      if (storeGroup.groupId) {
+        setTimeout(() => {
+          console.log('📐 更新父群组边界:', storeGroup.groupId);
+          updateGroupBoundary(storeGroup.groupId!);
+        }, 100);
+      }
+
       isDraggingRef.current = false;
     } else {
       const storeNode = storeNodes.find(n => n.id === node.id) as Node;
@@ -340,14 +368,14 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                 if (resizeTimeoutRef.current[change.id]) {
                   clearTimeout(resizeTimeoutRef.current[change.id]);
                 }
-                
+
                 resizeTimeoutRef.current[change.id] = setTimeout(() => {
                   const currentNode = reactFlowInstance?.getNode(change.id);
-                  
+
                   if (currentNode) {
                     const newWidth = Number(change.dimensions!.width);
                     const newHeight = Number(change.dimensions!.height);
-                    
+
                     // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
                     updateNode(change.id, {
                       width: newWidth || 350,
@@ -358,14 +386,24 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                         height: newHeight || 280,
                       }
                     });
-                    
+
                     if (currentNode.type === 'group') {
+                      const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
+
                       setTimeout(() => {
                         updateGroupBoundary(change.id);
+
+                        // 🔧 如果是嵌套群组，同时更新父群组边界
+                        if (storeGroup?.groupId) {
+                          setTimeout(() => {
+                            console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
+                            updateGroupBoundary(storeGroup.groupId!);
+                          }, 50);
+                        }
                       }, 50);
                     }
                   }
-                  
+
                   delete resizeTimeoutRef.current[change.id];
                 }, 100);
               }

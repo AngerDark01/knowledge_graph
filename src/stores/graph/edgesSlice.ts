@@ -70,18 +70,18 @@ export const createEdgesSlice = (set: any, get: any): EdgesSlice => ({
   getEdges: () => get().edges,
   getEdgeById: (id) => get().edges.find((edge: Edge) => edge.id === id),
   getEdgesByGroupId: (groupId: string) => {
-    return get().edges.filter(edge => 
+    return get().edges.filter((edge: Edge) =>
       edge.data?.sourceGroupId === groupId || edge.data?.targetGroupId === groupId
     );
   },
   getCrossGroupEdges: () => {
-    return get().edges.filter(edge => 
+    return get().edges.filter((edge: Edge) =>
       edge.data?.isCrossGroup === true
     );
   },
   getInternalGroupEdges: (groupId: string) => {
-    return get().edges.filter(edge => 
-      edge.data?.isCrossGroup === false && 
+    return get().edges.filter((edge: Edge) =>
+      edge.data?.isCrossGroup === false &&
       (edge.data?.sourceGroupId === groupId || edge.data?.targetGroupId === groupId)
     );
   },

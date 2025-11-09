@@ -1,4 +1,4 @@
-import { Node, Group, Edge } from '@/types/graph/models';
+import { Node, Group, Edge, BlockEnum } from '@/types/graph/models';
 
 // 群组内边距常量
 export const GROUP_PADDING = { 

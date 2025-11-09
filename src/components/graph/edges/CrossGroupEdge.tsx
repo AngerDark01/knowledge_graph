@@ -6,6 +6,10 @@ interface CrossGroupEdgeData {
   color?: string;
   strokeWidth?: number;
   strokeDasharray?: string;
+  // 跨群组信息
+  isCrossGroup?: boolean;
+  sourceGroupId?: string;
+  targetGroupId?: string;
   // 关系属性
   weight?: number;
   strength?: number;
@@ -100,8 +104,8 @@ const CrossGroupEdge = ({
   }
 
   // 根据方向性设置marker
-  let edgeMarkerEnd = markerEnd;
-  let edgeMarkerStart;
+  let edgeMarkerEnd: string | { type: MarkerType; color: string; width: number; height: number } | undefined = markerEnd;
+  let edgeMarkerStart: { type: MarkerType; color: string; width: number; height: number } | undefined;
   
   if (data?.direction === 'bidirectional') {
     // 双向箭头
@@ -146,8 +150,8 @@ const CrossGroupEdge = ({
         className="react-flow__edge-path"
         d={edgePath}
         style={edgeStyle}
-        markerEnd={edgeMarkerEnd}
-        markerStart={edgeMarkerStart}
+        markerEnd={edgeMarkerEnd as any}
+        markerStart={edgeMarkerStart as any}
       />
       {data?.label && (
         <EdgeLabelRenderer>
