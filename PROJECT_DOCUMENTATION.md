@@ -1,0 +1,1686 @@
+# 知识图谱编辑器 - 详细项目文档
+
+## 目录
+1. [项目概述](#项目概述)
+2. [技术栈](#技术栈)
+3. [项目架构](#项目架构)
+4. [核心模块详解](#核心模块详解)
+5. [数据模型与类型系统](#数据模型与类型系统)
+6. [状态管理](#状态管理)
+7. [组件系统](#组件系统)
+8. [核心功能实现](#核心功能实现)
+9. [模块依赖关系](#模块依赖关系)
+10. [开发指南](#开发指南)
+
+---
+
+## 项目概述
+
+知识图谱编辑器是一个基于 React 和 ReactFlow 构建的交互式图形编辑应用，用于创建、编辑和管理知识图谱。项目支持节点的创建、分组、关联，以及丰富的交互功能如拖拽、缩放、历史记录等。
+
+### 核心特性
+- **节点管理**: 创建、编辑、删除普通节点和群组节点
+- **群组功能**: 节点分组管理，支持群组内节点的位置约束
+- **关系管理**: 节点间的连接关系，支持跨群组关系
+- **交互功能**: 拖拽、缩放、展开/收缩、历史撤销/重做
+- **数据验证**: 使用 Zod 进行严格的数据验证
+- **Markdown 支持**: 节点内容支持 Markdown 格式
+
+---
+
+## 技术栈
+
+### 核心框架
+- **Next.js 16.0.1** - React 全栈框架
+- **React 19.2.0** - UI 库
+- **TypeScript 5** - 类型安全
+
+### 状态管理与数据处理
+- **Zustand 5.0.8** - 轻量级状态管理
+- **Zod 4.1.12** - 运行时类型验证和数据验证
+
+### UI 与样式
+- **Tailwind CSS 4** - 原子化 CSS 框架
+- **shadcn/ui** - 高质量 React 组件库
+- **Radix UI** - 无样式的可访问组件基础
+- **Lucide React** - 图标库
+
+### 图形可视化
+- **ReactFlow 11.11.4** - 节点图可视化库
+
+### Markdown 渲染
+- **react-markdown 10.1.0** - Markdown 渲染
+- **remark-gfm 4.0.1** - GitHub Flavored Markdown 支持
+
+---
+
+## 项目架构
+
+### 目录结构
+```
+src/
+├── app/                      # Next.js 应用入口
+│   ├── layout.tsx           # 根布局组件
+│   ├── page.tsx             # 首页
+│   └── globals.css          # 全局样式
+├── components/              # React 组件
+│   ├── Providers.tsx        # 全局 Provider（ReactFlow）
+│   ├── ui/                  # shadcn/ui 通用 UI 组件
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── input.tsx
+│   │   ├── textarea.tsx
+│   │   ├── select.tsx
+│   │   └── label.tsx
+│   └── graph/               # 图相关组件
+│       ├── nodes/           # 节点组件
+│       │   ├── BaseNode.tsx           # 节点基础组件
+│       │   ├── NoteNode.tsx           # 笔记节点
+│       │   ├── NoteNodeEdit.tsx       # 笔记节点编辑态
+│       │   └── GroupNode.tsx          # 群组节点
+│       ├── edges/           # 边组件
+│       │   ├── CustomEdge.tsx         # 自定义边
+│       │   └── CrossGroupEdge.tsx     # 跨群组边
+│       ├── editors/         # 编辑器组件
+│       │   ├── NodeEditor.tsx         # 节点编辑器
+│       │   ├── EdgeEditor.tsx         # 边编辑器
+│       │   ├── ContentEditor.tsx      # 内容编辑器
+│       │   └── StructuredAttributeEditor.tsx # 结构化属性编辑器
+│       ├── controls/        # 控制组件
+│       │   ├── Toolbar.tsx            # 工具栏
+│       │   ├── ZoomIndicator.tsx      # 缩放指示器
+│       │   ├── HistoryControl.tsx     # 历史控制
+│       │   └── EdgeFilterControl.tsx  # 边过滤控制
+│       ├── core/            # 核心组件和逻辑
+│       │   ├── GraphPageContent.tsx   # 图页面主组件
+│       │   ├── nodeSyncUtils.ts       # 节点同步工具
+│       │   ├── hooks/                 # 自定义 Hooks
+│       │   │   ├── useNodeHandling.ts       # 节点处理逻辑
+│       │   │   ├── useEdgeHandling.ts       # 边处理逻辑
+│       │   │   ├── useNodeExpansion.ts      # 节点展开逻辑
+│       │   │   ├── useKeyboardShortcuts.ts  # 键盘快捷键
+│       │   │   ├── useViewportControls.ts   # 视口控制
+│       │   │   └── useSelectionHandling.ts  # 选择处理
+│       │   └── utils/                 # 工具函数
+│       │       ├── bindingStrategy.ts       # 绑定策略
+│       │       ├── groupHandling.ts         # 群组处理
+│       │       ├── groupMoveHandler.ts      # 群组移动处理
+│       │       ├── groupBoundaryManager.ts  # 群组边界管理
+│       │       ├── nodeUpdateHandler.ts     # 节点更新处理
+│       │       └── nodePositionConstraints.ts # 节点位置约束
+│       └── ui/              # 图 UI 组件
+│           ├── MarkdownRenderer.tsx   # Markdown 渲染器
+│           ├── TagInput.tsx           # 标签输入
+│           ├── Tag.tsx                # 标签显示
+│           └── SummaryView.tsx        # 摘要视图
+├── stores/                  # Zustand 状态管理
+│   └── graph/              # 图状态管理
+│       ├── index.ts                   # 主 Store
+│       ├── canvasViewSlice.ts         # 画布视图状态
+│       ├── edgesSlice.ts              # 边状态
+│       ├── historySlice.ts            # 历史记录状态
+│       └── nodes/                     # 节点状态
+│           ├── index.ts               # 节点 Slice 入口
+│           ├── types.ts               # 节点类型定义
+│           ├── basicOperations.ts     # 基础操作
+│           ├── groupOperations.ts     # 群组操作
+│           ├── constraintOperations.ts # 约束操作
+│           └── groupBoundaryOperations.ts # 群组边界操作
+├── types/                   # TypeScript 类型定义
+│   └── graph/
+│       └── models.ts        # 数据模型定义
+├── utils/                   # 工具函数
+│   ├── validation.ts        # 数据验证
+│   └── graph/
+│       └── test-utils.ts    # 测试工具
+└── lib/                     # 工具库
+    └── utils.ts             # 通用工具（cn 函数）
+```
+
+### 架构设计原则
+
+1. **分层架构**
+   - 表现层（Components）
+   - 逻辑层（Hooks & Utils）
+   - 数据层（Stores & Types）
+
+2. **模块化设计**
+   - 每个功能模块独立封装
+   - 清晰的职责划分
+   - 易于维护和扩展
+
+3. **类型安全**
+   - 全面的 TypeScript 类型定义
+   - Zod 运行时验证
+   - 类型推导和约束
+
+---
+
+## 核心模块详解
+
+### 1. 应用入口 (src/app)
+
+#### src/app/layout.tsx
+根布局组件，提供全局的 HTML 结构和 ReactFlow Provider。
+
+**职责**:
+- 定义应用的整体布局结构
+- 提供全局样式和字体设置
+- 包装全局 Provider
+
+**关键代码**:
+```tsx
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+#### src/app/page.tsx
+应用首页，渲染知识图谱编辑器。
+
+**职责**:
+- 渲染主页面结构
+- 包含页面头部和主内容区域
+
+**依赖**:
+- `GraphPage` 组件
+
+---
+
+### 2. 数据模型与类型系统 (src/types)
+
+#### src/types/graph/models.ts
+定义了整个应用的核心数据模型。
+
+**核心类型**:
+
+##### BlockEnum
+节点类型枚举：
+```typescript
+enum BlockEnum {
+  NODE = 'node',    // 普通节点
+  GROUP = 'group'   // 群组节点
+}
+```
+
+##### CommonNodeType
+通用节点类型接口：
+```typescript
+interface CommonNodeType<T = any> {
+  id: string;                          // 唯一标识符
+  type: BlockEnum;                     // 节点类型
+  position: { x: number; y: number };  // 位置坐标
+  data?: T;                            // 自定义数据
+  width?: number;                      // 宽度
+  height?: number;                     // 高度
+  selected?: boolean;                  // 是否选中
+  dragging?: boolean;                  // 是否拖拽中
+  parentId?: string;                   // 父节点 ID（用于嵌套）
+}
+```
+
+##### Node（普通节点）
+```typescript
+interface Node extends CommonNodeType {
+  type: BlockEnum.NODE;
+  title: string;                       // 标题（必填）
+  content?: string;                    // Markdown 内容
+  attributes?: Record<string, any>;    // 结构化属性
+  tags?: string[];                     // 标签列表
+  summary?: string;                    // 摘要
+  isEditing?: boolean;                 // 是否处于编辑状态
+  groupId?: string;                    // 所属群组 ID
+  validationError?: string;            // 验证错误信息
+  isExpanded?: boolean;                // 是否展开
+  customExpandedSize?: {               // 自定义展开尺寸
+    width: number;
+    height: number;
+  };
+  style?: CSSProperties;               // 样式
+  createdAt: Date;                     // 创建时间
+  updatedAt: Date;                     // 更新时间
+}
+```
+
+**关键属性说明**:
+- `isExpanded`: 控制节点的展开/收缩状态
+- `customExpandedSize`: 保存用户手动调整的展开尺寸
+- `groupId`: 如果节点属于某个群组，该字段指向群组 ID
+
+##### Group（群组节点）
+```typescript
+interface Group extends CommonNodeType {
+  type: BlockEnum.GROUP;
+  title: string;                       // 群组标题
+  content?: string;                    // 群组描述
+  attributes?: Record<string, any>;    // 结构化属性
+  tags?: string[];                     // 标签列表
+  summary?: string;                    // 摘要
+  isEditing?: boolean;                 // 是否处于编辑状态
+  collapsed: boolean;                  // 是否收缩
+  nodeIds: string[];                   // 包含的节点 ID 列表
+  boundary: {                          // 边界范围
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  };
+  style?: CSSProperties;               // 样式
+  createdAt: Date;                     // 创建时间
+  updatedAt: Date;                     // 更新时间
+}
+```
+
+**关键属性说明**:
+- `nodeIds`: 维护群组内所有节点的 ID 列表
+- `boundary`: 用于计算群组的实际显示边界
+
+##### Edge（边/关系）
+```typescript
+interface Edge {
+  id: string;                          // 唯一标识符
+  source: string;                      // 源节点 ID
+  target: string;                      // 目标节点 ID
+  sourceHandle?: string;               // 源连接点
+  targetHandle?: string;               // 目标连接点
+  label?: string;                      // 标签
+  groupId?: string;                    // 所属群组 ID
+  style?: CSSProperties;               // 样式
+  data?: {
+    color?: string;                    // 颜色
+    strokeWidth?: number;              // 线宽
+    isCrossGroup?: boolean;            // 是否跨群组
+    sourceGroupId?: string;            // 源节点群组 ID
+    targetGroupId?: string;            // 目标节点群组 ID
+    strokeDasharray?: string;          // 虚线样式
+    weight?: number;                   // 权重
+    strength?: number;                 // 强度
+    direction?: 'unidirectional' | 'bidirectional' | 'undirected';
+    customProperties?: Record<string, any>;
+  };
+  createdAt: Date;                     // 创建时间
+  updatedAt: Date;                     // 更新时间
+}
+```
+
+**关键属性说明**:
+- `isCrossGroup`: 标识是否为跨群组关系
+- `direction`: 关系的方向性（单向、双向、无向）
+- `weight` 和 `strength`: 用于可视化不同强度的关系
+
+**Zod 验证 Schema**:
+每个数据模型都有对应的 Zod Schema 用于运行时验证：
+- `NodeSchema`: 验证普通节点数据
+- `GroupSchema`: 验证群组节点数据
+- `EdgeSchema`: 验证边数据
+
+---
+
+### 3. 状态管理 (src/stores)
+
+项目使用 Zustand 进行状态管理，采用 Slice 模式将不同功能的状态分离。
+
+#### 主 Store (src/stores/graph/index.ts)
+
+**组合所有 Slice**:
+```typescript
+export type GraphStore =
+  NodesSlice &
+  EdgesSlice &
+  CanvasViewSlice &
+  HistoryState;
+
+export const useGraphStore = create<GraphStore>()((set, get) => ({
+  ...createNodesSlice(set, get),
+  ...createEdgesSlice(set, get),
+  ...createCanvasViewSlice(set),
+  ...createHistorySlice(set, get),
+}));
+```
+
+#### Nodes Slice (src/stores/graph/nodes/)
+
+节点状态管理分为四个子模块：
+
+##### 1. basicOperations.ts - 基础节点操作
+
+**主要功能**:
+- `addNode`: 添加新节点
+  - 根据节点类型设置默认尺寸（普通节点 350x280，群组节点 300x200）
+  - 验证并修复节点位置和尺寸
+  - 如果节点属于群组，约束其位置在群组边界内
+  - 添加历史记录快照
+
+- `updateNode`: 更新节点
+  - 验证标题不为空
+  - 同步 width/height 到 style
+  - 约束群组内节点位置
+  - 智能判断是否添加历史记录（位置/尺寸变化不记录）
+
+- `deleteNode`: 删除节点
+  - 从节点列表中移除
+  - 添加历史记录快照
+
+- `getNodes`: 获取所有节点
+- `getNodeById`: 根据 ID 获取节点
+- `setSelectedNodeId`: 设置选中的节点
+- `setSelectedEdgeId`: 设置选中的边
+
+**关键常量**:
+```typescript
+const GROUP_PADDING = {
+  top: 70,    // 标题栏高度 + 额外间距
+  left: 20,
+  right: 20,
+  bottom: 20
+};
+
+const NODE_VISUAL_PADDING = 4;  // 节点外框的额外空间
+```
+
+**工具函数**:
+- `safeNumber`: 安全的数值验证
+- `safePosition`: 确保位置对象有效
+- `constrainNodeToGroupBoundary`: 约束节点位置在群组边界内
+
+##### 2. groupOperations.ts - 群组操作
+
+**主要功能**:
+- `addGroup`: 添加新群组
+  - 验证并设置默认位置和尺寸
+
+- `updateGroup`: 更新群组
+  - 验证标题
+  - 更新群组属性
+  - 处理 nodeIds 变化，自动更新节点的 groupId
+
+- `deleteGroup`: 删除群组
+  - 移除群组
+  - 清除所有子节点的 groupId
+
+- `addNodeToGroup`: 将节点添加到群组
+  - 从旧群组移除（如果有）
+  - 约束节点位置到新群组内
+  - 更新群组的 nodeIds
+
+- `removeNodeFromGroup`: 从群组移除节点
+  - 清除节点的 groupId
+  - 更新群组的 nodeIds
+
+##### 3. constraintOperations.ts - 位置约束操作
+
+**主要功能**:
+- `updateNodePosition`: 更新节点位置
+  - 如果节点属于群组，自动约束位置
+  - 确保节点不会超出群组边界
+
+- `handleGroupMove`: 处理群组移动
+  - 计算群组位置偏移
+  - 同步移动群组内所有节点
+  - 保持节点相对位置不变
+
+**实现细节**:
+群组移动时，计算偏移量并应用到所有子节点：
+```typescript
+const offsetX = newPos.x - oldPos.x;
+const offsetY = newPos.y - oldPos.y;
+// 应用偏移到每个子节点
+node.position = {
+  x: node.position.x + offsetX,
+  y: node.position.y + offsetY
+};
+```
+
+##### 4. groupBoundaryOperations.ts - 群组边界管理
+
+**主要功能**:
+- `updateGroupBoundary`: 更新群组边界
+  - 计算所有子节点的边界
+  - 根据需要扩展群组尺寸
+  - 支持四个方向的扩展（上下左右）
+
+**扩展策略**:
+- 优先向右下扩展（保持左上角不变）
+- 必要时向左上扩展（会改变群组位置）
+- 确保最小尺寸（300x200）
+- 包含 GROUP_PADDING 边距
+
+**计算逻辑**:
+```typescript
+// 计算子节点的边界
+minX, minY, maxX, maxY = calculateNodesBoundary(nodes);
+
+// 加上 padding 得到需要的群组边界
+requiredBoundary = {
+  minX: minX - GROUP_PADDING.left,
+  minY: minY - GROUP_PADDING.top,
+  maxX: maxX + GROUP_PADDING.right,
+  maxY: maxY + GROUP_PADDING.bottom
+};
+
+// 与当前边界比较，决定是否扩展
+```
+
+#### Edges Slice (src/stores/graph/edgesSlice.ts)
+
+**主要功能**:
+- `addEdge`: 添加边
+  - 新边默认可见
+  - 添加历史记录
+
+- `updateEdge`: 更新边
+  - 更新边属性
+  - 添加历史记录
+
+- `deleteEdge`: 删除边
+  - 从边列表和可见列表中移除
+  - 添加历史记录
+
+**边过滤功能**:
+- `getEdgesByGroupId`: 获取与特定群组相关的边
+- `getCrossGroupEdges`: 获取所有跨群组边
+- `getInternalGroupEdges`: 获取群组内部边
+- `filterEdges`: 自定义过滤函数
+
+**可见性控制**:
+- `visibleEdgeIds`: 可见边 ID 列表
+- `setVisibleEdgeIds`: 设置可见边
+- `showAllEdges`: 显示所有边
+- `hideAllEdges`: 隐藏所有边
+- `toggleEdgeVisibility`: 切换单个边的可见性
+
+#### Canvas View Slice (src/stores/graph/canvasViewSlice.ts)
+
+**状态**:
+```typescript
+interface ViewportState {
+  x: number;      // 视口 X 偏移
+  y: number;      // 视口 Y 偏移
+  zoom: number;   // 缩放比例
+}
+
+interface CanvasViewSlice {
+  viewport: ViewportState;
+  setViewport: (viewport: ViewportState) => void;
+  updateViewport: (update: Partial<ViewportState>) => void;
+  canvasSize: { width: number; height: number };
+  setCanvasSize: (size: { width: number; height: number }) => void;
+}
+```
+
+**职责**:
+- 管理画布的视口状态
+- 控制缩放和平移
+- 记录画布尺寸
+
+#### History Slice (src/stores/graph/historySlice.ts)
+
+**状态**:
+```typescript
+interface HistoryState {
+  history: Array<{ nodes: Node[]; edges: Edge[] }>;
+  historyIndex: number;
+  maxSize: number;                 // 默认 50
+  addHistorySnapshot: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  undo: () => void;
+  redo: () => void;
+  clearHistory: () => void;
+}
+```
+
+**实现机制**:
+- 使用数组存储历史快照
+- `historyIndex` 指向当前状态
+- 添加新快照时，截断 index 之后的历史
+- 超过 maxSize 时，删除最早的快照
+
+**撤销/重做逻辑**:
+```typescript
+undo: () => {
+  if (canUndo()) {
+    const newIndex = historyIndex - 1;
+    const snapshot = history[newIndex];
+    // 恢复快照状态
+    set({
+      nodes: [...snapshot.nodes],
+      edges: [...snapshot.edges],
+      historyIndex: newIndex,
+    });
+  }
+}
+```
+
+---
+
+### 4. 工具函数 (src/utils & src/lib)
+
+#### src/lib/utils.ts
+提供 `cn` 函数用于合并 Tailwind CSS 类名：
+```typescript
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+#### src/utils/validation.ts
+数据验证工具。
+
+**主要功能**:
+- `validateNodeContent`: 验证节点内容
+  - 标题不能为空，最大 100 字符
+  - 内容最大 10000 字符
+  - 摘要最大 500 字符
+  - 标签最多 20 个，每个最大 50 字符
+  - 验证结构化属性的 JSON 序列化
+
+- `validateTags`: 验证标签列表
+  - 数量限制
+  - 长度限制
+  - 空值检查
+
+**返回类型**:
+```typescript
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+```
+
+#### src/utils/graph/test-utils.ts
+提供测试工具函数，用于在浏览器控制台测试状态管理。
+
+**主要函数**:
+- `testNodeOperations`: 测试节点 CRUD
+- `testEdgeOperations`: 测试边 CRUD
+- `runAllTests`: 运行所有测试
+
+---
+
+## 组件系统
+
+### 1. UI 基础组件 (src/components/ui)
+
+基于 shadcn/ui 的通用 UI 组件库，包括：
+- `Button`: 按钮组件，支持多种变体和尺寸
+- `Card`: 卡片容器组件
+- `Input`: 输入框组件
+- `Textarea`: 多行文本输入
+- `Select`: 下拉选择组件
+- `Label`: 表单标签组件
+
+这些组件都使用 Radix UI 作为底层实现，确保可访问性。
+
+---
+
+### 2. 节点组件 (src/components/graph/nodes)
+
+#### BaseNode.tsx
+所有节点的基础组件，提供通用功能。
+
+**核心功能**:
+1. **连接点（Handles）**
+   - 四个方向的连接点（上下左右）
+   - 群组节点使用更大、更显眼的连接点
+   - 支持拖拽连接
+
+2. **展开/收缩**
+   - 通过 `isExpanded` 控制
+   - 支持外部控制或内部状态
+
+3. **尺寸调整**
+   - `showResizeControl` 启用调整器
+   - 支持最小宽高限制
+   - 鼠标悬停时显示调整手柄
+
+4. **样式**
+   - 区分群组节点和普通节点的样式
+   - 选中状态高亮
+   - 悬停效果
+
+**Props 接口**:
+```typescript
+interface BaseNodeProps {
+  id: string;
+  data: BaseNodeData;
+  isGroup?: boolean;
+  selected?: boolean;
+  groupNode?: any;
+  showResizeControl?: boolean;
+  minWidth?: number;
+  minHeight?: number;
+  children?: React.ReactNode;
+  node?: NodeType;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  renderContent?: (props: RenderContentProps) => React.ReactNode;
+}
+```
+
+**ConnectionHandles 组件**:
+```tsx
+const ConnectionHandles = ({ isGroup, selected }) => (
+  <>
+    <Handle type="source" position={Position.Top} id="top" />
+    <Handle type="source" position={Position.Right} id="right" />
+    <Handle type="source" position={Position.Bottom} id="bottom" />
+    <Handle type="source" position={Position.Left} id="left" />
+  </>
+);
+```
+
+#### NoteNode.tsx
+普通笔记节点组件。
+
+**布局结构**:
+```
+┌─────────────────────────────────┐
+│ 标题栏                           │ 48px
+│ [标题] [编辑] [展开/收缩]        │
+├─────────────────────────────────┤
+│                                 │
+│ 内容区域                         │ flex-1
+│ (Markdown 渲染或文本编辑)        │
+│                                 │
+├─────────────────────────────────┤
+│ 底部信息栏                       │ 40px
+│ [类型标识] [字符数] [日期]       │
+└─────────────────────────────────┘
+```
+
+**核心功能**:
+
+1. **标题编辑**
+   - 双击标题进入编辑状态
+   - 支持 Enter 保存、Escape 取消
+   - 实时更新到 store
+
+2. **内容编辑**
+   - 双击内容区域进入编辑
+   - Markdown 编辑和渲染切换
+   - Ctrl/Cmd + Enter 快速保存
+
+3. **展开/收缩**
+   - 收缩时显示截断内容（最多 150 字符）
+   - 展开时显示完整内容
+   - 保存用户自定义的展开尺寸
+
+4. **尺寸管理**
+   - 默认尺寸：350x280（收缩），600x450（展开）
+   - 用户手动调整后保存到 `customExpandedSize`
+   - 监听尺寸变化并自动保存
+
+**关键 Hook - useNodeExpansion**:
+```typescript
+const { isExpanded, toggleExpand } = useNodeExpansion({
+  id,
+  initialExpandedState,
+  nodeData
+});
+```
+
+**尺寸监听逻辑**:
+```typescript
+useEffect(() => {
+  const currentNode = getNodeById(id);
+  if (currentNode && isExpanded) {
+    const isManuallyResized = /* 检查是否手动调整 */;
+    if (isManuallyResized && !currentNode.customExpandedSize) {
+      // 保存自定义尺寸
+      updateNode(id, {
+        customExpandedSize: { width, height }
+      });
+    }
+  }
+}, [nodeData?.width, nodeData?.height]);
+```
+
+#### GroupNode.tsx
+群组节点组件。
+
+**布局结构**:
+```
+┌─────────────────────────────────┐
+│ 群组标题栏                       │ 48px
+│ [图标] [标题] [节点数量]         │
+├─────────────────────────────────┤
+│                                 │
+│ 子节点区域                       │
+│ (ReactFlow 自动渲染子节点)      │
+│                                 │
+└─────────────────────────────────┘
+```
+
+**核心功能**:
+1. **标题编辑**
+   - 双击编辑标题
+   - Enter 保存、Escape 取消
+
+2. **节点计数**
+   - 显示群组内节点数量
+   - 实时更新
+
+3. **样式区分**
+   - 蓝色调主题
+   - 半透明背景
+   - 边框和阴影效果
+
+**空间分配**:
+- 顶部 48px 固定标题栏
+- 剩余空间用于子节点
+- 通过 `position: absolute` 和 `top: 48px` 实现
+
+---
+
+### 3. 边组件 (src/components/graph/edges)
+
+#### CustomEdge.tsx
+自定义边组件，支持丰富的视觉效果。
+
+**核心功能**:
+1. **样式计算**
+   - 根据权重（weight）调整线宽
+   - 根据强度（strength）调整透明度
+   - 跨群组边使用橙色和虚线
+
+2. **方向性**
+   - `unidirectional`: 单向箭头（源→目标）
+   - `bidirectional`: 双向箭头
+   - `undirected`: 无箭头
+
+3. **标签渲染**
+   - 使用 EdgeLabelRenderer 渲染标签
+   - 居中显示在边的中点
+   - 白色背景、边框
+
+**样式计算逻辑**:
+```typescript
+// 基础线宽
+const baseStrokeWidth = isCrossGroup ? 2 : 1;
+// 根据权重调整
+const calculatedStrokeWidth = baseStrokeWidth * (1 + (weight - 1) * 0.2);
+
+// 颜色和透明度
+const baseColor = data?.color || (isCrossGroup ? '#FFA500' : '#000');
+const opacity = Math.max(0.2, Math.min(1, strength));
+```
+
+**箭头配置**:
+```typescript
+const edgeMarkerEnd = {
+  type: MarkerType.Arrow,
+  color: strokeColor,
+  width: 20,
+  height: 20,
+};
+```
+
+#### CrossGroupEdge.tsx
+跨群组边组件（特殊样式的 CustomEdge）。
+
+---
+
+### 4. 编辑器组件 (src/components/graph/editors)
+
+#### NodeEditor.tsx
+节点侧边栏编辑器。
+
+**编辑字段**:
+- 标题（Title）
+- 内容（Content）- Markdown 文本区
+- 所属群组（Group）- 下拉选择
+- 摘要（Summary）
+- 标签（Tags）- 逗号分隔
+- 结构化属性（Attributes）- 使用 StructuredAttributeEditor
+
+**功能**:
+1. **保存**
+   - 验证数据（使用 validateNodeContent）
+   - 更新到 store
+   - 显示验证错误
+
+2. **重置**
+   - 恢复到原始值
+
+3. **群组管理**
+   - 选择群组
+   - 移除出群组
+
+**依赖**:
+- UI 组件: Button, Card, Input, Textarea, Select, Label
+- 工具: validateNodeContent
+- Store: useGraphStore
+
+#### EdgeEditor.tsx
+边侧边栏编辑器。
+
+**编辑字段**:
+- 标签（Label）
+- 颜色（Color）
+- 线宽（Stroke Width）
+- 虚线样式（Stroke Dasharray）
+- 权重（Weight）
+- 强度（Strength）
+- 方向性（Direction）
+
+**功能**:
+- 实时更新边属性
+- 删除边
+- 颜色选择器
+
+#### ContentEditor.tsx
+内容编辑器（用于富文本编辑）。
+
+#### StructuredAttributeEditor.tsx
+结构化属性编辑器。
+
+**功能**:
+- 键值对编辑
+- 添加/删除属性
+- 类型选择（字符串、数字、布尔值等）
+
+---
+
+### 5. 控制组件 (src/components/graph/controls)
+
+#### Toolbar.tsx
+工具栏组件。
+
+**功能按钮**:
+- 添加节点
+- 添加群组
+- 清空画布
+- 重置视图
+
+#### ZoomIndicator.tsx
+缩放指示器，实时显示当前缩放比例。
+
+**显示格式**: `{zoom}%`（例如 100%、150%）
+
+#### HistoryControl.tsx
+历史记录控制组件。
+
+**功能**:
+- 撤销按钮
+- 重做按钮
+- 根据 `canUndo` 和 `canRedo` 禁用按钮
+
+#### EdgeFilterControl.tsx
+边过滤控制组件。
+
+**功能**:
+- 显示/隐藏所有边
+- 按类型过滤（跨群组边、群组内边）
+- 自定义过滤逻辑
+
+---
+
+### 6. 核心逻辑 (src/components/graph/core)
+
+#### GraphPageContent.tsx
+图页面的主组件，集成所有功能。
+
+**核心职责**:
+1. **ReactFlow 集成**
+   - 配置 nodeTypes 和 edgeTypes
+   - 管理 ReactFlow 实例
+   - 监听缩放事件
+
+2. **状态同步**
+   - Store → ReactFlow（节点和边）
+   - 处理拖拽状态，避免同步冲突
+
+3. **事件处理**
+   - 节点变化（NodeChange）
+   - 边变化（EdgeChange）
+   - 连接创建（onConnect）
+   - 拖拽（onDrag, onDragOver, onDrop）
+
+4. **UI 布局**
+   - ReactFlow 画布
+   - 工具栏
+   - 缩放指示器
+   - 历史控制
+   - 边过滤控制
+   - 侧边栏编辑器（节点/边）
+
+**关键代码片段**:
+
+节点同步：
+```typescript
+useEffect(() => {
+  if (isDraggingRef.current) return; // 拖拽时跳过
+
+  const processedNodes = syncStoreToReactFlowNodes(
+    storeNodes,
+    selectedNodeId
+  );
+  setReactFlowNodes(processedNodes);
+}, [storeNodes, selectedNodeId]);
+```
+
+边同步：
+```typescript
+useEffect(() => {
+  const processedEdges = edges
+    .filter(edge => visibleEdgeIds.includes(edge.id))
+    .map(edge => ({
+      ...edge,
+      selected: edge.id === selectedEdgeId,
+      type: edge.data?.isCrossGroup ? 'crossGroup' : 'default',
+      zIndex: isInSameGroup ? 100 : undefined,
+    }));
+  setReactFlowEdges(processedEdges);
+}, [edges, selectedEdgeId, visibleEdgeIds]);
+```
+
+#### nodeSyncUtils.ts
+节点同步工具函数。
+
+**主要函数**:
+- `syncStoreToReactFlowNodes`: 将 store 中的节点转换为 ReactFlow 格式
+  - 设置节点类型（custom 或 group）
+  - 设置选中状态
+  - 设置父节点（parentNode）关系
+  - 设置 extent 边界
+  - 设置 zIndex 层级
+
+**ReactFlow 节点转换**:
+```typescript
+export function syncStoreToReactFlowNodes(
+  storeNodes: (Node | Group)[],
+  selectedNodeId: string | null
+): ReactFlowNode[] {
+  return storeNodes.map(node => {
+    const isGroup = node.type === BlockEnum.GROUP;
+    const isNode = node.type === BlockEnum.NODE;
+
+    return {
+      ...node,
+      type: isGroup ? 'group' : 'custom',
+      selected: node.id === selectedNodeId,
+      parentNode: isNode && node.groupId ? node.groupId : undefined,
+      extent: isNode && node.groupId ? 'parent' : undefined,
+      zIndex: isGroup ? 1 : 2,
+      style: {
+        ...node.style,
+        width: node.width,
+        height: node.height,
+      },
+    };
+  });
+}
+```
+
+#### Hooks (src/components/graph/core/hooks)
+
+##### useNodeHandling.ts
+节点处理逻辑。
+
+**主要功能**:
+1. **添加节点 (onNodeAdd)**
+   - 检查当前选中的群组
+   - 在群组内使用网格布局
+   - 在画布中心创建（如果没有选中群组）
+   - 设置默认尺寸
+
+2. **添加群组 (onGroupAdd)**
+   - 在画布中心创建
+   - 设置默认尺寸 300x200
+
+3. **拖拽处理 (onDragOver, onDrop)**
+   - 允许拖拽到画布
+   - 计算拖拽位置
+
+**网格布局逻辑**:
+```typescript
+const nodesPerRow = 2;
+const nodeIndex = existingNodesInGroup.length;
+const row = Math.floor(nodeIndex / nodesPerRow);
+const col = nodeIndex % nodesPerRow;
+
+const horizontalSpacing = 400;  // 节点间距
+const verticalSpacing = 320;
+
+const nodeX = groupX + GROUP_PADDING.left + col * horizontalSpacing;
+const nodeY = groupY + GROUP_PADDING.top + row * verticalSpacing;
+```
+
+##### useEdgeHandling.ts
+边处理逻辑。
+
+**主要功能**:
+- `onConnect`: 创建新边
+  - 验证连接（不允许自连接）
+  - 检测跨群组关系
+  - 设置边的数据和样式
+  - 添加到 store
+
+**跨群组检测**:
+```typescript
+const sourceNode = nodes.find(n => n.id === params.source);
+const targetNode = nodes.find(n => n.id === params.target);
+
+const isCrossGroup =
+  sourceNode?.groupId &&
+  targetNode?.groupId &&
+  sourceNode.groupId !== targetNode.groupId;
+```
+
+##### useNodeExpansion.ts
+节点展开/收缩逻辑。
+
+**主要功能**:
+- 管理节点的展开状态
+- 自动调整节点尺寸
+- 保存/恢复自定义尺寸
+
+**展开/收缩尺寸定义**:
+```typescript
+const collapsedWidth = 350;
+const collapsedHeight = 280;
+const defaultExpandedWidth = 600;
+const defaultExpandedHeight = 450;
+```
+
+**切换逻辑**:
+```typescript
+const toggleExpand = useCallback(() => {
+  const newExpandedState = !isExpanded;
+
+  if (newExpandedState) {
+    // 展开：使用自定义尺寸或默认尺寸
+    const targetSize = customExpandedSize || {
+      width: defaultExpandedWidth,
+      height: defaultExpandedHeight
+    };
+    updateNode(id, {
+      isExpanded: true,
+      width: targetSize.width,
+      height: targetSize.height,
+    });
+  } else {
+    // 收缩：使用固定尺寸
+    updateNode(id, {
+      isExpanded: false,
+      width: collapsedWidth,
+      height: collapsedHeight,
+    });
+  }
+}, [isExpanded, customExpandedSize]);
+```
+
+##### useKeyboardShortcuts.ts
+键盘快捷键。
+
+**支持的快捷键**:
+- `Ctrl/Cmd + 0`: 重置视图
+- `Delete/Backspace`: 删除选中的节点或边
+- `Ctrl/Cmd + Z`: 撤销
+- `Ctrl/Cmd + Shift + Z`: 重做
+
+##### useViewportControls.ts
+视口控制。
+
+**主要功能**:
+- `onRecenter`: 重置视图到中心
+- `onClear`: 清空画布（确认后）
+
+##### useSelectionHandling.ts
+选择处理逻辑。
+
+**主要功能**:
+- 处理节点选择
+- 处理边选择
+- 更新选中状态
+
+#### Utils (src/components/graph/core/utils)
+
+##### bindingStrategy.ts
+节点绑定策略。
+
+**功能**:
+- 判断节点是否应该绑定到群组
+- 基于位置和重叠面积
+
+##### groupHandling.ts
+群组处理工具。
+
+**功能**:
+- 计算群组边界
+- 检测节点是否在群组内
+
+##### groupMoveHandler.ts
+群组移动处理。
+
+**功能**:
+- 同步移动群组和子节点
+- 保持相对位置
+
+##### groupBoundaryManager.ts
+群组边界管理。
+
+**功能**:
+- 自动扩展群组边界
+- 确保子节点在群组内
+
+##### nodeUpdateHandler.ts
+节点更新处理。
+
+**功能**:
+- 批量更新节点
+- 触发边界更新
+
+##### nodePositionConstraints.ts
+节点位置约束。
+
+**功能**:
+- 约束节点在群组边界内
+- 防止节点超出范围
+
+---
+
+### 7. UI 组件 (src/components/graph/ui)
+
+#### MarkdownRenderer.tsx
+Markdown 渲染组件。
+
+**功能**:
+- 使用 react-markdown 渲染
+- 支持 GitHub Flavored Markdown（remark-gfm）
+- 自定义样式（Tailwind Typography）
+
+**配置**:
+```typescript
+<ReactMarkdown
+  remarkPlugins={[remarkGfm]}
+  components={{
+    h1: ({ node, ...props }) => <h1 className="..." {...props} />,
+    // 其他自定义组件
+  }}
+>
+  {content}
+</ReactMarkdown>
+```
+
+#### TagInput.tsx
+标签输入组件。
+
+**功能**:
+- 输入标签（逗号分隔）
+- 显示标签列表
+- 删除标签
+
+#### Tag.tsx
+标签显示组件。
+
+**功能**:
+- 显示单个标签
+- 支持删除
+
+#### SummaryView.tsx
+摘要视图组件。
+
+**功能**:
+- 显示节点摘要
+- 折叠/展开长文本
+
+---
+
+## 核心功能实现
+
+### 1. 节点创建流程
+
+```
+用户点击"添加节点"
+    ↓
+onNodeAdd() 被调用
+    ↓
+检查是否有选中的群组
+    ↓
+是 → 在群组内创建（网格布局）
+否 → 在画布中心创建
+    ↓
+生成节点数据
+    ↓
+addNode(node) - store
+    ↓
+验证并修复位置/尺寸
+    ↓
+添加历史快照
+    ↓
+更新 store 状态
+    ↓
+触发 useEffect - 同步到 ReactFlow
+    ↓
+ReactFlow 渲染节点
+```
+
+### 2. 节点拖拽流程
+
+```
+用户拖拽节点
+    ↓
+ReactFlow onNodeDrag 事件
+    ↓
+设置 isDraggingRef = true
+    ↓
+阻止自动同步（避免冲突）
+    ↓
+用户释放节点
+    ↓
+ReactFlow onNodeDragStop 事件
+    ↓
+调用 updateNodePosition(id, position)
+    ↓
+检查节点是否属于群组
+    ↓
+是 → constrainNodeToGroupBoundary()
+    ↓
+更新节点位置到 store
+    ↓
+设置 isDraggingRef = false
+    ↓
+恢复自动同步
+```
+
+### 3. 群组移动流程
+
+```
+用户拖拽群组
+    ↓
+ReactFlow onNodeDrag 事件（群组节点）
+    ↓
+设置 isDraggingRef = true
+    ↓
+用户释放群组
+    ↓
+ReactFlow onNodeDragStop 事件
+    ↓
+调用 handleGroupMove(groupId, newPosition)
+    ↓
+计算位置偏移（offsetX, offsetY）
+    ↓
+更新群组位置
+    ↓
+遍历所有子节点
+    ↓
+应用相同偏移到每个子节点
+    ↓
+更新 store
+    ↓
+设置 isDraggingRef = false
+```
+
+### 4. 节点绑定到群组流程
+
+```
+创建节点时指定 groupId
+    ↓
+或：拖拽节点到群组内
+    ↓
+addNodeToGroup(nodeId, groupId)
+    ↓
+从旧群组移除（如果有）
+    ↓
+计算节点位置
+    ↓
+constrainNodeToGroupBoundary() 约束位置
+    ↓
+设置 node.groupId = groupId
+    ↓
+更新群组的 nodeIds 列表
+    ↓
+更新 store
+    ↓
+触发 updateGroupBoundary(groupId)
+    ↓
+计算所有子节点的边界
+    ↓
+扩展群组尺寸（如需要）
+```
+
+### 5. 边创建流程
+
+```
+用户从一个连接点拖拽到另一个
+    ↓
+ReactFlow onConnect 事件
+    ↓
+验证连接（不允许自连接）
+    ↓
+获取源节点和目标节点
+    ↓
+检测是否跨群组
+    ↓
+是 → isCrossGroup = true, 橙色虚线
+否 → isCrossGroup = false, 黑色实线
+    ↓
+生成边数据
+    ↓
+addEdge(edge) - store
+    ↓
+添加到可见边列表
+    ↓
+添加历史快照
+    ↓
+触发同步到 ReactFlow
+    ↓
+ReactFlow 渲染边
+```
+
+### 6. 展开/收缩流程
+
+```
+用户点击展开/收缩按钮
+    ↓
+toggleExpand() 被调用
+    ↓
+检查当前状态 isExpanded
+    ↓
+展开 → 设置为收缩尺寸（350x280）
+收缩 → 设置为展开尺寸（自定义或默认 600x450）
+    ↓
+updateNode(id, { isExpanded, width, height })
+    ↓
+更新 store
+    ↓
+触发 useEffect 监听尺寸变化
+    ↓
+ReactFlow 重新渲染节点
+    ↓
+如果用户手动调整了尺寸
+    ↓
+保存到 customExpandedSize
+```
+
+### 7. 历史记录流程
+
+```
+用户执行操作（添加、更新、删除）
+    ↓
+操作函数中调用 addHistorySnapshot()
+    ↓
+截断 historyIndex 之后的历史
+    ↓
+创建当前状态快照 { nodes, edges }
+    ↓
+添加到 history 数组
+    ↓
+检查是否超过 maxSize (50)
+    ↓
+是 → 删除最早的快照
+    ↓
+更新 historyIndex
+    ↓
+用户点击撤销
+    ↓
+undo() 被调用
+    ↓
+检查 canUndo() (historyIndex > 0)
+    ↓
+是 → historyIndex - 1
+    ↓
+恢复快照 history[newIndex]
+    ↓
+更新 nodes 和 edges
+```
+
+---
+
+## 模块依赖关系
+
+### 依赖层级（从底层到顶层）
+
+```
+第 1 层：基础层
+├── src/types/graph/models.ts          [数据模型定义]
+├── src/lib/utils.ts                   [工具函数]
+└── src/utils/validation.ts            [数据验证]
+
+第 2 层：状态管理层
+├── src/stores/graph/nodes/types.ts    [节点状态类型]
+├── src/stores/graph/nodes/basicOperations.ts
+├── src/stores/graph/nodes/groupOperations.ts
+├── src/stores/graph/nodes/constraintOperations.ts
+├── src/stores/graph/nodes/groupBoundaryOperations.ts
+├── src/stores/graph/nodes/index.ts    [节点状态聚合]
+├── src/stores/graph/edgesSlice.ts     [边状态]
+├── src/stores/graph/canvasViewSlice.ts [画布状态]
+├── src/stores/graph/historySlice.ts   [历史状态]
+└── src/stores/graph/index.ts          [主 Store]
+
+第 3 层：UI 基础组件层
+└── src/components/ui/                 [shadcn/ui 组件]
+
+第 4 层：图形基础组件层
+├── src/components/graph/ui/
+│   ├── MarkdownRenderer.tsx
+│   ├── Tag.tsx
+│   ├── TagInput.tsx
+│   └── SummaryView.tsx
+└── src/components/graph/nodes/BaseNode.tsx
+
+第 5 层：图形组件层
+├── src/components/graph/nodes/
+│   ├── NoteNode.tsx                  (依赖 BaseNode)
+│   └── GroupNode.tsx                 (依赖 BaseNode)
+├── src/components/graph/edges/
+│   ├── CustomEdge.tsx
+│   └── CrossGroupEdge.tsx
+└── src/components/graph/editors/
+    ├── StructuredAttributeEditor.tsx
+    ├── NodeEditor.tsx
+    ├── EdgeEditor.tsx
+    └── ContentEditor.tsx
+
+第 6 层：控制组件层
+└── src/components/graph/controls/
+    ├── Toolbar.tsx
+    ├── ZoomIndicator.tsx
+    ├── HistoryControl.tsx
+    └── EdgeFilterControl.tsx
+
+第 7 层：核心逻辑层
+├── src/components/graph/core/utils/
+│   ├── bindingStrategy.ts
+│   ├── groupHandling.ts
+│   ├── groupMoveHandler.ts
+│   ├── groupBoundaryManager.ts
+│   ├── nodeUpdateHandler.ts
+│   └── nodePositionConstraints.ts
+├── src/components/graph/core/hooks/
+│   ├── useNodeHandling.ts
+│   ├── useEdgeHandling.ts
+│   ├── useNodeExpansion.ts
+│   ├── useKeyboardShortcuts.ts
+│   ├── useViewportControls.ts
+│   └── useSelectionHandling.ts
+├── src/components/graph/core/nodeSyncUtils.ts
+└── src/components/graph/core/GraphPageContent.tsx
+
+第 8 层：页面组件层
+├── src/components/Providers.tsx
+└── src/app/page.tsx
+
+第 9 层：应用入口层
+└── src/app/layout.tsx
+```
+
+### 关键依赖关系图
+
+```
+models.ts
+    ↓
+stores/graph/index.ts
+    ↓
+GraphPageContent.tsx  ←→  Hooks (useNodeHandling, etc.)
+    ↓                        ↓
+NoteNode, GroupNode      Utils (groupHandling, etc.)
+    ↓
+BaseNode
+    ↓
+UI Components
+```
+
+### 数据流向
+
+```
+用户交互
+    ↓
+组件事件处理 (Hooks)
+    ↓
+Store Actions
+    ↓
+State 更新
+    ↓
+useEffect 监听
+    ↓
+组件重新渲染
+```
+
+### Store 依赖关系
+
+```
+useGraphStore
+├── NodesSlice
+│   ├── NodeOperationsSlice        (basicOperations.ts)
+│   ├── GroupOperationsSlice       (groupOperations.ts)
+│   ├── ConstraintOperationsSlice  (constraintOperations.ts)
+│   └── GroupBoundaryOperationsSlice (groupBoundaryOperations.ts)
+├── EdgesSlice                     (edgesSlice.ts)
+├── CanvasViewSlice                (canvasViewSlice.ts)
+└── HistorySlice                   (historySlice.ts)
+```
+
+---
+
+## 开发指南
+
+### 添加新节点类型
+
+1. 在 `models.ts` 中定义新的节点类型和接口
+2. 在 `src/components/graph/nodes/` 创建新的节点组件
+3. 在 `GraphPageContent.tsx` 的 `nodeTypes` 中注册
+4. 更新 `syncStoreToReactFlowNodes` 处理新类型
+
+### 添加新的边样式
+
+1. 在 `models.ts` 的 `Edge.data` 中添加新属性
+2. 在 `CustomEdge.tsx` 或创建新的边组件中处理新样式
+3. 在 `GraphPageContent.tsx` 的 `edgeTypes` 中注册
+
+### 扩展状态管理
+
+1. 在 `stores/graph/` 创建新的 slice
+2. 定义 slice 的接口和实现
+3. 在 `stores/graph/index.ts` 中组合新 slice
+
+### 添加新的快捷键
+
+在 `useKeyboardShortcuts.ts` 中添加：
+```typescript
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'YourKey' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      // 你的处理逻辑
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, []);
+```
+
+### 调试技巧
+
+1. **Store 状态查看**
+   ```javascript
+   // 浏览器控制台
+   useGraphStore.getState()
+   ```
+
+2. **运行测试**
+   ```javascript
+   import { runAllTests } from '@/utils/graph/test-utils';
+   runAllTests();
+   ```
+
+3. **日志输出**
+   代码中已包含大量 console.log，可以追踪操作流程
+
+### 性能优化建议
+
+1. **使用 memo 包装组件**
+   - 所有节点和边组件都使用 `React.memo`
+   - 减少不必要的重新渲染
+
+2. **避免频繁的 Store 更新**
+   - 拖拽时使用 `isDraggingRef` 阻止同步
+   - 位置/尺寸变化不添加历史记录
+
+3. **虚拟化大数据集**
+   - 当节点数量很大时，考虑使用虚拟化技术
+   - ReactFlow 内置了一些优化
+
+4. **使用 useMemo 和 useCallback**
+   - 缓存计算结果
+   - 稳定函数引用
+
+---
+
+## 常见问题
+
+### 1. 节点拖拽时闪烁
+原因：Store 同步与拖拽冲突
+解决：使用 `isDraggingRef` 在拖拽时阻止同步
+
+### 2. 群组边界不更新
+原因：没有调用 `updateGroupBoundary`
+解决：在添加/移动节点后调用此函数
+
+### 3. 历史记录太多导致内存问题
+原因：`maxSize` 设置过大
+解决：调整 `historySlice.ts` 中的 `maxSize`（默认 50）
+
+### 4. 节点超出群组边界
+原因：位置约束逻辑失效
+解决：检查 `constrainNodeToGroupBoundary` 函数
+
+### 5. 跨群组边样式不正确
+原因：`isCrossGroup` 标记未设置
+解决：在 `onConnect` 中正确检测和设置
+
+---
+
+## 总结
+
+这个知识图谱编辑器是一个功能完整、架构清晰的 React 应用。主要特点：
+
+1. **模块化设计**：清晰的目录结构和职责划分
+2. **类型安全**：全面的 TypeScript 和 Zod 验证
+3. **状态管理**：Zustand 的 Slice 模式，易于维护
+4. **组件复用**：BaseNode 等基础组件提供通用功能
+5. **交互友好**：丰富的快捷键、拖拽、展开等功能
+6. **可扩展性**：容易添加新节点类型、边样式等
+
+通过阅读本文档，开发者应该能够：
+- 理解项目的整体架构
+- 掌握各模块的功能和实现细节
+- 了解模块之间的依赖关系
+- 能够扩展和修改功能
+- 解决常见问题
+
+---
+
+**文档版本**: 1.0
+**最后更新**: 2025-11-09
+**作者**: Claude AI
