@@ -11,6 +11,14 @@ import { BaseNode, BaseNodeSchema, ViewMode } from '@/types/graph/models';
 import { getDefaultSize, getViewModeConfig } from '@/types/graph/viewModes';
 import { nanoid } from 'nanoid';
 
+// 容器内边距常量（与 types.ts 保持一致）
+const GROUP_PADDING = {
+  top: 70,
+  left: 20,
+  right: 20,
+  bottom: 20,
+};
+
 /**
  * 节点创建参数
  */
@@ -23,6 +31,60 @@ export interface CreateNodeParams {
   content?: string;
   tags?: string[];
   attributes?: Record<string, any>;
+}
+
+/**
+ * 计算在容器内创建新子节点的合理位置
+ *
+ * 策略：
+ * 1. 优先使用父容器左上角 + padding 作为基础位置
+ * 2. 如果已有子节点，计算一个不重叠的位置（稍微偏移）
+ * 3. 确保新节点在容器边界内
+ *
+ * @param parent 父容器节点
+ * @param existingChildren 已有的子节点列表
+ * @param childSize 子节点的尺寸
+ * @returns 子节点的初始位置（绝对坐标）
+ */
+export function calculateChildInitialPosition(
+  parent: BaseNode,
+  existingChildren: BaseNode[],
+  childSize: { width: number; height: number }
+): { x: number; y: number } {
+  // 基础位置：父容器左上角 + padding
+  const baseX = parent.position.x + GROUP_PADDING.left;
+  const baseY = parent.position.y + GROUP_PADDING.top;
+
+  // 如果没有子节点，直接返回基础位置
+  if (existingChildren.length === 0) {
+    return { x: baseX, y: baseY };
+  }
+
+  // 有子节点时，计算一个稍微偏移的位置，避免完全重叠
+  // 策略：从基础位置开始，向右下方递增偏移
+  const offsetStep = 20; // 每个子节点偏移的距离
+  let offsetX = (existingChildren.length % 5) * offsetStep; // 最多偏移 5 次后重新开始
+  let offsetY = Math.floor(existingChildren.length / 5) * offsetStep;
+
+  let candidateX = baseX + offsetX;
+  let candidateY = baseY + offsetY;
+
+  // 确保不超出父容器边界
+  const maxX = parent.position.x + parent.width - GROUP_PADDING.right - childSize.width;
+  const maxY = parent.position.y + parent.height - GROUP_PADDING.bottom - childSize.height;
+
+  // 如果超出边界，调整到边界内
+  if (candidateX > maxX) {
+    candidateX = baseX; // 回到基础位置的 X
+  }
+  if (candidateY > maxY) {
+    candidateY = baseY; // 回到基础位置的 Y
+  }
+
+  return {
+    x: Math.max(baseX, Math.min(candidateX, maxX)),
+    y: Math.max(baseY, Math.min(candidateY, maxY)),
+  };
 }
 
 /**
@@ -65,6 +127,11 @@ export const createNode = (params: CreateNodeParams): BaseNode => {
 export class ViewModeTransformer {
   /**
    * 转换视图模式
+   *
+   * 核心功能：
+   * 1. 保存当前模式的状态
+   * 2. 恢复目标模式的状态（如果有保存的状态）
+   * 3. 确保状态完全一致，支持来回切换
    */
   static transform(node: BaseNode, targetMode: ViewMode): BaseNode {
     if (node.viewMode === targetMode) {
@@ -72,54 +139,123 @@ export class ViewModeTransformer {
       return node;
     }
 
-    const config = getViewModeConfig(targetMode);
-    const now = new Date();
+    console.log(`🔄 视图模式转换: ${node.viewMode} -> ${targetMode}`);
 
-    // 基础转换
-    const transformed: BaseNode = {
-      ...node,
-      viewMode: targetMode,
-      expanded: false, // 转换后默认折叠
-      width: config.defaultWidth,
-      height: config.defaultHeight,
-      updatedAt: now,
-    };
+    const now = new Date();
 
     // 特殊处理
     if (targetMode === 'note') {
-      return this.transformToNote(transformed);
+      // Container -> Note
+      return this.transformToNote(node, now);
     } else {
-      return this.transformToContainer(transformed);
+      // Note -> Container
+      return this.transformToContainer(node, now);
     }
   }
 
   /**
-   * 转换为笔记模式
+   * 转换为笔记模式 (Container -> Note)
+   *
+   * 步骤：
+   * 1. 保存当前 Container 的状态到 containerState
+   * 2. 恢复之前保存的 noteState（如果有）
+   * 3. 如果没有保存的 noteState，使用默认值
    */
-  private static transformToNote(node: BaseNode): BaseNode {
+  private static transformToNote(node: BaseNode, now: Date): BaseNode {
     const config = getViewModeConfig('note');
+
+    // 1. 保存当前 Container 的状态
+    const containerState = {
+      width: node.width,
+      height: node.height,
+      expanded: node.expanded,
+    };
+
+    console.log(`💾 保存 Container 状态:`, containerState);
+
+    // 2. 恢复 Note 状态（如果有保存）或使用默认值
+    let width: number;
+    let height: number;
+    let expanded: boolean;
+    let customExpandedSize: { width: number; height: number } | undefined;
+
+    if (node.noteState) {
+      // 恢复之前保存的 Note 状态
+      console.log(`♻️ 恢复 Note 状态:`, node.noteState);
+      width = node.noteState.width;
+      height = node.noteState.height;
+      expanded = node.noteState.expanded;
+      customExpandedSize = node.noteState.customExpandedSize;
+    } else {
+      // 使用默认的 Note 状态（首次转换为 Note）
+      console.log(`🆕 使用默认 Note 状态`);
+      width = config.collapsedWidth!;
+      height = config.collapsedHeight!;
+      expanded = false;
+      customExpandedSize = undefined;
+    }
 
     return {
       ...node,
-      width: config.collapsedWidth!,
-      height: config.collapsedHeight!,
-      // 清除容器特定的属性
-      customExpandedSize: undefined,
+      viewMode: 'note',
+      width,
+      height,
+      expanded,
+      customExpandedSize,
+      containerState, // 保存 Container 状态
+      updatedAt: now,
     };
   }
 
   /**
-   * 转换为容器模式
+   * 转换为容器模式 (Note -> Container)
+   *
+   * 步骤：
+   * 1. 保存当前 Note 的状态到 noteState
+   * 2. 恢复之前保存的 containerState（如果有）
+   * 3. 如果没有保存的 containerState，使用默认值
    */
-  private static transformToContainer(node: BaseNode): BaseNode {
+  private static transformToContainer(node: BaseNode, now: Date): BaseNode {
     const config = getViewModeConfig('container');
+
+    // 1. 保存当前 Note 的状态
+    const noteState = {
+      width: node.width,
+      height: node.height,
+      expanded: node.expanded,
+      customExpandedSize: node.customExpandedSize,
+    };
+
+    console.log(`💾 保存 Note 状态:`, noteState);
+
+    // 2. 恢复 Container 状态（如果有保存）或使用默认值
+    let width: number;
+    let height: number;
+    let expanded: boolean;
+
+    if (node.containerState) {
+      // 恢复之前保存的 Container 状态
+      console.log(`♻️ 恢复 Container 状态:`, node.containerState);
+      width = node.containerState.width;
+      height = node.containerState.height;
+      expanded = node.containerState.expanded;
+    } else {
+      // 使用默认的 Container 状态（首次转换为 Container）
+      console.log(`🆕 使用默认 Container 状态`);
+      width = config.defaultWidth;
+      height = config.defaultHeight;
+      expanded = false;
+    }
 
     return {
       ...node,
-      width: config.defaultWidth,
-      height: config.defaultHeight,
-      // 清除笔记特定的属性
-      customExpandedSize: undefined,
+      viewMode: 'container',
+      width,
+      height,
+      expanded,
+      customExpandedSize: undefined, // Container 不使用 customExpandedSize
+      noteState, // 保存 Note 状态
+      updatedAt: now,
     };
   }
 
@@ -133,6 +269,9 @@ export class ViewModeTransformer {
 
 /**
  * 切换展开/折叠状态
+ *
+ * 同时更新保存的状态（noteState 或 containerState），
+ * 确保下次切换回来时能恢复到最新状态
  */
 export const toggleExpanded = (node: BaseNode, customSize?: { width: number; height: number }): BaseNode => {
   const newExpanded = !node.expanded;
@@ -163,17 +302,40 @@ export const toggleExpanded = (node: BaseNode, customSize?: { width: number; hei
   }
   // Container 模式：不改变尺寸（由子节点自动决定）
 
-  return {
+  const updatedNode: BaseNode = {
     ...node,
     expanded: newExpanded,
     width: newWidth,
     height: newHeight,
     updatedAt: new Date(),
   };
+
+  // 🔥 同步更新保存的状态
+  if (node.viewMode === 'note' && node.noteState) {
+    // 更新 noteState
+    updatedNode.noteState = {
+      ...node.noteState,
+      expanded: newExpanded,
+      width: newWidth,
+      height: newHeight,
+    };
+  } else if (node.viewMode === 'container' && node.containerState) {
+    // 更新 containerState
+    updatedNode.containerState = {
+      ...node.containerState,
+      expanded: newExpanded,
+      width: newWidth,
+      height: newHeight,
+    };
+  }
+
+  return updatedNode;
 };
 
 /**
  * 保存自定义展开尺寸
+ *
+ * 同时更新 noteState，确保下次切换回 Note 模式时能恢复
  */
 export const saveCustomExpandedSize = (node: BaseNode, width: number, height: number): BaseNode => {
   if (node.viewMode !== 'note') {
@@ -181,11 +343,21 @@ export const saveCustomExpandedSize = (node: BaseNode, width: number, height: nu
     return node;
   }
 
-  return {
+  const updatedNode: BaseNode = {
     ...node,
     customExpandedSize: { width, height },
     updatedAt: new Date(),
   };
+
+  // 🔥 同步更新 noteState
+  if (node.noteState) {
+    updatedNode.noteState = {
+      ...node.noteState,
+      customExpandedSize: { width, height },
+    };
+  }
+
+  return updatedNode;
 };
 
 /**

@@ -32,6 +32,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useViewportControls } from './hooks/useViewportControls';
 import { ZoomIndicator } from './components/ZoomIndicator';
 import { Toolbar } from './components/Toolbar';
+import { filterVisibleNodes } from '@/utils/graph/nodeVisibility';
 
 interface GraphPageProps {
   className?: string;
@@ -102,7 +103,11 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       return;
     }
 
-    const processedNodes = storeNodes.map((node: BaseNode) => {
+    // 🔥 核心功能：递归过滤隐藏的节点
+    // 只有展开的容器的子节点才会显示，支持嵌套容器
+    const visibleNodes = filterVisibleNodes(storeNodes);
+
+    const processedNodes = visibleNodes.map((node: BaseNode) => {
       // 在新架构中，使用 viewMode 判断节点类型
       const isContainer = node.viewMode === 'container';
 
@@ -135,15 +140,23 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         },
       };
     });
-    
-    console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
+
+    console.log(`🔄 同步节点到ReactFlow: ${processedNodes.length}/${storeNodes.length} (已过滤隐藏节点)`);
     setReactFlowNodes(processedNodes as ReactFlowNode[]);
   }, [storeNodes, selectedNodeId, setReactFlowNodes]);
 
   // 同步边
   useEffect(() => {
+    // 获取可见节点的ID集合，用于过滤边
+    const visibleNodes = filterVisibleNodes(storeNodes);
+    const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+
     const processedEdges = edges
       .filter(edge => visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id)) // 根据可见性过滤
+      .filter(edge => {
+        // 🔥 新增：只显示源节点和目标节点都可见的边
+        return visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target);
+      })
       .map(edge => {
         // TODO: 简化版本 - 需要进一步重构以支持跨群组边的检测
         const sourceNode = storeNodes.find(n => n.id === edge.source) as BaseNode | undefined;

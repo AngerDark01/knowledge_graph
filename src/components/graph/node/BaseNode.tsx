@@ -116,7 +116,7 @@ const BaseNode: React.FC<BaseNodeProps> = ({
       onToggleExpand();
     } else {
       setInternalIsExpanded(prev => !prev);
-      updateNode(id, { isExpanded: !internalIsExpanded });
+      updateNode(id, { expanded: !internalIsExpanded });
     }
   }, [onToggleExpand, internalIsExpanded, id, updateNode]);
 

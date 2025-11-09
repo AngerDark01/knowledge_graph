@@ -94,6 +94,8 @@ function constrainToParentBoundary(
 
 /**
  * 更新容器边界以适应内部子节点
+ *
+ * 同时更新 containerState，确保状态同步
  */
 function updateContainerBoundary(containerId: string, get: any) {
   const container = get().getNodeById(containerId) as BaseNode;
@@ -141,11 +143,22 @@ function updateContainerBoundary(containerId: string, get: any) {
     Math.abs((container.height || 300) - newHeight) > 1;
 
   if (needsUpdate) {
-    get().updateNode(containerId, {
+    const updates: Partial<BaseNode> = {
       position: { x: minX, y: minY },
       width: newWidth,
       height: newHeight
-    });
+    };
+
+    // 🔥 同步更新 containerState
+    if (container.containerState) {
+      updates.containerState = {
+        ...container.containerState,
+        width: newWidth,
+        height: newHeight,
+      };
+    }
+
+    get().updateNode(containerId, updates);
   }
 }
 

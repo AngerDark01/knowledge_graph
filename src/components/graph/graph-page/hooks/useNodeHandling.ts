@@ -6,7 +6,8 @@
 
 import { useCallback } from 'react';
 import { useGraphStore } from '@/stores/graph';
-import { createNode } from '@/utils/graph/nodeFactory';
+import { createNode, calculateChildInitialPosition } from '@/utils/graph/nodeFactory';
+import { getDefaultSize } from '@/types/graph/viewModes';
 import type { DragEvent } from 'react';
 
 interface NodeAddOptions {
@@ -15,15 +16,37 @@ interface NodeAddOptions {
 }
 
 export const useNodeHandling = () => {
-  const { addNode, addChildToParent } = useGraphStore();
+  const { addNode, addChildToParent, getNodeById, getChildNodes } = useGraphStore();
 
   const onNodeAdd = useCallback(
     (position: { x: number; y: number }, options?: NodeAddOptions) => {
       const viewMode = options?.viewMode || 'note';
       const parentId = options?.parentId;
 
+      // 🔥 如果指定了 parentId，计算容器内的合理初始位置
+      let finalPosition = position;
+      if (parentId) {
+        const parentNode = getNodeById(parentId);
+        if (parentNode && parentNode.viewMode === 'container') {
+          const existingChildren = getChildNodes(parentId);
+          const childSize = getDefaultSize(viewMode);
+
+          finalPosition = calculateChildInitialPosition(
+            parentNode,
+            existingChildren,
+            childSize
+          );
+
+          console.log(`📍 计算子节点初始位置:`, {
+            parentId,
+            existingChildrenCount: existingChildren.length,
+            calculatedPosition: finalPosition,
+          });
+        }
+      }
+
       const newNode = createNode({
-        position,
+        position: finalPosition,
         viewMode,
         title: viewMode === 'note' ? 'New Note' : 'New Container',
       });
@@ -38,7 +61,7 @@ export const useNodeHandling = () => {
 
       return newNode;
     },
-    [addNode, addChildToParent]
+    [addNode, addChildToParent, getNodeById, getChildNodes]
   );
 
   const onGroupAdd = useCallback(

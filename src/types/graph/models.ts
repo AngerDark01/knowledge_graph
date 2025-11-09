@@ -7,6 +7,57 @@ import type { CSSProperties } from 'react';
 export type ViewMode = 'note' | 'container';
 
 /**
+ * Note 模式的状态
+ * 保存 Note 模式下的所有状态信息，用于模式切换时的状态恢复
+ */
+export interface NoteState {
+  /**
+   * Note 模式的宽度
+   */
+  width: number;
+
+  /**
+   * Note 模式的高度
+   */
+  height: number;
+
+  /**
+   * Note 模式的展开状态
+   * - true: 展开显示完整内容
+   * - false: 折叠显示摘要
+   */
+  expanded: boolean;
+
+  /**
+   * 用户自定义的展开尺寸（当用户手动调整 Note 尺寸时保存）
+   */
+  customExpandedSize?: { width: number; height: number };
+}
+
+/**
+ * Container 模式的状态
+ * 保存 Container 模式下的所有状态信息，用于模式切换时的状态恢复
+ */
+export interface ContainerState {
+  /**
+   * Container 模式的宽度
+   */
+  width: number;
+
+  /**
+   * Container 模式的高度
+   */
+  height: number;
+
+  /**
+   * Container 模式的展开状态
+   * - true: 展开显示子节点
+   * - false: 折叠隐藏子节点
+   */
+  expanded: boolean;
+}
+
+/**
  * 统一节点模型 - BaseNode
  *
  * 设计理念：
@@ -66,7 +117,23 @@ export interface BaseNode {
   // ==================== 样式属性 ====================
   style?: CSSProperties;
 
+  // ==================== 模式状态保存 ====================
   /**
+   * Note 模式的保存状态
+   * 当节点切换到 Container 模式时，保存 Note 模式的状态
+   * 切换回 Note 模式时恢复此状态
+   */
+  noteState?: NoteState;
+
+  /**
+   * Container 模式的保存状态
+   * 当节点切换到 Note 模式时，保存 Container 模式的状态
+   * 切换回 Container 模式时恢复此状态
+   */
+  containerState?: ContainerState;
+
+  /**
+   * @deprecated 使用 noteState.customExpandedSize 替代
    * 用户自定义的展开尺寸（仅 note 模式）
    * 用户手动调整尺寸后保存
    */
@@ -121,6 +188,24 @@ export interface Edge {
 }
 
 // ==================== Zod 验证 Schema ====================
+export const NoteStateSchema = z.object({
+  width: z.number().positive(),
+  height: z.number().positive(),
+  expanded: z.boolean(),
+  customExpandedSize: z
+    .object({
+      width: z.number(),
+      height: z.number(),
+    })
+    .optional(),
+});
+
+export const ContainerStateSchema = z.object({
+  width: z.number().positive(),
+  height: z.number().positive(),
+  expanded: z.boolean(),
+});
+
 export const BaseNodeSchema = z.object({
   id: z.string(),
   position: z.object({
@@ -143,6 +228,8 @@ export const BaseNodeSchema = z.object({
   isEditing: z.boolean().optional(),
   validationError: z.string().optional(),
   style: z.any().optional(),
+  noteState: NoteStateSchema.optional(),
+  containerState: ContainerStateSchema.optional(),
   customExpandedSize: z
     .object({
       width: z.number(),
