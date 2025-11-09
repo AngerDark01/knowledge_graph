@@ -45,7 +45,8 @@ export interface Group extends CommonNodeType {
   summary?: string; // 摘要
   isEditing?: boolean; // 编辑状态
   collapsed: boolean;
-  nodeIds: string[];
+  nodeIds: string[]; // 包含的节点ID列表（可以是 Node 或 Group）
+  groupId?: string; // 所属的父群组ID（支持群组嵌套）
   boundary: { minX: number; minY: number; maxX: number; maxY: number };
   style?: CSSProperties; // 样式属性
   createdAt: Date;
@@ -122,6 +123,7 @@ export const GroupSchema = z.object({
   isEditing: z.boolean().optional(),
   collapsed: z.boolean(),
   nodeIds: z.array(z.string()),
+  groupId: z.string().optional(), // 支持群组嵌套
   boundary: z.object({
     minX: z.number(),
     minY: z.number(),

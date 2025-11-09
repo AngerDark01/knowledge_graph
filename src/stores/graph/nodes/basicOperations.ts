@@ -118,14 +118,14 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
               updatedNode.style = { ...node.style, ...updates.style };
             }
             
-            // 如果是普通节点且属于群组，确保位置在群组边界内
-            if (updatedNode.type === BlockEnum.NODE && 'groupId' in updatedNode && updatedNode.groupId) {
-              const group = state.nodes.find((n: Node | Group) => 
+            // 🔧 如果节点（Node 或 Group）属于群组，确保位置在群组边界内
+            if ('groupId' in updatedNode && updatedNode.groupId) {
+              const parentGroup = state.nodes.find((n: Node | Group) =>
                 n.id === updatedNode.groupId && n.type === BlockEnum.GROUP
               ) as Group;
-              
-              if (group) {
-                const constrainedPos = constrainNodeToGroupBoundary(updatedNode as Node, group);
+
+              if (parentGroup) {
+                const constrainedPos = constrainNodeToGroupBoundary(updatedNode, parentGroup);
                 updatedNode.position = constrainedPos;
                 console.log('  🔒 更新时约束位置到群组内:', constrainedPos);
               }

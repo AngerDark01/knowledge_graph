@@ -25,29 +25,46 @@ export const safePosition = (position: any): { x: number; y: number } => {
   };
 };
 
-// 约束节点位置在群组边界内
+/**
+ * 约束节点位置在群组边界内（支持 Node 和 Group）
+ * @param node 要约束的节点（Node 或 Group）
+ * @param parentGroup 父群组
+ * @returns 约束后的位置
+ */
 export const constrainNodeToGroupBoundary = (
-  node: Node, 
-  group: Group
+  node: Node | Group,
+  parentGroup: Group
 ): { x: number; y: number } => {
-  const nodeWidth = safeNumber(node.width, 150);
-  const nodeHeight = safeNumber(node.height, 100);
-  const groupWidth = safeNumber(group.width, 300);
-  const groupHeight = safeNumber(group.height, 200);
-  
-  const groupPos = safePosition(group.position);
+  // 根据节点类型确定默认尺寸
+  let defaultWidth = 150;
+  let defaultHeight = 100;
+
+  if (node.type === BlockEnum.NODE) {
+    defaultWidth = 350;
+    defaultHeight = 280;
+  } else if (node.type === BlockEnum.GROUP) {
+    defaultWidth = 300;
+    defaultHeight = 200;
+  }
+
+  const nodeWidth = safeNumber(node.width, defaultWidth);
+  const nodeHeight = safeNumber(node.height, defaultHeight);
+  const groupWidth = safeNumber(parentGroup.width, 300);
+  const groupHeight = safeNumber(parentGroup.height, 200);
+
+  const groupPos = safePosition(parentGroup.position);
   const nodePos = safePosition(node.position);
-  
+
   // 计算允许的最小和最大位置
   const minX = groupPos.x + GROUP_PADDING.left;
   const minY = groupPos.y + GROUP_PADDING.top;
   const maxX = groupPos.x + groupWidth - GROUP_PADDING.right - nodeWidth;
   const maxY = groupPos.y + groupHeight - GROUP_PADDING.bottom - nodeHeight;
-  
+
   // 约束节点位置
   const constrainedX = Math.max(minX, Math.min(nodePos.x, maxX));
   const constrainedY = Math.max(minY, Math.min(nodePos.y, maxY));
-  
+
   return {
     x: safeNumber(constrainedX, minX),
     y: safeNumber(constrainedY, minY)

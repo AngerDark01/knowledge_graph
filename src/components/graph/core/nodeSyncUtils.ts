@@ -33,6 +33,42 @@ export const convertToAbsolutePosition = (
   };
 };
 
+/**
+ * 按嵌套层级排序节点（父节点必须在子节点之前）
+ * ReactFlow 要求：父节点必须在 nodes 数组中出现在子节点之前
+ */
+export const sortNodesByNestingLevel = (nodes: (Node | Group)[]): (Node | Group)[] => {
+  const nodeMap = new Map<string, Node | Group>();
+  nodes.forEach(node => nodeMap.set(node.id, node));
+
+  const sorted: (Node | Group)[] = [];
+  const visited = new Set<string>();
+
+  // 递归添加节点及其所有祖先
+  const addNodeWithAncestors = (node: Node | Group) => {
+    if (visited.has(node.id)) return;
+
+    // 如果节点有父群组，先添加父群组
+    if ('groupId' in node && node.groupId) {
+      const parent = nodeMap.get(node.groupId);
+      if (parent) {
+        addNodeWithAncestors(parent);
+      }
+    }
+
+    // 然后添加当前节点
+    if (!visited.has(node.id)) {
+      visited.add(node.id);
+      sorted.push(node);
+    }
+  };
+
+  // 遍历所有节点
+  nodes.forEach(node => addNodeWithAncestors(node));
+
+  return sorted;
+};
+
 // 将 store 节点同步到 ReactFlow 节点
 export const syncStoreToReactFlowNodes = (
   storeNodes: (Node | Group)[],
@@ -40,21 +76,48 @@ export const syncStoreToReactFlowNodes = (
   convertToRelativePositionImpl = convertToRelativePosition,
   safeNumberImpl = safeNumber
 ): ReactFlowNode[] => {
-  return storeNodes.map((node: Node | Group) => {
+  // 先按嵌套层级排序（父节点在前）
+  const sortedNodes = sortNodesByNestingLevel(storeNodes);
+
+  return sortedNodes.map((node: Node | Group) => {
     const isGroup = node.type === BlockEnum.GROUP;
-    
+
     if (isGroup) {
       const groupNode = node as Group;
+
+      // 🔧 支持 Group 嵌套：如果 Group 有 groupId，需要转换为相对坐标
+      const parentGroup = groupNode.groupId
+        ? storeNodes.find(n => n.id === groupNode.groupId) as Group
+        : undefined;
+
+      const safeGroupPosition = {
+        x: safeNumberImpl(groupNode.position.x),
+        y: safeNumberImpl(groupNode.position.y),
+      };
+
+      // 如果在父群组内，使用相对坐标
+      const position = parentGroup
+        ? convertToRelativePositionImpl({ ...groupNode, position: safeGroupPosition }, parentGroup, safeNumberImpl)
+        : safeGroupPosition;
+
+      const finalPosition = {
+        x: safeNumberImpl(position.x),
+        y: safeNumberImpl(position.y),
+      };
+
       return {
         ...groupNode,
         id: groupNode.id,
         type: 'group',
-        position: {
-          x: safeNumberImpl(groupNode.position.x),
-          y: safeNumberImpl(groupNode.position.y),
-        },
+        position: finalPosition,
         selected: node.id === selectedNodeId,
         draggable: true,
+        // 🔧 如果 Group 有父群组，设置 parentId 和 extent
+        ...(groupNode.groupId && {
+          parentId: groupNode.groupId,
+          extent: 'parent' as const,
+          expandParent: true,
+        }),
         style: {
           ...groupNode.style,
           width: safeNumberImpl(groupNode.width, 300),

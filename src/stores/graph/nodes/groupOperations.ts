@@ -1,10 +1,51 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 import { GroupOperationsSlice, safePosition, safeNumber, constrainNodeToGroupBoundary } from './types';
+import { hasCircularNesting, validateNestingDepth } from '@/utils/graph/nestingHelpers';
 
 export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsSlice => {
   return {
     addGroup: (group) => set((state: any) => {
       console.log('➕ 添加群组:', group.id);
+
+      // 🔧 如果群组有 groupId（嵌套群组），验证嵌套深度和循环
+      if ('groupId' in group && group.groupId) {
+        // 检测循环嵌套
+        if (hasCircularNesting(group.id, group.groupId, state.nodes)) {
+          console.error(`❌ 循环嵌套检测：群组 ${group.id} 不能添加到 ${group.groupId}`);
+          return state; // 不添加
+        }
+
+        // 验证嵌套深度
+        const depthValidation = validateNestingDepth(group.id, group.groupId, state.nodes);
+        if (!depthValidation.valid) {
+          console.error(`❌ 嵌套深度超限：${depthValidation.message}`);
+          return state; // 不添加
+        }
+
+        console.log(`✅ 嵌套验证通过，深度: ${depthValidation.currentDepth}/${depthValidation.maxDepth}`);
+
+        // 如果在父群组内，约束位置
+        const parentGroup = state.nodes.find((n: Node | Group) =>
+          n.id === group.groupId && n.type === BlockEnum.GROUP
+        ) as Group | undefined;
+
+        const safeGroup = {
+          ...group,
+          position: safePosition(group.position),
+          width: safeNumber(group.width, 300),
+          height: safeNumber(group.height, 200)
+        };
+
+        if (parentGroup) {
+          const constrainedPos = constrainNodeToGroupBoundary(safeGroup, parentGroup);
+          safeGroup.position = constrainedPos;
+          console.log('  🔒 群组位置已约束到父群组内:', constrainedPos);
+        }
+
+        return { nodes: [...state.nodes, safeGroup] };
+      }
+
+      // 普通群组（无父群组）
       const safeGroup = {
         ...group,
         position: safePosition(group.position),
@@ -103,7 +144,25 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
       if (node && 'groupId' in node && node.groupId === groupId) {
         return state;
       }
-      
+
+      // 🔧 如果节点是 Group 类型，需要验证嵌套
+      if (node && node.type === BlockEnum.GROUP) {
+        // 检测循环嵌套
+        if (hasCircularNesting(nodeId, groupId, state.nodes)) {
+          console.error(`❌ 循环嵌套检测：群组 ${nodeId} 不能添加到 ${groupId}`);
+          return state; // 不添加
+        }
+
+        // 验证嵌套深度
+        const depthValidation = validateNestingDepth(nodeId, groupId, state.nodes);
+        if (!depthValidation.valid) {
+          console.error(`❌ 嵌套深度超限：${depthValidation.message}`);
+          return state; // 不添加
+        }
+
+        console.log(`✅ 嵌套验证通过，深度: ${depthValidation.currentDepth}/${depthValidation.maxDepth}`);
+      }
+
       let updatedNodes = [...state.nodes];
       if (node && 'groupId' in node && node.groupId) {
         updatedNodes = updatedNodes.map((n: Node | Group) => {
@@ -118,13 +177,13 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
 
       updatedNodes = updatedNodes.map((n: Node | Group) => {
         if (n.id === nodeId) {
-          // 添加到新群组时，约束位置
-          const group = updatedNodes.find((g: Node | Group) => 
+          // 添加到新群组时，约束位置（支持 Node 和 Group）
+          const group = updatedNodes.find((g: Node | Group) =>
             g.id === groupId && g.type === BlockEnum.GROUP
           ) as Group;
-          
+
           if (group) {
-            const constrainedPos = constrainNodeToGroupBoundary(n as Node, group);
+            const constrainedPos = constrainNodeToGroupBoundary(n, group);
             return { ...n, groupId, position: constrainedPos };
           }
           return { ...n, groupId };
