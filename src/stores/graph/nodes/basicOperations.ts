@@ -112,8 +112,9 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
               updatedNode.style = { ...node.style, ...updates.style };
             }
             
-            // 如果节点属于群组，确保位置在群组边界内（支持 Node 和 Group）
-            if ('groupId' in updatedNode && updatedNode.groupId) {
+            // ✅ 关键修复：只在明确更新位置时才进行约束，避免在更新其他属性（width、height等）时触发位置重新约束
+            // 这样可以防止在群组移动期间，子节点更新其他属性时位置被错误地约束到旧的父群组位置
+            if (updates.position !== undefined && 'groupId' in updatedNode && updatedNode.groupId) {
               const group = state.nodes.find((n: Node | Group) =>
                 n.id === updatedNode.groupId && n.type === BlockEnum.GROUP
               ) as Group;
