@@ -14,8 +14,9 @@ import { BaseNode } from '@/types/graph/models';
  * 规则：
  * 1. 根节点（无父节点）总是显示
  * 2. 如果节点有父节点，需要检查所有祖先节点：
- *    - 如果任何祖先容器处于折叠状态（expanded=false），则隐藏
- *    - 只有所有祖先容器都展开（expanded=true），才显示
+ *    - 只有当父节点是 Container 模式时，子节点才显示
+ *    - 如果父节点是 Note 模式，子节点隐藏（Note 不能显示子节点）
+ *    - 递归检查所有祖先节点
  *
  * @param node 要检查的节点
  * @param allNodes 所有节点的列表
@@ -36,14 +37,13 @@ export function shouldNodeBeVisible(node: BaseNode, allNodes: BaseNode[]): boole
     return true;
   }
 
-  // 检查父节点的展开状态
-  // 只有当父节点是容器模式且展开时，子节点才可见
-  if (parent.viewMode === 'container' && !parent.expanded) {
-    // 父容器折叠，子节点隐藏
+  // 🔥 核心逻辑：只有当父节点是 Container 模式时，子节点才显示
+  if (parent.viewMode !== 'container') {
+    // 父节点不是容器（是 Note），子节点隐藏
     return false;
   }
 
-  // 父节点可以显示子节点，继续递归检查父节点的祖先
+  // 父节点是容器，继续递归检查父节点的祖先
   return shouldNodeBeVisible(parent, allNodes);
 }
 

@@ -22,14 +22,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     if (selectedNodeId) {
       const selectedNode = getNodeById(selectedNodeId);
       if (selectedNode && selectedNode.viewMode === 'container') {
-        // 在容器内部添加子节点
-        const containerX = selectedNode.position.x;
-        const containerY = selectedNode.position.y;
-        const childPosition = {
-          x: containerX + 100, // 在容器内部偏移位置
-          y: containerY + 100,
-        };
-        onNodeAdd(childPosition, { parentId: selectedNodeId }); // 传递 parentId
+        // 🔥 在容器内部添加子节点
+        // 传递占位符位置，实际位置会由 useNodeHandling 中的 calculateChildInitialPosition 计算
+        onNodeAdd({ x: 0, y: 0 }, { parentId: selectedNodeId });
         return;
       }
     }

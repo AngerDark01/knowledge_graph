@@ -37,6 +37,9 @@ export interface NoteState {
 /**
  * Container 模式的状态
  * 保存 Container 模式下的所有状态信息，用于模式切换时的状态恢复
+ *
+ * 注意：Container 不需要 expanded 状态，子节点总是显示的
+ * 当 Container 切换到 Note 时，子节点自动隐藏（因为 Note 不能显示子节点）
  */
 export interface ContainerState {
   /**
@@ -48,13 +51,6 @@ export interface ContainerState {
    * Container 模式的高度
    */
   height: number;
-
-  /**
-   * Container 模式的展开状态
-   * - true: 展开显示子节点
-   * - false: 折叠隐藏子节点
-   */
-  expanded: boolean;
 }
 
 /**
@@ -203,7 +199,6 @@ export const NoteStateSchema = z.object({
 export const ContainerStateSchema = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
-  expanded: z.boolean(),
 });
 
 export const BaseNodeSchema = z.object({

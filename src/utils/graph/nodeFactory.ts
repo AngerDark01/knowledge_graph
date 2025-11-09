@@ -157,18 +157,17 @@ export class ViewModeTransformer {
    * 转换为笔记模式 (Container -> Note)
    *
    * 步骤：
-   * 1. 保存当前 Container 的状态到 containerState
+   * 1. 保存当前 Container 的状态到 containerState（只保存尺寸，不保存 expanded）
    * 2. 恢复之前保存的 noteState（如果有）
    * 3. 如果没有保存的 noteState，使用默认值
    */
   private static transformToNote(node: BaseNode, now: Date): BaseNode {
     const config = getViewModeConfig('note');
 
-    // 1. 保存当前 Container 的状态
+    // 1. 保存当前 Container 的状态（只保存尺寸）
     const containerState = {
       width: node.width,
       height: node.height,
-      expanded: node.expanded,
     };
 
     console.log(`💾 保存 Container 状态:`, containerState);
@@ -214,6 +213,8 @@ export class ViewModeTransformer {
    * 1. 保存当前 Note 的状态到 noteState
    * 2. 恢复之前保存的 containerState（如果有）
    * 3. 如果没有保存的 containerState，使用默认值
+   *
+   * 注意：Container 不需要 expanded 状态，子节点总是显示
    */
   private static transformToContainer(node: BaseNode, now: Date): BaseNode {
     const config = getViewModeConfig('container');
@@ -231,20 +232,17 @@ export class ViewModeTransformer {
     // 2. 恢复 Container 状态（如果有保存）或使用默认值
     let width: number;
     let height: number;
-    let expanded: boolean;
 
     if (node.containerState) {
       // 恢复之前保存的 Container 状态
       console.log(`♻️ 恢复 Container 状态:`, node.containerState);
       width = node.containerState.width;
       height = node.containerState.height;
-      expanded = node.containerState.expanded;
     } else {
       // 使用默认的 Container 状态（首次转换为 Container）
       console.log(`🆕 使用默认 Container 状态`);
       width = config.defaultWidth;
       height = config.defaultHeight;
-      expanded = false;
     }
 
     return {
@@ -252,7 +250,7 @@ export class ViewModeTransformer {
       viewMode: 'container',
       width,
       height,
-      expanded,
+      expanded: true, // Container 的 expanded 总是 true（子节点总是可见）
       customExpandedSize: undefined, // Container 不使用 customExpandedSize
       noteState, // 保存 Note 状态
       updatedAt: now,
@@ -310,7 +308,7 @@ export const toggleExpanded = (node: BaseNode, customSize?: { width: number; hei
     updatedAt: new Date(),
   };
 
-  // 🔥 同步更新保存的状态
+  // 🔥 同步更新保存的状态（仅 Note 模式需要）
   if (node.viewMode === 'note' && node.noteState) {
     // 更新 noteState
     updatedNode.noteState = {
@@ -319,15 +317,8 @@ export const toggleExpanded = (node: BaseNode, customSize?: { width: number; hei
       width: newWidth,
       height: newHeight,
     };
-  } else if (node.viewMode === 'container' && node.containerState) {
-    // 更新 containerState
-    updatedNode.containerState = {
-      ...node.containerState,
-      expanded: newExpanded,
-      width: newWidth,
-      height: newHeight,
-    };
   }
+  // Container 不需要更新 expanded（子节点总是可见）
 
   return updatedNode;
 };
