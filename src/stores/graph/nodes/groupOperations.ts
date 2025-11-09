@@ -1,26 +1,31 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 import { GroupOperationsSlice, safePosition, safeNumber, constrainNodeToGroupBoundary } from './types';
+import { GraphConfig } from '@/config/graph.config';
+import { validateAddToGroup } from '@/utils/graph/nesting';
 
 export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsSlice => {
   return {
     addGroup: (group) => set((state: any) => {
       console.log('➕ 添加群组:', group.id);
+      const defaultSize = GraphConfig.nodeSize.group.default;
       const safeGroup = {
         ...group,
         position: safePosition(group.position),
-        width: safeNumber(group.width, 300),
-        height: safeNumber(group.height, 200)
+        width: safeNumber(group.width, defaultSize.width),
+        height: safeNumber(group.height, defaultSize.height)
       };
       return { nodes: [...state.nodes, safeGroup] };
     }),
     
     updateGroup: (id, updates) => set((state: any) => {
       console.log(`🔧 更新群组 ${id}:`, updates);
-      
+
       let validationError = undefined;
       if (updates.title !== undefined && updates.title.trim() === '') {
         validationError = 'Title cannot be empty';
       }
+
+      const defaultSize = GraphConfig.nodeSize.group.default;
 
       return {
         nodes: state.nodes.map((node: Node | Group) => {
@@ -29,7 +34,7 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
             const updatedGroup = {
               ...group,
               ...updates,
-              data: updates.data !== undefined 
+              data: updates.data !== undefined
                 ? { ...group.data, ...updates.data }
                 : group.data,
               style: updates.style !== undefined
@@ -38,8 +43,8 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
               position: updates.position !== undefined
                 ? safePosition(updates.position)
                 : safePosition(group.position),
-              width: safeNumber(updates.width ?? group.width, 300),
-              height: safeNumber(updates.height ?? group.height, 200),
+              width: safeNumber(updates.width ?? group.width, defaultSize.width),
+              height: safeNumber(updates.height ?? group.height, defaultSize.height),
               validationError,
               updatedAt: new Date(),
             };
@@ -100,12 +105,27 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
     
     addNodeToGroup: (nodeId, groupId) => set((state: any) => {
       const node = state.nodes.find((n: Node | Group) => n.id === nodeId);
+
+      // 如果节点已经在目标群组中，直接返回
       if (node && 'groupId' in node && node.groupId === groupId) {
         return state;
       }
-      
+
+      // ✅ 验证是否可以添加（循环检测和深度限制）
+      const validation = validateAddToGroup(nodeId, groupId, state.nodes);
+      if (!validation.valid) {
+        console.error(`❌ 添加节点到群组失败: ${validation.error}`);
+        alert(validation.error); // 显示错误信息
+        return state;
+      }
+
+      console.log(`📌 添加节点 ${nodeId} 到群组 ${groupId}`);
+
       let updatedNodes = [...state.nodes];
+
+      // 从旧群组移除（如果有）
       if (node && 'groupId' in node && node.groupId) {
+        console.log(`  📤 从旧群组 ${node.groupId} 移除`);
         updatedNodes = updatedNodes.map((n: Node | Group) => {
           if ('groupId' in node && n.id === node.groupId && n.type === BlockEnum.GROUP) {
             const group = n as Group;
@@ -116,15 +136,16 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
         });
       }
 
+      // 添加到新群组，约束位置（支持 Node 和 Group）
       updatedNodes = updatedNodes.map((n: Node | Group) => {
         if (n.id === nodeId) {
-          // 添加到新群组时，约束位置
-          const group = updatedNodes.find((g: Node | Group) => 
+          const group = updatedNodes.find((g: Node | Group) =>
             g.id === groupId && g.type === BlockEnum.GROUP
           ) as Group;
-          
+
           if (group) {
-            const constrainedPos = constrainNodeToGroupBoundary(n as Node, group);
+            const constrainedPos = constrainNodeToGroupBoundary(n, group);
+            console.log(`  🔒 约束位置:`, constrainedPos);
             return { ...n, groupId, position: constrainedPos };
           }
           return { ...n, groupId };
@@ -132,6 +153,7 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
         return n;
       });
 
+      // 更新目标群组的 nodeIds
       updatedNodes = updatedNodes.map((n: Node | Group) => {
         if (n.id === groupId && n.type === BlockEnum.GROUP) {
           const group = n as Group;
@@ -142,6 +164,7 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
         return n;
       });
 
+      console.log(`  ✅ 添加成功`);
       return { nodes: updatedNodes };
     }),
     

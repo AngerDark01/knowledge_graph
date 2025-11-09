@@ -25,6 +25,8 @@ import EdgeEditor from '../EdgeEditor';
 import EdgeFilterControl from '../EdgeFilterControl';
 import HistoryControl from '../HistoryControl';
 import { useGraphStore } from '@/stores/graph';
+import { GraphConfig } from '@/config/graph.config';
+import { findCommonAncestor } from '@/utils/graph/nesting';
 
 import { useNodeHandling } from './hooks/useNodeHandling';
 import { useEdgeHandling } from './hooks/useEdgeHandling';
@@ -37,15 +39,9 @@ interface GraphPageProps {
   className?: string;
 }
 
-// 群组内边距常量
-const GROUP_PADDING = { 
-  top: 70,
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
-
-const NODE_VISUAL_PADDING = 4;
+// 使用配置文件中的常量
+const GROUP_PADDING = GraphConfig.groupPadding;
+const NODE_VISUAL_PADDING = GraphConfig.nodeVisualPadding;
 
 // 安全数值验证
 const safeNumber = (value: any, defaultValue: number = 0): number => {
@@ -127,20 +123,43 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       
       if (isGroup) {
         const groupNode = node as Group;
+
+        // ✅ 支持嵌套群组：如果群组有 groupId，需要设置 parentId
+        const parentGroup = groupNode.groupId
+          ? storeNodes.find(n => n.id === groupNode.groupId) as Group
+          : undefined;
+
+        const safeGroupPosition = {
+          x: safeNumber(groupNode.position.x),
+          y: safeNumber(groupNode.position.y),
+        };
+
+        // 如果在父群组内，使用相对坐标
+        const position = parentGroup
+          ? convertToRelativePosition({ ...groupNode, position: safeGroupPosition }, parentGroup)
+          : safeGroupPosition;
+
+        const finalPosition = {
+          x: safeNumber(position.x),
+          y: safeNumber(position.y),
+        };
+
         return {
           ...groupNode,
           id: groupNode.id,
           type: 'group',
-          position: {
-            x: safeNumber(groupNode.position.x),
-            y: safeNumber(groupNode.position.y),
-          },
+          position: finalPosition,
           selected: node.id === selectedNodeId,
           draggable: true,
+          ...(groupNode.groupId && {
+            parentId: groupNode.groupId,
+            extent: 'parent' as const,
+            expandParent: true,
+          }),
           style: {
             ...groupNode.style,
-            width: safeNumber(groupNode.width, 300),
-            height: safeNumber(groupNode.height, 200),
+            width: safeNumber(groupNode.width, GraphConfig.nodeSize.group.default.width),
+            height: safeNumber(groupNode.height, GraphConfig.nodeSize.group.default.height),
           },
           data: {
             ...groupNode.data,
@@ -187,8 +206,8 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           }),
           style: {
             ...(regularNode as any).style,
-            width: safeNumber(regularNode.width, 350),  // 🔧 NoteNode初始宽度
-            height: safeNumber(regularNode.height, 280), // 🔧 NoteNode初始高度
+            width: safeNumber(regularNode.width, GraphConfig.nodeSize.note.collapsed.width),
+            height: safeNumber(regularNode.height, GraphConfig.nodeSize.note.collapsed.height),
           },
           data: {
             ...regularNode.data,
@@ -212,22 +231,29 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     const processedEdges = edges
       .filter(edge => visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id)) // 根据可见性过滤
       .map(edge => {
-        // 检查边的源节点和目标节点是否都在同一个群组内
-        const sourceNode = storeNodes.find(n => n.id === edge.source);
-        const targetNode = storeNodes.find(n => n.id === edge.target);
-        
-        // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
-        const isInSameGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
-                             sourceNode.groupId === targetNode.groupId;
-        
-        // 确定边的类型
-        const isCrossGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
-                             sourceNode.groupId !== targetNode.groupId;
-        
+        // 检查边的源节点和目标节点
+        const sourceNode = storeNodes.find(n => n.id === edge.source) as Node | Group | undefined;
+        const targetNode = storeNodes.find(n => n.id === edge.target) as Node | Group | undefined;
+
+        // ✅ 增强的跨群组检测：支持嵌套群组
+        let isCrossGroup = false;
+        let isInSameGroup = false;
+
+        if (sourceNode && targetNode) {
+          const sourceHasGroup = 'groupId' in sourceNode && sourceNode.groupId;
+          const targetHasGroup = 'groupId' in targetNode && targetNode.groupId;
+
+          if (sourceHasGroup && targetHasGroup) {
+            // 两个节点都在群组内
+            isInSameGroup = sourceNode.groupId === targetNode.groupId;
+            isCrossGroup = !isInSameGroup;
+          } else if (sourceHasGroup || targetHasGroup) {
+            // 一个在群组内，一个在群组外
+            isCrossGroup = true;
+            isInSameGroup = false;
+          }
+        }
+
         // 设置边类型
         const edgeType = isCrossGroup ? 'crossGroup' : 'default';
         
@@ -309,11 +335,30 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     }
 
     if (currentNode.type === 'group') {
-      const safePosition = {
+      const storeGroup = storeNodes.find(n => n.id === node.id) as Group;
+
+      let absolutePosition = {
         x: safeNumber(currentNode.position.x),
         y: safeNumber(currentNode.position.y)
       };
-      handleGroupMove(node.id, safePosition);
+
+      // ✅ 如果群组在父群组内，转换为绝对坐标
+      if (storeGroup && storeGroup.groupId) {
+        const parentGroup = storeNodes.find(n => n.id === storeGroup.groupId) as Group;
+        if (parentGroup) {
+          absolutePosition = convertToAbsolutePosition(currentNode.position, parentGroup);
+          console.log('📍 群组 相对→绝对:', currentNode.position, '→', absolutePosition);
+          console.log('  父群组位置:', parentGroup.position);
+        }
+      }
+
+      handleGroupMove(node.id, absolutePosition);
+
+      // ✅ 如果群组属于父群组，更新父群组边界
+      if (storeGroup && storeGroup.groupId) {
+        updateGroupBoundary(storeGroup.groupId);
+      }
+
       isDraggingRef.current = false;
     } else {
       const storeNode = storeNodes.find(n => n.id === node.id) as Node;
@@ -449,10 +494,13 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                 
                 resizeTimeoutRef.current[change.id] = setTimeout(() => {
                   const currentNode = reactFlowInstance?.getNode(change.id);
-                  
+
                   if (currentNode) {
-                    const newWidth = safeNumber(change.dimensions!.width, 350);
-                    const newHeight = safeNumber(change.dimensions!.height, 280);
+                    const defaultSize = currentNode.type === 'group'
+                      ? GraphConfig.nodeSize.group.default
+                      : GraphConfig.nodeSize.note.collapsed;
+                    const newWidth = safeNumber(change.dimensions!.width, defaultSize.width);
+                    const newHeight = safeNumber(change.dimensions!.height, defaultSize.height);
                     
                     // 🔧 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
                     updateNode(change.id, {

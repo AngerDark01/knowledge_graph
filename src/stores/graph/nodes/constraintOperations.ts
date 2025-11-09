@@ -5,31 +5,31 @@ export const createConstraintOperationsSlice = (set: any, get: any): ConstraintO
   return {
     updateNodePosition: (id, position) => set((state: any) => {
       console.log(`📍 更新节点位置 ${id}:`, position);
-      
+
       const safePos = safePosition(position);
-      
+
       return {
         nodes: state.nodes.map((node: Node | Group) => {
           if (node.id === id) {
-            let updatedNode = { 
-              ...node, 
+            let updatedNode = {
+              ...node,
               position: safePos,
               updatedAt: new Date()
             };
-            
-            // 如果节点属于群组，约束位置
-            if (node.type === BlockEnum.NODE && 'groupId' in node && (node as Node).groupId) {
-              const group = state.nodes.find((n: Node | Group) => 
-                n.id === (node as Node).groupId && n.type === BlockEnum.GROUP
+
+            // 如果节点属于群组，约束位置（支持 Node 和 Group）
+            if ('groupId' in node && node.groupId) {
+              const group = state.nodes.find((n: Node | Group) =>
+                n.id === node.groupId && n.type === BlockEnum.GROUP
               ) as Group;
-              
+
               if (group) {
-                const constrainedPos = constrainNodeToGroupBoundary(updatedNode as Node, group);
+                const constrainedPos = constrainNodeToGroupBoundary(updatedNode, group);
                 updatedNode.position = constrainedPos;
                 console.log('  🔒 拖动时约束位置到群组内:', constrainedPos);
               }
             }
-            
+
             console.log(`  ✅ 位置已更新:`, updatedNode.position);
             return updatedNode;
           }

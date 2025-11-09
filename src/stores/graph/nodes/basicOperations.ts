@@ -1,10 +1,12 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
-import { 
-  NodeOperationsSlice, 
-  safePosition, 
-  safeNumber, 
-  constrainNodeToGroupBoundary 
+import {
+  NodeOperationsSlice,
+  safePosition,
+  safeNumber,
+  constrainNodeToGroupBoundary
 } from './types';
+import { GraphConfig } from '@/config/graph.config';
+import { getAllNestedNodeIds } from '@/utils/graph/nesting';
 
 export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSlice => {
   return {
@@ -25,36 +27,28 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
     addNode: (node) => {
       const state = get();
       console.log('➕ 添加节点:', node.id, node);
-      
-      // 🔧 根据节点类型确定默认尺寸
-      let defaultWidth = 150;
-      let defaultHeight = 100;
-      
-      if (node.type === BlockEnum.NODE) {
-        // 普通节点使用 NoteNode 的初始尺寸
-        defaultWidth = 350;
-        defaultHeight = 280;
-      } else if (node.type === BlockEnum.GROUP) {
-        defaultWidth = 300;
-        defaultHeight = 200;
-      }
-      
+
+      // 🔧 根据节点类型从配置文件获取默认尺寸
+      const defaultSize = node.type === BlockEnum.NODE
+        ? GraphConfig.nodeSize.note.collapsed
+        : GraphConfig.nodeSize.group.default;
+
       // 验证并修复节点位置和尺寸
       const safeNode = {
         ...node,
         position: safePosition(node.position),
-        width: safeNumber(node.width, defaultWidth),
-        height: safeNumber(node.height, defaultHeight)
+        width: safeNumber(node.width, defaultSize.width),
+        height: safeNumber(node.height, defaultSize.height)
       };
       
-      // 如果节点属于群组，确保位置在群组内
+      // 如果节点属于群组，确保位置在群组内（支持 Node 和 Group）
       if ('groupId' in safeNode && safeNode.groupId) {
-        const group = state.nodes.find((n: Node | Group) => 
+        const group = state.nodes.find((n: Node | Group) =>
           n.id === safeNode.groupId && n.type === BlockEnum.GROUP
         ) as Group;
-        
+
         if (group) {
-          const constrainedPos = constrainNodeToGroupBoundary(safeNode as Node, group);
+          const constrainedPos = constrainNodeToGroupBoundary(safeNode, group);
           safeNode.position = constrainedPos;
           console.log('  🔒 节点位置已约束到群组内:', constrainedPos);
         }
@@ -118,14 +112,14 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
               updatedNode.style = { ...node.style, ...updates.style };
             }
             
-            // 如果是普通节点且属于群组，确保位置在群组边界内
-            if (updatedNode.type === BlockEnum.NODE && 'groupId' in updatedNode && updatedNode.groupId) {
-              const group = state.nodes.find((n: Node | Group) => 
+            // 如果节点属于群组，确保位置在群组边界内（支持 Node 和 Group）
+            if ('groupId' in updatedNode && updatedNode.groupId) {
+              const group = state.nodes.find((n: Node | Group) =>
                 n.id === updatedNode.groupId && n.type === BlockEnum.GROUP
               ) as Group;
-              
+
               if (group) {
-                const constrainedPos = constrainNodeToGroupBoundary(updatedNode as Node, group);
+                const constrainedPos = constrainNodeToGroupBoundary(updatedNode, group);
                 updatedNode.position = constrainedPos;
                 console.log('  🔒 更新时约束位置到群组内:', constrainedPos);
               }
@@ -154,15 +148,38 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
     
     deleteNode: (id) => {
       const state = get();
-      console.log(`🗑️ 删除节点: ${id}`);
+      const nodeToDelete = state.nodes.find((n: Node | Group) => n.id === id);
+
+      if (!nodeToDelete) {
+        console.warn(`⚠️ 删除失败: 节点 ${id} 不存在`);
+        return state;
+      }
+
+      console.log(`🗑️ 删除节点: ${id} (类型: ${nodeToDelete.type})`);
+
+      let nodeIdsToDelete = [id];
+
+      // 如果是 GROUP，递归获取所有嵌套节点的 ID
+      if (nodeToDelete.type === BlockEnum.GROUP) {
+        const nestedIds = getAllNestedNodeIds(id, state.nodes);
+        nodeIdsToDelete = [id, ...nestedIds];
+        console.log(`  🗑️ 级联删除 ${nestedIds.length} 个嵌套节点:`, nestedIds);
+      }
+
+      // 删除所有节点（包括嵌套的）
       const newState = {
-        nodes: state.nodes.filter((node: Node | Group) => node.id !== id)
+        nodes: state.nodes.filter((node: Node | Group) =>
+          !nodeIdsToDelete.includes(node.id)
+        )
       };
+
       set(newState);
+
       // 添加历史记录快照
       if (get().addHistorySnapshot) {
         get().addHistorySnapshot();
       }
+
       return newState;
     },
     

@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { ReactFlowInstance } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
+import { getAllNestedNodeIds } from '@/utils/graph/nesting';
+import { BlockEnum } from '@/types/graph/models';
 
 export const useKeyboardShortcuts = (onRecenter: () => void, reactFlowInstance: ReactFlowInstance | null) => {
   // 处理键盘快捷键
@@ -47,12 +49,37 @@ export const useKeyboardShortcuts = (onRecenter: () => void, reactFlowInstance: 
       }
 
       // Delete 键删除选中的节点或边
-      if ((e.key === 'Delete' || e.key === 'Backspace') && 
+      if ((e.key === 'Delete' || e.key === 'Backspace') &&
           !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
         // 只有当焦点不在输入框或文本域中时才执行删除操作
         if (reactFlowInstance) {
           // 删除选中的节点
           const selectedNodes = reactFlowInstance.getNodes().filter((node: any) => node.selected);
+
+          // ✅ 检查是否有群组节点需要删除确认
+          for (const node of selectedNodes) {
+            if (node.type === 'group') {
+              const { getNodes } = useGraphStore.getState();
+              const allNodes = getNodes();
+              const nestedIds = getAllNestedNodeIds(node.id, allNodes);
+
+              if (nestedIds.length > 0) {
+                const confirmed = window.confirm(
+                  `确定要删除群组 "${node.data?.title || node.id}" 吗？\n\n` +
+                  `此操作将同时删除该群组内的所有嵌套内容：\n` +
+                  `- ${nestedIds.length} 个嵌套节点/群组\n\n` +
+                  `此操作不可撤销！`
+                );
+
+                if (!confirmed) {
+                  console.log('用户取消删除群组');
+                  return; // 取消整个删除操作
+                }
+              }
+            }
+          }
+
+          // 执行删除
           selectedNodes.forEach((node: any) => {
             // 需要同时删除关联的边
             const { getEdges } = useGraphStore.getState();
@@ -63,7 +90,7 @@ export const useKeyboardShortcuts = (onRecenter: () => void, reactFlowInstance: 
                 deleteEdge(edge.id);
               }
             });
-            // 删除节点
+            // 删除节点（级联删除会在 basicOperations.ts 中处理）
             const { deleteNode } = useGraphStore.getState();
             deleteNode(node.id);
           });

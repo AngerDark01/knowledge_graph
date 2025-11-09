@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { Connection, Edge } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
-import { BlockEnum, Node } from '@/types/graph/models';
+import { BlockEnum, Node, Group } from '@/types/graph/models';
+import { findCommonAncestor } from '@/utils/graph/nesting';
 
 export const useEdgeHandling = () => {
   const { addEdge, edges, getNodes } = useGraphStore();
@@ -38,19 +39,43 @@ export const useEdgeHandling = () => {
       }
 
       // 检查子节点与父节点的连接限制
-      // 阻止子节点与自己的父群组连接
-      if (sourceNode?.type === BlockEnum.NODE && sourceNode.groupId === params.target) {
+      // 阻止子节点与自己的父群组连接（包括嵌套情况）
+      if (sourceNode?.type === BlockEnum.NODE && 'groupId' in sourceNode && sourceNode.groupId === params.target) {
         console.log("Cannot connect child node to its parent group");
         return;
       }
-      
-      if (targetNode?.type === BlockEnum.NODE && targetNode.groupId === params.source) {
+
+      if (targetNode?.type === BlockEnum.NODE && 'groupId' in targetNode && targetNode.groupId === params.source) {
         console.log("Cannot connect child node to its parent group");
         return;
       }
-      
-      // 确定是否为跨群关系
-      const isCrossGroup = sourceNode?.groupId && targetNode?.groupId && sourceNode.groupId !== targetNode.groupId;
+
+      // ✅ 增强的跨群组检测：支持嵌套群组
+      // 如果两个节点都在群组内，检查它们是否在同一个群组层级
+      let isCrossGroup = false;
+
+      if (sourceNode && targetNode) {
+        const sourceHasGroup = 'groupId' in sourceNode && sourceNode.groupId;
+        const targetHasGroup = 'groupId' in targetNode && targetNode.groupId;
+
+        if (sourceHasGroup && targetHasGroup) {
+          // 两个节点都在群组内，使用共同祖先判断
+          const commonAncestor = findCommonAncestor(sourceNode.id, targetNode.id, allNodes);
+
+          // 如果没有共同祖先（null），说明它们在不同的顶层群组中，属于跨群组
+          // 如果有共同祖先，但不是它们的直接父群组，也可能需要特殊处理
+          // 简化逻辑：直接父群组不同即为跨群组
+          isCrossGroup = sourceNode.groupId !== targetNode.groupId;
+
+          console.log(`🔗 边连接检测: ${sourceNode.id} -> ${targetNode.id}`);
+          console.log(`  源节点群组: ${sourceNode.groupId}, 目标节点群组: ${targetNode.groupId}`);
+          console.log(`  共同祖先: ${commonAncestor || '无'}`);
+          console.log(`  跨群组: ${isCrossGroup}`);
+        } else if (sourceHasGroup || targetHasGroup) {
+          // 一个在群组内，一个在群组外，也算跨群组
+          isCrossGroup = true;
+        }
+      }
       
       // 构建边数据
       const newEdgeData: any = {

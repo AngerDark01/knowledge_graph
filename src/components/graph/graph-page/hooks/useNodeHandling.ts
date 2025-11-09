@@ -2,14 +2,11 @@ import { useCallback } from 'react';
 import { useReactFlow } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
 import { Node, Group, BlockEnum } from '@/types/graph/models';
+import { GraphConfig } from '@/config/graph.config';
+import { validateAddToGroup } from '@/utils/graph/nesting';
 
-// 群组内边距常量 - 标题高度约40px，所以顶部需要更多空间
-const GROUP_PADDING = { 
-  top: 70,    // 增加顶部边距，避免与标题重叠
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
+// 使用配置文件中的群组内边距
+const GROUP_PADDING = GraphConfig.groupPadding;
 
 // 安全的数值验证和默认值函数
 const safeNumber = (value: any, defaultValue: number = 0): number => {
@@ -17,13 +14,12 @@ const safeNumber = (value: any, defaultValue: number = 0): number => {
   return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
 };
 
-// 🆕 根据节点类型获取默认尺寸
+// 🆕 根据节点类型获取默认尺寸（使用配置文件）
 const getDefaultNodeSize = (nodeType: BlockEnum) => {
   if (nodeType === BlockEnum.NODE) {
-    // NoteNode 的初始尺寸
-    return { width: 350, height: 280 };
+    return GraphConfig.nodeSize.note.collapsed;
   } else if (nodeType === BlockEnum.GROUP) {
-    return { width: 300, height: 200 };
+    return GraphConfig.nodeSize.group.default;
   }
   return { width: 150, height: 100 };
 };
@@ -186,55 +182,156 @@ export const useNodeHandling = () => {
 
   // 添加群组的处理函数
   const onGroupAdd = useCallback(() => {
-    console.log('➕ 创建新群组');
-    
-    try {
-      // 在当前视图中心创建群组
-      const viewPort = reactFlowInstance?.getViewport();
-      const center = reactFlowInstance?.screenToFlowPosition({
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2
-      });
-      
-      let position = {
-        x: safeNumber(center?.x, safeNumber(viewPort?.x, 0) + 200),
-        y: safeNumber(center?.y, safeNumber(viewPort?.y, 0) + 100)
+    console.log('➕ 创建新群组，当前选中:', selectedNodeId);
+
+    // 检查当前是否有选中的群组（支持嵌套）
+    const selectedGroup = nodes.find((n: Node | Group) =>
+      n.id === selectedNodeId && n.type === BlockEnum.GROUP
+    ) as Group;
+
+    let position;
+    let parentGroupId: string | undefined;
+
+    // 🆕 获取群组默认尺寸
+    const defaultSize = getDefaultNodeSize(BlockEnum.GROUP);
+
+    if (selectedGroup) {
+      console.log('📦 在选中的群组内创建子群组:', selectedGroup.id);
+
+      // ✅ 验证是否可以在此群组内创建子群组
+      const tempGroupId = `temp_${Date.now()}`; // 临时ID用于验证
+      const validation = validateAddToGroup(tempGroupId, selectedGroup.id, nodes);
+
+      if (!validation.valid) {
+        console.error(`❌ 无法创建嵌套群组: ${validation.error}`);
+        alert(validation.error);
+        return;
+      }
+
+      // 确保群组位置和尺寸有效
+      const safeGroupPosition = {
+        x: safeNumber(selectedGroup.position?.x, 0),
+        y: safeNumber(selectedGroup.position?.y, 0)
       };
-      
-      const groupCount = nodes.filter((n: Node | Group) => 
-        n.type === BlockEnum.GROUP
-      ).length;
-      
-      const newGroup: Group = {
-        id: `group_${Date.now()}`,
-        type: BlockEnum.GROUP,
-        position: {
-          x: safeNumber(position.x),
-          y: safeNumber(position.y)
-        },
-        data: { 
-          title: `Group ${groupCount + 1}`, 
-          content: 'Select this group and click "Add Node" to add nodes inside' 
-        },
-        title: `Group ${groupCount + 1}`,
-        content: 'Select this group and click "Add Node" to add nodes inside',
-        collapsed: false,
-        nodeIds: [],
-        boundary: { minX: 0, minY: 0, maxX: 300, maxY: 200 },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        width: 300,
-        height: 200,
+      const safeGroupWidth = safeNumber(selectedGroup.width, defaultSize.width);
+      const safeGroupHeight = safeNumber(selectedGroup.height, defaultSize.height);
+
+      console.log('  📍 父群组安全位置:', safeGroupPosition);
+      console.log('  📏 父群组安全尺寸:', { width: safeGroupWidth, height: safeGroupHeight });
+
+      // 计算父群组内已有的子群组数量
+      const existingGroupsInGroup = nodes.filter((n: Node | Group) =>
+        n.type === BlockEnum.GROUP && 'groupId' in n && (n as Group).groupId === selectedGroup.id
+      );
+
+      // 使用网格布局避免重叠
+      const groupsPerRow = 2;
+      const groupIndex = existingGroupsInGroup.length;
+      const row = Math.floor(groupIndex / groupsPerRow);
+      const col = groupIndex % groupsPerRow;
+
+      const groupSpacingX = defaultSize.width + 30; // 群组宽度 + 间距
+      const groupSpacingY = defaultSize.height + 30; // 群组高度 + 间距
+
+      // 计算群组在父群组内的相对位置
+      const relativeX = GROUP_PADDING.left + (col * groupSpacingX);
+      const relativeY = GROUP_PADDING.top + (row * groupSpacingY);
+
+      // 计算绝对位置
+      position = {
+        x: safeNumber(safeGroupPosition.x + relativeX, relativeX),
+        y: safeNumber(safeGroupPosition.y + relativeY, relativeY)
       };
-      
-      console.log('✅ 创建群组:', newGroup);
-      
-      addNode(newGroup);
-      setSelectedNodeId(newGroup.id);
-    } catch (error) {
-      console.error('创建群组失败:', error);
+
+      // 确保子群组不会超出父群组边界
+      const maxX = safeGroupPosition.x + safeGroupWidth - GROUP_PADDING.right - defaultSize.width;
+      const maxY = safeGroupPosition.y + safeGroupHeight - GROUP_PADDING.bottom - defaultSize.height;
+
+      position.x = Math.max(
+        safeGroupPosition.x + GROUP_PADDING.left,
+        Math.min(position.x, maxX)
+      );
+      position.y = Math.max(
+        safeGroupPosition.y + GROUP_PADDING.top,
+        Math.min(position.y, maxY)
+      );
+
+      // 最后的安全检查
+      position.x = safeNumber(position.x, safeGroupPosition.x + GROUP_PADDING.left);
+      position.y = safeNumber(position.y, safeGroupPosition.y + GROUP_PADDING.top);
+
+      parentGroupId = selectedGroup.id;
+
+      console.log('  📍 新群组位置（绝对坐标）:', position);
+      console.log('  📊 父群组内已有子群组数:', existingGroupsInGroup.length);
+      console.log('  🎯 相对位置:', { x: relativeX, y: relativeY });
+    } else {
+      // 没有选中群组时，在当前视图中心创建群组
+      try {
+        const viewPort = reactFlowInstance?.getViewport();
+        const center = reactFlowInstance?.screenToFlowPosition({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2
+        });
+
+        position = {
+          x: safeNumber(center?.x, safeNumber(viewPort?.x, 0) + 200),
+          y: safeNumber(center?.y, safeNumber(viewPort?.y, 0) + 100)
+        };
+      } catch (error) {
+        console.error('计算视图中心位置失败:', error);
+        position = { x: 200, y: 100 };
+      }
+
+      console.log('  📍 新群组位置（画布中心）:', position);
     }
-  }, [addNode, nodes, setSelectedNodeId, reactFlowInstance]);
+
+    // 最终验证位置有效性
+    if (!position || isNaN(position.x) || isNaN(position.y)) {
+      console.error('❌ 位置计算错误，使用默认值');
+      position = { x: 100, y: 100 };
+    }
+
+    const groupCount = nodes.filter((n: Node | Group) =>
+      n.type === BlockEnum.GROUP
+    ).length;
+
+    const newGroup: Group = {
+      id: `group_${Date.now()}`,
+      type: BlockEnum.GROUP,
+      position: {
+        x: safeNumber(position.x),
+        y: safeNumber(position.y)
+      },
+      data: {
+        title: `Group ${groupCount + 1}`,
+        content: 'Select this group and click "Add Node/Group" to add content inside'
+      },
+      title: `Group ${groupCount + 1}`,
+      content: 'Select this group and click "Add Node/Group" to add content inside',
+      collapsed: false,
+      nodeIds: [],
+      boundary: { minX: 0, minY: 0, maxX: defaultSize.width, maxY: defaultSize.height },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      width: defaultSize.width,
+      height: defaultSize.height,
+      ...(parentGroupId && { groupId: parentGroupId }) // ✅ 如果有父群组ID，添加groupId属性
+    };
+
+    console.log('✅ 创建群组:', newGroup);
+
+    addNode(newGroup);
+    setSelectedNodeId(newGroup.id);
+
+    // ✅ 如果群组属于父群组，延迟更新父群组边界以确保子群组被包含
+    if (parentGroupId) {
+      setTimeout(() => {
+        console.log('📐 更新父群组边界:', parentGroupId);
+        updateGroupBoundary(parentGroupId);
+      }, 100);
+    }
+  }, [addNode, nodes, selectedNodeId, setSelectedNodeId, reactFlowInstance, updateGroupBoundary]);
 
   // 处理节点拖拽
   const onDragOver = useCallback((event: React.DragEvent) => {

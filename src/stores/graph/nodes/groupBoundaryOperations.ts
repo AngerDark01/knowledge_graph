@@ -1,5 +1,6 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
-import { GroupBoundaryOperationsSlice, GROUP_PADDING, NODE_VISUAL_PADDING, safePosition, safeNumber } from './types';
+import { GroupBoundaryOperationsSlice, safePosition, safeNumber } from './types';
+import { GraphConfig } from '@/config/graph.config';
 
 export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBoundaryOperationsSlice => {
   return {
@@ -37,8 +38,8 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       
       groupNodes.forEach((node: Node | Group) => {
-        const nodeWidth = safeNumber(node.width, 150) + NODE_VISUAL_PADDING;
-        const nodeHeight = safeNumber(node.height, 100) + NODE_VISUAL_PADDING;
+        const nodeWidth = safeNumber(node.width, 150) + GraphConfig.nodeVisualPadding;
+        const nodeHeight = safeNumber(node.height, 100) + GraphConfig.nodeVisualPadding;
         const nodePos = safePosition(node.position);
         
         console.log(`  节点 ${node.id}:`, {
@@ -55,10 +56,10 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
       console.log(`  节点边界:`, { minX, minY, maxX, maxY });
 
       // 计算需要的群组边界（包含 padding）
-      const requiredMinX = minX - GROUP_PADDING.left;
-      const requiredMinY = minY - GROUP_PADDING.top;
-      const requiredMaxX = maxX + GROUP_PADDING.right;
-      const requiredMaxY = maxY + GROUP_PADDING.bottom;
+      const requiredMinX = minX - GraphConfig.groupPadding.left;
+      const requiredMinY = minY - GraphConfig.groupPadding.top;
+      const requiredMaxX = maxX + GraphConfig.groupPadding.right;
+      const requiredMaxY = maxY + GraphConfig.groupPadding.bottom;
       
       // 当前群组的右下角位置
       const currentMaxX = currentGroupPos.x + currentWidth;
@@ -114,8 +115,8 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
       }
 
       // 确保最小尺寸
-      newWidth = Math.max(newWidth, 300);
-      newHeight = Math.max(newHeight, 200);
+      newWidth = Math.max(newWidth, GraphConfig.nodeSize.group.default.width);
+      newHeight = Math.max(newHeight, GraphConfig.nodeSize.group.default.height);
 
       console.log(`📏 新群组状态:`, {
         position: { x: newGroupX, y: newGroupY },
@@ -129,13 +130,24 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
           return {
             ...node,
             position: { x: safeNumber(newGroupX), y: safeNumber(newGroupY) },
-            width: safeNumber(newWidth, 300),
-            height: safeNumber(newHeight, 200),
+            width: safeNumber(newWidth, GraphConfig.nodeSize.group.default.width),
+            height: safeNumber(newHeight, GraphConfig.nodeSize.group.default.height),
             updatedAt: new Date()
           } as Group;
         }
         return node;
       });
+
+      // ✅ 关键增强：如果当前群组本身也在父群组内，递归更新父群组边界
+      const updatedGroup = updatedNodes.find(n => n.id === groupId) as Group;
+      if (updatedGroup && 'groupId' in updatedGroup && updatedGroup.groupId) {
+        console.log(`  ⬆️ 递归更新父群组 ${updatedGroup.groupId} 的边界`);
+        // 使用 get() 获取最新状态，然后递归调用
+        const newState = { ...state, nodes: updatedNodes };
+        set(newState);
+        get().updateGroupBoundary(updatedGroup.groupId);
+        return get(); // 返回递归更新后的最新状态
+      }
 
       return { nodes: updatedNodes };
     }),

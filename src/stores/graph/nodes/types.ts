@@ -1,15 +1,9 @@
 import { Node, Group, Edge } from '@/types/graph/models';
+import { GraphConfig } from '@/config/graph.config';
 
-// 群组内边距常量
-export const GROUP_PADDING = { 
-  top: 70,    // 标题栏高度 + 额外间距
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
-
-// 节点外框的额外空间（阴影、边框等视觉效果）
-export const NODE_VISUAL_PADDING = 4;
+// 从配置文件导出常量（保持兼容性）
+export const GROUP_PADDING = GraphConfig.groupPadding;
+export const NODE_VISUAL_PADDING = GraphConfig.nodeVisualPadding;
 
 // 安全的数值验证函数
 export const safeNumber = (value: any, defaultValue: number = 0): number => {
@@ -25,15 +19,23 @@ export const safePosition = (position: any): { x: number; y: number } => {
   };
 };
 
-// 约束节点位置在群组边界内
+// 约束节点位置在群组边界内（支持 Node 和 Group）
 export const constrainNodeToGroupBoundary = (
-  node: Node, 
+  node: Node | Group,
   group: Group
 ): { x: number; y: number } => {
-  const nodeWidth = safeNumber(node.width, 150);
-  const nodeHeight = safeNumber(node.height, 100);
-  const groupWidth = safeNumber(group.width, 300);
-  const groupHeight = safeNumber(group.height, 200);
+  // 根据节点类型获取默认尺寸
+  const defaultWidth = node.type === 'group' ?
+    GraphConfig.nodeSize.group.default.width :
+    GraphConfig.nodeSize.note.collapsed.width;
+  const defaultHeight = node.type === 'group' ?
+    GraphConfig.nodeSize.group.default.height :
+    GraphConfig.nodeSize.note.collapsed.height;
+
+  const nodeWidth = safeNumber(node.width, defaultWidth);
+  const nodeHeight = safeNumber(node.height, defaultHeight);
+  const groupWidth = safeNumber(group.width, GraphConfig.nodeSize.group.default.width);
+  const groupHeight = safeNumber(group.height, GraphConfig.nodeSize.group.default.height);
   
   const groupPos = safePosition(group.position);
   const nodePos = safePosition(node.position);
