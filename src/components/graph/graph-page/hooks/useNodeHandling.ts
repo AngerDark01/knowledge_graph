@@ -23,7 +23,6 @@ export const useNodeHandling = () => {
       const viewMode = options?.viewMode || 'note';
       const parentId = options?.parentId;
 
-      // 🔥 如果指定了 parentId，计算容器内的合理初始位置
       let finalPosition = position;
       if (parentId) {
         const parentNode = getNodeById(parentId);

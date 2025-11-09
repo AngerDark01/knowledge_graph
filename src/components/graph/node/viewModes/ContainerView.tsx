@@ -108,30 +108,12 @@ const ContainerView: React.FC<ContainerViewProps> = ({ id, node, selected }) => 
         </div>
       </div>
 
-      {/* Container 内容区域 - 为顶部标题栏留出空间 */}
       <div className="absolute top-12 left-0 right-0 bottom-0 rounded-b-2xl overflow-visible">
-        {/* 如果没有子节点，显示提示 */}
         {node.childrenIds.length === 0 && (
           <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm italic">
             Drag nodes here to add them to this container
           </div>
         )}
-
-        {/* 如果折叠了，显示子节点统计 */}
-        {!node.expanded && node.childrenIds.length > 0 && (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">
-                {node.childrenIds.length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                {node.childrenIds.length === 1 ? 'item' : 'items'} hidden
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 子节点由 ReactFlow 自动渲染在这个区域内 */}
       </div>
     </BaseNodeComponent>
   );

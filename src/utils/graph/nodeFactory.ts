@@ -100,7 +100,7 @@ export const createNode = (params: CreateNodeParams): BaseNode => {
     width: defaultSize.width,
     height: defaultSize.height,
     viewMode,
-    expanded: false, // 默认折叠
+    expanded: viewMode === 'note' ? false : true,
     title: params.title,
     content: params.content,
     tags: params.tags,
@@ -250,9 +250,9 @@ export class ViewModeTransformer {
       viewMode: 'container',
       width,
       height,
-      expanded: true, // Container 的 expanded 总是 true（子节点总是可见）
-      customExpandedSize: undefined, // Container 不使用 customExpandedSize
-      noteState, // 保存 Note 状态
+      expanded: true,
+      customExpandedSize: undefined,
+      noteState,
       updatedAt: now,
     };
   }
@@ -298,7 +298,6 @@ export const toggleExpanded = (node: BaseNode, customSize?: { width: number; hei
       newHeight = config.collapsedHeight!;
     }
   }
-  // Container 模式：不改变尺寸（由子节点自动决定）
 
   const updatedNode: BaseNode = {
     ...node,
@@ -308,9 +307,7 @@ export const toggleExpanded = (node: BaseNode, customSize?: { width: number; hei
     updatedAt: new Date(),
   };
 
-  // 🔥 同步更新保存的状态（仅 Note 模式需要）
   if (node.viewMode === 'note' && node.noteState) {
-    // 更新 noteState
     updatedNode.noteState = {
       ...node.noteState,
       expanded: newExpanded,
@@ -318,15 +315,12 @@ export const toggleExpanded = (node: BaseNode, customSize?: { width: number; hei
       height: newHeight,
     };
   }
-  // Container 不需要更新 expanded（子节点总是可见）
 
   return updatedNode;
 };
 
 /**
  * 保存自定义展开尺寸
- *
- * 同时更新 noteState，确保下次切换回 Note 模式时能恢复
  */
 export const saveCustomExpandedSize = (node: BaseNode, width: number, height: number): BaseNode => {
   if (node.viewMode !== 'note') {
@@ -340,7 +334,6 @@ export const saveCustomExpandedSize = (node: BaseNode, width: number, height: nu
     updatedAt: new Date(),
   };
 
-  // 🔥 同步更新 noteState
   if (node.noteState) {
     updatedNode.noteState = {
       ...node.noteState,

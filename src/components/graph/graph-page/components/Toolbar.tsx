@@ -18,18 +18,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const { selectedNodeId, getNodeById } = useGraphStore();
 
   const handleAddNode = () => {
-    // 检查是否选中了容器节点
     if (selectedNodeId) {
       const selectedNode = getNodeById(selectedNodeId);
       if (selectedNode && selectedNode.viewMode === 'container') {
-        // 🔥 在容器内部添加子节点
-        // 传递占位符位置，实际位置会由 useNodeHandling 中的 calculateChildInitialPosition 计算
         onNodeAdd({ x: 0, y: 0 }, { parentId: selectedNodeId });
         return;
       }
     }
 
-    // 默认在画布中心添加节点
     onNodeAdd({ x: 400, y: 300 });
   };
 

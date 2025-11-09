@@ -149,7 +149,6 @@ function updateContainerBoundary(containerId: string, get: any) {
       height: newHeight
     };
 
-    // 🔥 同步更新 containerState
     if (container.containerState) {
       updates.containerState = {
         ...container.containerState,

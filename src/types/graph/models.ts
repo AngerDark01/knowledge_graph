@@ -78,9 +78,9 @@ export interface BaseNode {
   viewMode: ViewMode;
 
   /**
-   * 展开状态：控制子节点是否可见
-   * - true: 展开，子节点可见
-   * - false: 折叠，子节点隐藏
+   * 展开状态
+   * - Note 模式: true=展开显示内容，false=折叠显示摘要
+   * - Container 模式: 不使用此字段（子节点可见性由 viewMode 决定）
    */
   expanded: boolean;
 
@@ -308,5 +308,8 @@ export const isRootNode = (node: BaseNode): boolean => {
  * 检查节点是否应该显示子节点
  */
 export const shouldShowChildren = (node: BaseNode): boolean => {
+  if (node.viewMode === 'container') {
+    return hasChildren(node);
+  }
   return hasChildren(node) && node.expanded;
 };

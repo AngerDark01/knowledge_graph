@@ -37,9 +37,8 @@ export function shouldNodeBeVisible(node: BaseNode, allNodes: BaseNode[]): boole
     return true;
   }
 
-  // 🔥 核心逻辑：只有当父节点是 Container 模式时，子节点才显示
+  // 只有当父节点是 Container 模式时，子节点才显示
   if (parent.viewMode !== 'container') {
-    // 父节点不是容器（是 Note），子节点隐藏
     return false;
   }
 
@@ -96,8 +95,7 @@ export function hasVisibleChildren(node: BaseNode, allNodes: BaseNode[]): boolea
     return false;
   }
 
-  // 如果节点是折叠的容器，子节点不可见
-  if (node.viewMode === 'container' && !node.expanded) {
+  if (node.viewMode === 'note' && !node.expanded) {
     return false;
   }
 
