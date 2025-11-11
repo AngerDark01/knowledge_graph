@@ -16,6 +16,13 @@ export interface CommonNodeType<T = any> {
   selected?: boolean;
   dragging?: boolean;
   parentId?: string; // 用于嵌套节点
+  // 转换相关字段
+  convertedFrom?: BlockEnum.NODE | BlockEnum.GROUP; // 原始类型
+  isConverted?: boolean; // 是否为转换节点
+  savedChildren?: (Node | Group)[]; // 保存的子节点数据（仅在转换为NoteNode时使用）
+  savedEdges?: Edge[]; // 保存的边关系数据（仅在转换为NoteNode时使用）
+  originalPosition?: { x: number; y: number }; // 原始位置（仅在转换为NoteNode时使用）
+  originalSize?: { width: number; height: number }; // 原始尺寸（仅在转换为NoteNode时使用）
   [key: string]: any;
 }
 

@@ -4,6 +4,7 @@ import BaseNode from './BaseNode';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import { useGraphStore } from '@/stores/graph';
 import { useNodeExpansion } from '../core/hooks';
+import { BlockEnum } from '@/types/graph/models';
 
 interface NoteNodeData {
   title: string;
@@ -139,6 +140,21 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
               </button>
             )}
             
+            {/* 转换为群组按钮 */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const { convertNodeToGroup } = useGraphStore.getState();
+                convertNodeToGroup(id);
+              }}
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
+              title="转换为群组"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+
             {/* 展开/收缩按钮 */}
             <button
               onClick={(e) => {

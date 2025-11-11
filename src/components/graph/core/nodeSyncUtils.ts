@@ -9,7 +9,7 @@ export const safeNumber = (value: any, defaultValue: number = 0): number => {
 
 // 转换为相对坐标
 export const convertToRelativePosition = (
-  node: Node | Group, 
+  node: Node | Group,
   parentGroup?: Group,
   safeNumberImpl: (value: any, defaultValue: number) => number = safeNumber
 ): { x: number; y: number } => {
@@ -23,7 +23,7 @@ export const convertToRelativePosition = (
 
 // 转换为绝对坐标
 export const convertToAbsolutePosition = (
-  relativePos: { x: number; y: number }, 
+  relativePos: { x: number; y: number },
   parentGroup: Group,
   safeNumberImpl: (value: any, defaultValue: number) => number = safeNumber
 ): { x: number; y: number } => {
@@ -76,10 +76,26 @@ export const syncStoreToReactFlowNodes = (
   convertToRelativePositionImpl = convertToRelativePosition,
   safeNumberImpl = safeNumber
 ): ReactFlowNode[] => {
-  // 先按嵌套层级排序（父节点在前）
+  // 检查是否有转换为NoteNode的节点（即isConverted为true且type为NODE的节点）
+  const convertedNodeIds = new Set(
+    storeNodes
+      .filter(n => n.isConverted && n.type === BlockEnum.NODE && n.convertedFrom === BlockEnum.GROUP)
+      .map(n => n.id)
+  );
+
+  // 按嵌套层级排序（父节点在前）
   const sortedNodes = sortNodesByNestingLevel(storeNodes);
 
-  return sortedNodes.map((node: Node | Group) => {
+  return sortedNodes
+    .filter(node => {
+      // ✅ 过滤掉被转换隐藏的节点
+      if ((node as any)._hiddenByConversion) {
+        return false;
+      }
+      // 过滤掉已转换节点的子节点，这样它们不会在UI中显示
+      return !(node as any).groupId || !convertedNodeIds.has((node as any).groupId);
+    })
+    .map((node: Node | Group) => {
     const isGroup = node.type === BlockEnum.GROUP;
 
     if (isGroup) {
@@ -135,10 +151,10 @@ export const syncStoreToReactFlowNodes = (
       };
     } else {
       const regularNode = node as Node & { groupId?: string };
-      const parentGroup = regularNode.groupId 
+      const parentGroup = regularNode.groupId
         ? storeNodes.find(n => n.id === regularNode.groupId) as Group
         : undefined;
-      
+
       const safeNodePosition = {
         x: safeNumberImpl(regularNode.position.x, 0),
         y: safeNumberImpl(regularNode.position.y, 0),
@@ -153,7 +169,7 @@ export const syncStoreToReactFlowNodes = (
         x: safeNumberImpl(position.x, 0),
         y: safeNumberImpl(position.y, 0),
       };
-      
+
       return {
         ...regularNode,
         id: regularNode.id,
@@ -161,7 +177,7 @@ export const syncStoreToReactFlowNodes = (
         position: finalPosition,
         selected: node.id === selectedNodeId,
         draggable: true,
-        ...(regularNode.groupId && { 
+        ...(regularNode.groupId && {
           parentId: regularNode.groupId,
           extent: 'parent' as const,
           expandParent: true,

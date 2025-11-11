@@ -2,7 +2,7 @@ import React, { memo, useState, useCallback } from 'react';
 import { NodeProps } from 'reactflow';
 import BaseNode from './BaseNode';
 import { useGraphStore } from '@/stores/graph';
-import { Group } from '@/types/graph/models';
+import { Group, BlockEnum } from '@/types/graph/models';
 
 type GroupNodeProps = NodeProps<{
   title: string;
@@ -86,6 +86,21 @@ const GroupNode: React.FC<GroupNodeProps> = ({ id, data, selected, ...rest }) =>
           )}
         </div>
         
+        {/* 转换按钮 */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const { convertGroupToNode } = useGraphStore.getState();
+            convertGroupToNode(id);
+          }}
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
+          title="转换为节点"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+        </button>
+
         {/* 节点数量徽章 */}
         <div className="flex-shrink-0 ml-2">
           <div className="px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-700 dark:text-blue-300 rounded-full border border-blue-300/50 dark:border-blue-700/50">
