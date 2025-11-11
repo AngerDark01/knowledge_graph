@@ -18,22 +18,23 @@ export const applyOffsetToDescendants = (
   offset: { x: number; y: number },
   nodes: (Node | Group)[]
 ): (Node | Group)[] => {
-  // 获取该群组的所有后代（不包括群组自己）
+  // 获取该群组的所有后代（包括所有嵌套层级的节点和群组，但不包括群组自己）
   const group = nodes.find(n => n.id === groupId);
   if (!group || group.type !== BlockEnum.GROUP) {
     return nodes;
   }
 
-  // 获取所有直接子节点ID
-  const directChildIds = (group as Group).nodeIds || [];
+  // 使用 getAllDescendants 获取所有后代节点（包括嵌套的群组和节点）
+  const allDescendants = getAllDescendants(groupId, nodes).filter(d => d.id !== groupId);
+  const descendantIds = allDescendants.map(d => d.id);
 
-  console.log(`📦 递归移动群组 ${groupId} 的后代，偏移量:`, offset);
-  console.log(`  直接子节点数量: ${directChildIds.length}`);
+  console.log(`📦 递归移动群组 ${groupId} 的所有后代，偏移量:`, offset);
+  console.log(`  所有后代节点数量: ${descendantIds.length}`);
 
-  // 递归更新所有后代节点的位置
+  // 更新所有后代节点的位置（包括嵌套群组）
   return nodes.map(node => {
-    // 检查是否是直接子节点
-    if (directChildIds.includes(node.id)) {
+    // 检查是否是后代节点
+    if (descendantIds.includes(node.id)) {
       const updatedNode = {
         ...node,
         position: {
@@ -43,7 +44,7 @@ export const applyOffsetToDescendants = (
         updatedAt: new Date(),
       };
 
-      console.log(`  ↳ 更新子节点 ${node.id} (${node.type}):`, {
+      console.log(`  ↳ 更新后代节点 ${node.id} (${node.type}):`, {
         旧位置: node.position,
         新位置: updatedNode.position,
       });

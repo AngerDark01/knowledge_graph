@@ -166,7 +166,8 @@ export const useNodeHandling = () => {
       height: defaultSize.height, // 🔧 使用正确的尺寸 280
       createdAt: new Date(),
       updatedAt: new Date(),
-      ...(groupId && { groupId }) // 如果有群组ID，添加groupId属性
+      // 不在这里设置 groupId，而是通过 addNodeToGroup 来处理
+      // ...(groupId && { groupId })
     };
     
     console.log('✅ 创建节点:', newNode);
@@ -175,12 +176,15 @@ export const useNodeHandling = () => {
     addNode(newNode);
     setSelectedNodeId(newNode.id);
     
-    // 如果节点属于群组，延迟更新群组边界以确保节点被包含
+    addNode(newNode);
+    setSelectedNodeId(newNode.id);
+
+    // 如果节点属于群组，将节点添加到父群组
     if (groupId) {
-      setTimeout(() => {
-        console.log('📐 更新群组边界:', groupId);
-        updateGroupBoundary(groupId);
-      }, 100);
+      console.log('🔗 将节点添加到父群组:', { childId: newNode.id, parentId: groupId });
+      // 使用 store 的 addNodeToGroup 方法，它会正确管理 nodeIds
+      const { addNodeToGroup } = useGraphStore.getState();
+      addNodeToGroup(newNode.id, groupId);
     }
   }, [addNode, nodes, selectedNodeId, setSelectedNodeId, reactFlowInstance, updateGroupBoundary]);
 
@@ -308,7 +312,8 @@ export const useNodeHandling = () => {
         updatedAt: new Date(),
         width: defaultSize.width,
         height: defaultSize.height,
-        ...(parentGroupId && { groupId: parentGroupId }) // 🔧 如果有父群组，添加 groupId
+        // 不在这里设置 groupId，而是通过 addNodeToGroup 来处理
+        // ...(parentGroupId && { groupId: parentGroupId })
       };
 
       console.log('✅ 创建群组:', newGroup);
@@ -316,13 +321,12 @@ export const useNodeHandling = () => {
       addNode(newGroup);
       setSelectedNodeId(newGroup.id);
 
-      // 🔧 如果是子群组，延迟更新父群组边界
+      // 如果是嵌套群组，需要将新群组添加到父群组中
       if (parentGroupId) {
-        const groupIdToUpdate = parentGroupId;
-        setTimeout(() => {
-          console.log('📐 更新父群组边界:', groupIdToUpdate);
-          updateGroupBoundary(groupIdToUpdate);
-        }, 100);
+        console.log('🔗 将群组添加到父群组:', { childId: newGroup.id, parentId: parentGroupId });
+        // 使用 store 的 addNodeToGroup 方法，它会正确管理 nodeIds
+        const { addNodeToGroup } = useGraphStore.getState();
+        addNodeToGroup(newGroup.id, parentGroupId);
       }
     } catch (error) {
       console.error('创建群组失败:', error);
@@ -380,11 +384,30 @@ export const useNodeHandling = () => {
 
         addNode(newNode);
         setSelectedNodeId(newNode.id);
+
+        // 检查放置位置是否在某个群组内
+        const targetGroup = nodes.find((node: Node | Group) => {
+          if (node.type === BlockEnum.GROUP && 
+              position.x >= node.position.x && 
+              position.x <= node.position.x + (node.width || 300) &&
+              position.y >= node.position.y && 
+              position.y <= node.position.y + (node.height || 200)) {
+            return true;
+          }
+          return false;
+        }) as Group;
+
+        // 如果在某个群组内放置，将节点添加到该群组
+        if (targetGroup) {
+          console.log('🔗 将拖放节点添加到群组:', { childId: newNode.id, parentId: targetGroup.id });
+          const { addNodeToGroup } = useGraphStore.getState();
+          addNodeToGroup(newNode.id, targetGroup.id);
+        }
       } catch (error) {
         console.error('放置节点失败:', error);
       }
     },
-    [reactFlowInstance, addNode, setSelectedNodeId]
+    [reactFlowInstance, addNode, setSelectedNodeId, nodes]
   );
 
   return {
