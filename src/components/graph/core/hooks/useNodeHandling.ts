@@ -149,7 +149,7 @@ export const useNodeHandling = () => {
     
     // 创建新节点
     const newNode: Node = {
-      id: `node_${Date.now()}`,
+      id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: BlockEnum.NODE,
       position: {
         x: safeNumber(position.x),
@@ -289,7 +289,7 @@ export const useNodeHandling = () => {
       ).length;
 
       const newGroup: Group = {
-        id: `group_${Date.now()}`,
+        id: `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: BlockEnum.GROUP,
         position: {
           x: safeNumber(position.x),
@@ -366,7 +366,7 @@ export const useNodeHandling = () => {
         const defaultSize = getDefaultNodeSize(BlockEnum.NODE);
 
         const newNode: Node = {
-          id: `node_${Date.now()}`,
+          id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           type: BlockEnum.NODE,
           position,
           data: { 

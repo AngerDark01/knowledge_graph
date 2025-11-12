@@ -100,7 +100,14 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   // 同步边
   useEffect(() => {
     const processedEdges = edges
-      .filter(edge => visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id)) // 根据可见性过滤
+      .filter(edge => {
+        // ✅ 过滤掉被转换隐藏的边
+        if ((edge as any)._hiddenByConversion) {
+          return false;
+        }
+        // 根据可见性过滤
+        return visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id);
+      })
       .map(edge => {
         // 检查边的源节点和目标节点是否都在同一个群组内
         const sourceNode = storeNodes.find(n => n.id === edge.source);
@@ -125,7 +132,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           ...edge,
           selected: edge.id === selectedEdgeId,
           type: edgeType, // 设置边类型
-          zIndex: isInSameGroup ? 100 : undefined, // 确保群组内的边显示在群组之上
+          zIndex: 1000, // 设置边的层级高于节点（默认节点zIndex为0，选中节点为1）
         };
       });
     setReactFlowEdges(processedEdges as ReactFlowEdge[]);
