@@ -2,7 +2,7 @@
 import { Node, Group, Edge, BlockEnum } from '../../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTypes';
 import { GeometryUtils } from '../utils/GeometryUtils';
-import { LAYOUT_CONFIG } from '../../../config/graph.config';
+import { LAYOUT_CONFIG, EDGE_CONFIG } from '../../../config/graph.config';
 
 export interface EdgeOptimizationOptions extends LayoutOptions {
   optimizeHandles?: boolean;
@@ -203,8 +203,8 @@ export class EdgeOptimizationStrategy implements ILayoutStrategy {
           type: 'default',
           animated: false,
           style: {
-            stroke: LAYOUT_CONFIG.edgeStyle.defaultColor,
-            strokeWidth: LAYOUT_CONFIG.edgeStyle.defaultWidth
+            stroke: EDGE_CONFIG.DEFAULT_COLOR,
+            strokeWidth: EDGE_CONFIG.DEFAULT_STROKE_WIDTH
           },
           pathOptions: {
             type: 'smoothStep', // 使用平滑的路径
@@ -218,17 +218,17 @@ export class EdgeOptimizationStrategy implements ILayoutStrategy {
         return {
           type: 'step',
           style: {
-            stroke: LAYOUT_CONFIG.edgeStyle.defaultColor,
-            strokeWidth: LAYOUT_CONFIG.edgeStyle.defaultWidth
+            stroke: EDGE_CONFIG.DEFAULT_COLOR,
+            strokeWidth: EDGE_CONFIG.DEFAULT_STROKE_WIDTH
           }
         };
-        
+
       default: // 'straight'
         return {
           type: 'default',
           style: {
-            stroke: LAYOUT_CONFIG.edgeStyle.defaultColor,
-            strokeWidth: LAYOUT_CONFIG.edgeStyle.defaultWidth
+            stroke: EDGE_CONFIG.DEFAULT_COLOR,
+            strokeWidth: EDGE_CONFIG.DEFAULT_STROKE_WIDTH
           }
         };
     }

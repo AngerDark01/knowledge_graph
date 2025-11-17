@@ -36,74 +36,75 @@ export const convertToAbsolutePosition = (
 /**
  * 按嵌套层级排序节点（父节点必须在子节点之前）
  * ReactFlow 要求：父节点必须在 nodes 数组中出现在子节点之前
+ * ⚡ 优化版：使用深度缓存，避免重复计算
  */
 export const sortNodesByNestingLevel = (nodes: (Node | Group)[]): (Node | Group)[] => {
   const nodeMap = new Map<string, Node | Group>();
+  const depthCache = new Map<string, number>();
+
   nodes.forEach(node => nodeMap.set(node.id, node));
 
-  const sorted: (Node | Group)[] = [];
-  const visited = new Set<string>();
-
-  // 递归添加节点及其所有祖先
-  const addNodeWithAncestors = (node: Node | Group) => {
-    if (visited.has(node.id)) return;
-
-    // 如果节点有父群组，先添加父群组
-    if ('groupId' in node && node.groupId) {
-      const parent = nodeMap.get(node.groupId);
-      if (parent) {
-        addNodeWithAncestors(parent);
-      }
+  // ⚡ 优化：计算每个节点的深度（带缓存）
+  const getDepth = (nodeId: string): number => {
+    if (depthCache.has(nodeId)) {
+      return depthCache.get(nodeId)!;
     }
 
-    // 然后添加当前节点
-    if (!visited.has(node.id)) {
-      visited.add(node.id);
-      sorted.push(node);
+    const node = nodeMap.get(nodeId);
+    if (!node || !('groupId' in node) || !node.groupId) {
+      depthCache.set(nodeId, 0);
+      return 0;
     }
+
+    const depth = 1 + getDepth(node.groupId);
+    depthCache.set(nodeId, depth);
+    return depth;
   };
 
-  // 遍历所有节点
-  nodes.forEach(node => addNodeWithAncestors(node));
-
-  return sorted;
+  // ⚡ 优化：计算所有节点的深度并按深度排序（一次遍历）
+  return [...nodes].sort((a, b) => getDepth(a.id) - getDepth(b.id));
 };
 
 // 将 store 节点同步到 ReactFlow 节点
+// ⚡ 优化版：使用 Map 缓存，减少查找次数
 export const syncStoreToReactFlowNodes = (
   storeNodes: (Node | Group)[],
   selectedNodeId: string | null,
   convertToRelativePositionImpl = convertToRelativePosition,
   safeNumberImpl = safeNumber
 ): ReactFlowNode[] => {
-  // 检查是否有转换为NoteNode的节点（即isConverted为true且type为NODE的节点）
-  const convertedNodeIds = new Set(
-    storeNodes
-      .filter(n => n.isConverted && n.type === BlockEnum.NODE && n.convertedFrom === BlockEnum.GROUP)
-      .map(n => n.id)
-  );
+  // ⚡ 优化：创建节点 Map，避免重复 find 操作 (O(1) vs O(n))
+  const nodesMap = new Map<string, Node | Group>();
+  storeNodes.forEach(n => nodesMap.set(n.id, n));
+
+  // ⚡ 优化：一次遍历构建转换节点集合
+  const convertedNodeIds = new Set<string>();
+  storeNodes.forEach(n => {
+    if (n.isConverted && n.type === BlockEnum.NODE && n.convertedFrom === BlockEnum.GROUP) {
+      convertedNodeIds.add(n.id);
+    }
+  });
 
   // 按嵌套层级排序（父节点在前）
   const sortedNodes = sortNodesByNestingLevel(storeNodes);
 
-  return sortedNodes
-    .filter(node => {
-      // ✅ 过滤掉被转换隐藏的节点
-      if ((node as any)._hiddenByConversion) {
-        return false;
-      }
-      // 过滤掉已转换节点的子节点，这样它们不会在UI中显示
-      return !(node as any).groupId || !convertedNodeIds.has((node as any).groupId);
-    })
-    .map((node: Node | Group) => {
+  // ⚡ 优化：合并 filter 和 map 为一次遍历
+  const result: ReactFlowNode[] = [];
+
+  for (const node of sortedNodes) {
+    // 过滤逻辑
+    if ((node as any)._hiddenByConversion) continue;
+    if ((node as any).groupId && convertedNodeIds.has((node as any).groupId)) continue;
+
+    // 映射逻辑（内联到循环中）
     const isGroup = node.type === BlockEnum.GROUP;
 
     if (isGroup) {
       const groupNode = node as Group;
 
-      // 🔧 支持 Group 嵌套：如果 Group 有 groupId，需要转换为相对坐标
+      // ⚡ 优化：使用 Map 查找父群组（O(1) vs O(n)）
       const parentGroup = groupNode.groupId
-        ? storeNodes.find(n => n.id === groupNode.groupId) as Group
+        ? nodesMap.get(groupNode.groupId) as Group
         : undefined;
 
       const safeGroupPosition = {
@@ -121,7 +122,7 @@ export const syncStoreToReactFlowNodes = (
         y: safeNumberImpl(position.y, 0),
       };
 
-      return {
+      result.push({
         ...groupNode,
         id: groupNode.id,
         type: 'group',
@@ -148,11 +149,13 @@ export const syncStoreToReactFlowNodes = (
           attributes: groupNode.attributes,
           validationError: groupNode.validationError,
         },
-      };
+      } as ReactFlowNode);
     } else {
       const regularNode = node as Node & { groupId?: string };
+
+      // ⚡ 优化：使用 Map 查找父群组（O(1) vs O(n)）
       const parentGroup = regularNode.groupId
-        ? storeNodes.find(n => n.id === regularNode.groupId) as Group
+        ? nodesMap.get(regularNode.groupId) as Group
         : undefined;
 
       const safeNodePosition = {
@@ -170,7 +173,7 @@ export const syncStoreToReactFlowNodes = (
         y: safeNumberImpl(position.y, 0),
       };
 
-      return {
+      result.push({
         ...regularNode,
         id: regularNode.id,
         type: 'custom',
@@ -196,7 +199,9 @@ export const syncStoreToReactFlowNodes = (
           attributes: regularNode.attributes,
           validationError: regularNode.validationError,
         },
-      };
+      } as ReactFlowNode);
     }
-  });
+  }
+
+  return result;
 };

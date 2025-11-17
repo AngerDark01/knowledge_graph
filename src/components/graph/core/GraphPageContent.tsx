@@ -83,19 +83,25 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const { onRecenter, onClear } = useViewportControls();
   useKeyboardShortcuts(onRecenter, rfInstance);
 
-  // 同步store到ReactFlow
-  useEffect(() => {
-    // 如果正在拖拽，跳过同步以避免覆盖用户操作
+  // ⚡ 优化：使用 useMemo 缓存节点转换结果
+  const processedNodes = useMemo(() => {
+    // 如果正在拖拽，返回当前节点（避免覆盖用户操作）
     if (isDraggingRef.current) {
-      console.log('⏸️ 拖拽中，跳过同步');
-      return;
+      console.log('⏸️ 拖拽中，使用当前节点');
+      return reactFlowNodes;
     }
 
-    const processedNodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
-    
-    console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
-    setReactFlowNodes(processedNodes as ReactFlowNode[]);
-  }, [storeNodes, selectedNodeId, setReactFlowNodes]);
+    const nodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
+    console.log('🔄 同步节点到ReactFlow:', nodes.length);
+    return nodes as ReactFlowNode[];
+  }, [storeNodes, selectedNodeId]); // 移除 reactFlowNodes 依赖，避免循环
+
+  // ⚡ 优化：仅在 processedNodes 真正变化时更新
+  useEffect(() => {
+    if (!isDraggingRef.current && processedNodes !== reactFlowNodes) {
+      setReactFlowNodes(processedNodes);
+    }
+  }, [processedNodes, setReactFlowNodes]);
 
   // 同步边
   useEffect(() => {
@@ -195,7 +201,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     lastDraggedNodeRef.current = node.id;
   }, []);
 
-  // 拖拽结束
+  // ⚡ 优化版：拖拽结束处理（移除不必要的 setTimeout）
   const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     console.log('🎯 拖拽结束:', node.id);
 
@@ -231,14 +237,13 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
       handleGroupMove(node.id, absolutePosition);
 
-      // 🔧 如果是嵌套群组，更新父群组边界
+      // ⚡ 优化：直接更新父群组边界（防抖已在 updateGroupBoundary 中处理）
       if (storeGroup.groupId) {
-        setTimeout(() => {
-          console.log('📐 更新父群组边界:', storeGroup.groupId);
-          updateGroupBoundary(storeGroup.groupId!);
-        }, 100);
+        console.log('📐 更新父群组边界:', storeGroup.groupId);
+        updateGroupBoundary(storeGroup.groupId!);
       }
 
+      // ⚡ 优化：立即重置拖拽状态
       isDraggingRef.current = false;
     } else {
       const storeNode = storeNodes.find(n => n.id === node.id) as Node;
@@ -251,7 +256,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         x: Number(currentNode.position.x),
         y: Number(currentNode.position.y)
       };
-      
+
       if (storeNode.groupId) {
         const parentGroup = storeNodes.find(n => n.id === storeNode.groupId) as Group;
         if (parentGroup) {
@@ -264,22 +269,20 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           console.log('  父群组位置:', parentGroup.position);
         }
       }
-      
+
       console.log('💾 最终保存位置:', absolutePosition);
-      
+
       // 先更新位置
       updateNodePosition(node.id, absolutePosition);
-      
-      // 如果节点属于群组，更新群组边界
+
+      // ⚡ 优化：直接更新群组边界（防抖已在 updateGroupBoundary 中处理）
       if (storeNode.groupId) {
         updateGroupBoundary(storeNode.groupId!);
       }
-      
-      // 延迟重置拖拽状态，确保更新完成
-      setTimeout(() => {
-        isDraggingRef.current = false;
-        lastDraggedNodeRef.current = null;
-      }, 100);
+
+      // ⚡ 优化：立即重置拖拽状态（不需要延迟）
+      isDraggingRef.current = false;
+      lastDraggedNodeRef.current = null;
     }
   }, [reactFlowInstance, storeNodes, handleGroupMove, updateNodePosition, updateGroupBoundary]);
 
@@ -371,6 +374,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                 }
               }
               
+              // ⚡ 优化版：尺寸变化处理（减少 setTimeout 嵌套）
               if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
                 if (resizeTimeoutRef.current[change.id]) {
                   clearTimeout(resizeTimeoutRef.current[change.id]);
@@ -397,17 +401,14 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                     if (currentNode.type === 'group') {
                       const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
 
-                      setTimeout(() => {
-                        updateGroupBoundary(change.id);
+                      // ⚡ 优化：直接更新边界（防抖已在 updateGroupBoundary 中处理）
+                      updateGroupBoundary(change.id);
 
-                        // 🔧 如果是嵌套群组，同时更新父群组边界
-                        if (storeGroup?.groupId) {
-                          setTimeout(() => {
-                            console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
-                            updateGroupBoundary(storeGroup.groupId!);
-                          }, 50);
-                        }
-                      }, 50);
+                      // ⚡ 优化：直接更新父群组边界（防抖已处理）
+                      if (storeGroup?.groupId) {
+                        console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
+                        updateGroupBoundary(storeGroup.groupId!);
+                      }
                     }
                   }
 

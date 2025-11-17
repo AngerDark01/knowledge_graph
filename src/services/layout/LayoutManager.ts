@@ -27,12 +27,12 @@ export interface ILayoutManager {
   /**
    * 设置布局配置
    */
-  setConfig(config: Partial<typeof DEFAULT_LAYOUT_CONFIG>): void;
-  
+  setConfig(config: Partial<typeof LAYOUT_CONFIG>): void;
+
   /**
    * 获取当前配置
    */
-  getConfig(): typeof DEFAULT_LAYOUT_CONFIG;
+  getConfig(): typeof LAYOUT_CONFIG;
 }
 
 export class LayoutManager implements ILayoutManager {
@@ -152,14 +152,14 @@ export class LayoutManager implements ILayoutManager {
   /**
    * 设置布局配置
    */
-  setConfig(config: Partial<typeof DEFAULT_LAYOUT_CONFIG>): void {
+  setConfig(config: Partial<typeof LAYOUT_CONFIG>): void {
     this.config = { ...this.config, ...config };
   }
-  
+
   /**
    * 获取当前配置
    */
-  getConfig(): typeof DEFAULT_LAYOUT_CONFIG {
+  getConfig(): typeof LAYOUT_CONFIG {
     return this.config;
   }
 }
