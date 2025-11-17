@@ -87,13 +87,10 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   useEffect(() => {
     // 如果正在拖拽，跳过同步以避免覆盖用户操作
     if (isDraggingRef.current) {
-      console.log('⏸️ 拖拽中，跳过同步');
       return;
     }
 
     const processedNodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
-    
-    console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
     setReactFlowNodes(processedNodes as ReactFlowNode[]);
   }, [storeNodes, selectedNodeId, setReactFlowNodes]);
 
@@ -190,15 +187,12 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   // 拖拽开始
   const onNodeDragStart = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
-    console.log('🚀 开始拖拽:', node.id);
     isDraggingRef.current = true;
     lastDraggedNodeRef.current = node.id;
   }, []);
 
   // 拖拽结束
   const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
-    console.log('🎯 拖拽结束:', node.id);
-
     const currentNode = reactFlowInstance?.getNode(node.id);
     if (!currentNode) {
       isDraggingRef.current = false;
@@ -225,7 +219,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
             x: Number(currentNode.position.x) + Number(parentGroup.position.x),
             y: Number(currentNode.position.y) + Number(parentGroup.position.y)
           };
-          console.log('📍 群组 相对→绝对:', currentNode.position, '→', absolutePosition);
         }
       }
 
@@ -233,10 +226,10 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
       // 🔧 如果是嵌套群组，更新父群组边界
       if (storeGroup.groupId) {
-        setTimeout(() => {
-          console.log('📐 更新父群组边界:', storeGroup.groupId);
+        // ⚡ 性能优化: 使用 requestAnimationFrame 延迟执行，避免阻塞主线程
+        requestAnimationFrame(() => {
           updateGroupBoundary(storeGroup.groupId!);
-        }, 100);
+        });
       }
 
       isDraggingRef.current = false;
@@ -251,35 +244,33 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         x: Number(currentNode.position.x),
         y: Number(currentNode.position.y)
       };
-      
+
       if (storeNode.groupId) {
         const parentGroup = storeNodes.find(n => n.id === storeNode.groupId) as Group;
         if (parentGroup) {
-          // 使用同步函数中的转换逻辑
           absolutePosition = {
             x: Number(currentNode.position.x) + Number(parentGroup.position.x),
             y: Number(currentNode.position.y) + Number(parentGroup.position.y)
           };
-          console.log('📍 相对→绝对:', currentNode.position, '→', absolutePosition);
-          console.log('  父群组位置:', parentGroup.position);
         }
       }
-      
-      console.log('💾 最终保存位置:', absolutePosition);
-      
+
       // 先更新位置
       updateNodePosition(node.id, absolutePosition);
-      
+
       // 如果节点属于群组，更新群组边界
       if (storeNode.groupId) {
-        updateGroupBoundary(storeNode.groupId!);
+        // ⚡ 性能优化: 使用 requestAnimationFrame 延迟执行
+        requestAnimationFrame(() => {
+          updateGroupBoundary(storeNode.groupId!);
+        });
       }
-      
-      // 延迟重置拖拽状态，确保更新完成
-      setTimeout(() => {
+
+      // ⚡ 性能优化: 使用 requestAnimationFrame 延迟重置状态
+      requestAnimationFrame(() => {
         isDraggingRef.current = false;
         lastDraggedNodeRef.current = null;
-      }, 100);
+      });
     }
   }, [reactFlowInstance, storeNodes, handleGroupMove, updateNodePosition, updateGroupBoundary]);
 

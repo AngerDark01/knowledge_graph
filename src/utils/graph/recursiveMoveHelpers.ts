@@ -26,30 +26,28 @@ export const applyOffsetToDescendants = (
 
   // 使用 getAllDescendants 获取所有后代节点（包括嵌套的群组和节点）
   const allDescendants = getAllDescendants(groupId, nodes).filter(d => d.id !== groupId);
-  const descendantIds = allDescendants.map(d => d.id);
 
-  console.log(`📦 递归移动群组 ${groupId} 的所有后代，偏移量:`, offset);
-  console.log(`  所有后代节点数量: ${descendantIds.length}`);
+  // ⚡ 性能优化: 使用 Set 代替数组，查找时间从 O(n) 降到 O(1)
+  const descendantIdsSet = new Set(allDescendants.map(d => d.id));
 
-  // 更新所有后代节点的位置（包括嵌套群组）
+  // 仅在开发环境输出日志
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📦 递归移动群组 ${groupId}，后代数量: ${descendantIdsSet.size}, 偏移: (${offset.x}, ${offset.y})`);
+  }
+
+  // ⚡ 性能优化: 使用 Set.has() 替代 Array.includes()，时间复杂度从 O(N*m) 降到 O(N)
+  const now = new Date();
   return nodes.map(node => {
-    // 检查是否是后代节点
-    if (descendantIds.includes(node.id)) {
-      const updatedNode = {
+    // 检查是否是后代节点 - O(1) 查找
+    if (descendantIdsSet.has(node.id)) {
+      return {
         ...node,
         position: {
           x: node.position.x + offset.x,
           y: node.position.y + offset.y,
         },
-        updatedAt: new Date(),
+        updatedAt: now,  // 复用同一个 Date 对象
       };
-
-      console.log(`  ↳ 更新后代节点 ${node.id} (${node.type}):`, {
-        旧位置: node.position,
-        新位置: updatedNode.position,
-      });
-
-      return updatedNode;
     }
 
     return node;

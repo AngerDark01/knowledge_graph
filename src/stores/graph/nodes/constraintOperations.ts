@@ -5,8 +5,6 @@ import { applyOffsetToDescendants } from '@/utils/graph/recursiveMoveHelpers';
 export const createConstraintOperationsSlice = (set: any, get: any): ConstraintOperationsSlice => {
   return {
     updateNodePosition: (id, position) => set((state: any) => {
-      console.log(`📍 更新节点位置 ${id}:`, position);
-
       const safePos = safePosition(position);
 
       return {
@@ -27,11 +25,9 @@ export const createConstraintOperationsSlice = (set: any, get: any): ConstraintO
               if (parentGroup) {
                 const constrainedPos = constrainNodeToGroupBoundary(updatedNode, parentGroup);
                 updatedNode.position = constrainedPos;
-                console.log('  🔒 拖动时约束位置到群组内:', constrainedPos);
               }
             }
 
-            console.log(`  ✅ 位置已更新:`, updatedNode.position);
             return updatedNode;
           }
           return node;
@@ -45,7 +41,6 @@ export const createConstraintOperationsSlice = (set: any, get: any): ConstraintO
       ) as Group;
 
       if (!group) {
-        console.log(`⚠️ 群组 ${groupId} 未找到`);
         return state;
       }
 
@@ -55,11 +50,10 @@ export const createConstraintOperationsSlice = (set: any, get: any): ConstraintO
       const offsetX = safeNewPos.x - safeOldPos.x;
       const offsetY = safeNewPos.y - safeOldPos.y;
 
-      console.log(`📦 群组移动 ${groupId}:`, {
-        旧位置: safeOldPos,
-        新位置: safeNewPos,
-        偏移: { x: offsetX, y: offsetY }
-      });
+      // ⚡ 性能优化: 如果偏移量为0，直接返回，避免不必要的更新
+      if (offsetX === 0 && offsetY === 0) {
+        return state;
+      }
 
       // 先更新群组位置
       let updatedNodes = state.nodes.map((node: Node | Group) => {
