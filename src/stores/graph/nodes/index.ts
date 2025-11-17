@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { NodeOperationsSlice, GroupOperationsSlice, ConstraintOperationsSlice, GroupBoundaryOperationsSlice } from './types';
+import { NodeOperationsSlice, GroupOperationsSlice, ConstraintOperationsSlice, GroupBoundaryOperationsSlice, LayoutOperationsSlice } from './types';
 import { createBasicOperationsSlice } from './basicOperations';
 import { createGroupOperationsSlice } from './groupOperations';
 import { createConstraintOperationsSlice } from './constraintOperations';
@@ -10,12 +10,16 @@ export type NodesSlice = NodeOperationsSlice &
                         GroupOperationsSlice &
                         ConstraintOperationsSlice &
                         GroupBoundaryOperationsSlice &
-                        ConversionOperationsSlice;
+                        ConversionOperationsSlice &
+                        LayoutOperationsSlice;
 
-export const createNodesSlice = (set: any, get: any): NodesSlice => ({
-  ...createBasicOperationsSlice(set, get),
-  ...createGroupOperationsSlice(set, get),
-  ...createConstraintOperationsSlice(set, get),
-  ...createGroupBoundaryOperationsSlice(set, get),
-  ...createConversionOperationsSlice(set, get),
-});
+export const createNodesSlice = (set: any, get: any): NodesSlice => {
+  const basicOperations = createBasicOperationsSlice(set, get);
+  return {
+    ...basicOperations,
+    ...createGroupOperationsSlice(set, get),
+    ...createConstraintOperationsSlice(set, get),
+    ...createGroupBoundaryOperationsSlice(set, get),
+    ...createConversionOperationsSlice(set, get),
+  } as NodesSlice;
+};

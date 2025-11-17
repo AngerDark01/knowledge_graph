@@ -210,6 +210,77 @@ export const EDGE_CONFIG = {
   CROSS_GROUP_DASH_ARRAY: '5,5',
 } as const;
 
+// ========== 布局配置 ==========
+export const LAYOUT_CONFIG = {
+  general: {
+    enableAnimation: true,
+    animationDuration: 500,
+    debugMode: false
+  },
+  nodeSize: {
+    defaultNode: { width: 350, height: 280 },  // 符合NoteNode的初始尺寸
+    groupNode: { width: 300, height: 200 },   // 符合GroupNode的初始尺寸
+    minWidth: 100,
+    minHeight: 80,
+    maxWidth: 800,
+    maxHeight: 600
+  },
+  weight: {
+    areaWeight: 0.3,
+    totalEdgesWeight: 0.4,
+    crossEdgesWeight: 0.2,
+    sameEdgesWeight: 0.1,
+    maxArea: 100000,
+    maxEdges: 20,
+    coreThreshold: 0.7,
+    secondaryThreshold: 0.4
+  },
+  collision: {
+    minNodeGap: 20,
+    minGroupPadding: 30,
+    maxIterations: 100,
+    repulsionForce: 0.5,
+    convergenceThreshold: 1.0,
+    boundaryMargin: 10
+  },
+  layoutAlgorithm: {
+    gridSpacing: 20,
+    centerWeight: 0.2,
+    boundaryExpansion: 1.1
+  },
+  group: {
+    paddingTop: 40,        // 为Group标题预留空间
+    paddingRight: 20,
+    paddingBottom: 20,
+    paddingLeft: 20,
+    titleHeight: 40,       // Group标题高度
+    repositionThreshold: 50,
+    interLevelSpacing: 100,
+    levelAlignment: 'center' as const,
+    boundaryExpansionFactor: 1.2,
+    maxIteration: 5
+  },
+  recursive: {
+    maxDepth: 10,
+    levelSpacing: 50,
+    boundaryExpansionFactor: 1.2,
+    shouldMergeSingleChildGroup: true,
+    maxNodesPerGroup: 10,
+    balanceThreshold: 3,
+  },
+  performance: {
+    maxCacheSize: 50,
+    cacheEnabled: true,
+    cacheMaxAge: 300000, // 5 minutes
+    baseLayoutTime: 10,
+    nodeTimeMultiplier: 0.5,
+    depthTimeMultiplier: 2.0
+  },
+  memory: {
+    limit: 512 * 1024 * 1024 // 512MB
+  }
+};
+
 // ========== 导出所有常量的快捷访问 ==========
 export const {
   GROUP_PADDING,
@@ -220,3 +291,6 @@ export const {
   MAX_DEPTH,
   ENABLE_CIRCULAR_CHECK,
 } = NESTING_CONFIG;
+
+// 导出布局配置类型
+export type LayoutConfig = typeof LAYOUT_CONFIG;

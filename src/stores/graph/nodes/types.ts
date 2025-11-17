@@ -97,6 +97,11 @@ export interface ConstraintOperationsSlice {
   handleGroupMove: (groupId: string, newPosition: { x: number; y: number }) => void;
 }
 
+export interface LayoutOperationsSlice {
+  setIsLayoutMode: (isLayoutMode: boolean) => void;
+  isLayoutMode: boolean;
+}
+
 export interface GroupBoundaryOperationsSlice {
   updateGroupBoundary: (groupId: string) => void;
 }

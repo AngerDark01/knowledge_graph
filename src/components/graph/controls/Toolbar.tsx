@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import LayoutControl from './LayoutControl';
 import { useGraphStore } from '@/stores/graph';
 import { BlockEnum } from '@/types/graph/models';
 
@@ -42,6 +43,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <Button className="w-full text-red-500 border-red-500" variant="outline" onClick={onClear}>
         Clear All
       </Button>
+
+      {/* 布局控制按钮 */}
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <LayoutControl />
+      </div>
     </div>
   );
 };

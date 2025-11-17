@@ -6,17 +6,23 @@ import {
   constrainNodeToGroupBoundary 
 } from './types';
 
-export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSlice => {
+export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSlice & { isLayoutMode: boolean; setIsLayoutMode: (isLayoutMode: boolean) => void } => {
   return {
     nodes: [],
     selectedNodeId: null,
     selectedEdgeId: null,
+    isLayoutMode: false,
     
     setSelectedNodeId: (id) => {
       console.log('🎯 设置选中节点:', id);
       set({ selectedNodeId: id });
     },
     
+    setIsLayoutMode: (isLayoutMode: boolean) => {
+      console.log('🔧 设置布局模式:', isLayoutMode);
+      set({ isLayoutMode });
+    },
+
     setSelectedEdgeId: (id) => {
       console.log('🎯 设置选中边:', id);
       set({ selectedEdgeId: id });
@@ -48,11 +54,12 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
       };
       
       // 如果节点属于群组，确保位置在群组内
-      if ('groupId' in safeNode && safeNode.groupId) {
-        const group = state.nodes.find((n: Node | Group) => 
+      // 但在布局模式下跳过此约束逻辑，以保持布局算法计算的相对位置
+      if ('groupId' in safeNode && safeNode.groupId && !state.isLayoutMode) {
+        const group = state.nodes.find((n: Node | Group) =>
           n.id === safeNode.groupId && n.type === BlockEnum.GROUP
         ) as Group;
-        
+
         if (group) {
           const constrainedPos = constrainNodeToGroupBoundary(safeNode as Node, group);
           safeNode.position = constrainedPos;
@@ -119,7 +126,8 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
             }
             
             // 🔧 如果节点（Node 或 Group）属于群组，确保位置在群组边界内
-            if ('groupId' in updatedNode && updatedNode.groupId) {
+            // 但在布局模式下跳过此约束逻辑，以保持布局算法计算的相对位置
+            if ('groupId' in updatedNode && updatedNode.groupId && !state.isLayoutMode) {
               const parentGroup = state.nodes.find((n: Node | Group) =>
                 n.id === updatedNode.groupId && n.type === BlockEnum.GROUP
               ) as Group;
