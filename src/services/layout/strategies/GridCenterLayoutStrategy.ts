@@ -4,6 +4,7 @@ import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTyp
 import { GeometryUtils } from '../utils/GeometryUtils';
 import { LAYOUT_CONFIG } from '../../../config/graph.config';
 import { applyOffsetToDescendants, getAbsolutePosition } from '../../../utils/graph/recursiveMoveHelpers';
+import { EdgeOptimizer, OptimizedEdge } from '../algorithms/EdgeOptimizer';
 
 export interface GridCenterLayoutOptions extends LayoutOptions {
   centerWeight?: number;
@@ -14,7 +15,14 @@ export interface GridCenterLayoutOptions extends LayoutOptions {
 export class GridCenterLayoutStrategy implements ILayoutStrategy {
   name = 'Grid Center Layout';
   id = 'grid-center-layout';
-  
+
+  // 边优化器实例
+  private edgeOptimizer: EdgeOptimizer;
+
+  constructor() {
+    this.edgeOptimizer = new EdgeOptimizer();
+  }
+
   async applyLayout(
     nodes: (Node | Group)[],
     edges: Edge[],
@@ -51,6 +59,9 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
       // 实现嵌套节点的相对位置保持机制
       const finalNodes = this.updateNestedNodePositions(nodes, resolvedNodes);
 
+      // 优化边的连接点
+      const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(finalNodes, edges);
+
       const endTime = performance.now();
 
       // 创建结果映射
@@ -59,10 +70,16 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
         nodePositions.set(node.id, node.position);
       }
 
+      // 创建边映射
+      const edgeHandles = new Map<string, OptimizedEdge>();
+      for (const edge of optimizedEdges) {
+        edgeHandles.set(edge.id, edge);
+      }
+
       return {
         success: true,
         nodes: nodePositions,
-        edges: new Map(), // 基础布局策略暂时不处理边
+        edges: edgeHandles, // 返回优化后的边信息
         errors: [],
         stats: {
           duration: endTime - startTime,

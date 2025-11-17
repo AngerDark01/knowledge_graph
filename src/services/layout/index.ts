@@ -1,17 +1,13 @@
 // src/services/layout/index.ts
 import { LayoutManager } from './LayoutManager';
 import { GridCenterLayoutStrategy } from './strategies/GridCenterLayoutStrategy';
-import { GroupAwareLayoutStrategy } from './strategies/GroupAwareLayoutStrategy';
-import { EdgeOptimizationStrategy } from './strategies/EdgeOptimizationStrategy';
-import { CompositeLayoutStrategy } from './strategies/CompositeLayoutStrategy';
+import { EdgeOptimizer } from './algorithms/EdgeOptimizer';
 import { GeometryUtils } from './utils/GeometryUtils';
 
 export {
   LayoutManager,
   GridCenterLayoutStrategy,
-  GroupAwareLayoutStrategy,
-  EdgeOptimizationStrategy,
-  CompositeLayoutStrategy,
+  EdgeOptimizer,
   GeometryUtils
 };
 

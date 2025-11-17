@@ -33,6 +33,8 @@ import { useViewportControls } from './hooks/useViewportControls';
 import { ZoomIndicator } from '../controls/ZoomIndicator';
 import { Toolbar } from '../controls/Toolbar';
 import { syncStoreToReactFlowNodes } from './nodeSyncUtils';
+import { EdgeOptimizer } from '@/services/layout/algorithms/EdgeOptimizer';
+import { EDGE_OPTIMIZATION_CONFIG } from '@/config/graph.config';
 
 interface GraphPageProps {
   className?: string;
@@ -78,10 +80,57 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const isDraggingRef = useRef<boolean>(false);
   const lastDraggedNodeRef = useRef<string | null>(null);
 
+  // 边优化器实例和防抖定时器
+  const edgeOptimizerRef = useRef<EdgeOptimizer>(new EdgeOptimizer());
+  const edgeOptimizeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const { onNodeAdd, onGroupAdd, onDragOver, onDrop } = useNodeHandling();
   const { onConnect } = useEdgeHandling();
   const { onRecenter, onClear } = useViewportControls();
   useKeyboardShortcuts(onRecenter, rfInstance);
+
+  // 边优化防抖函数：在拖拽结束后优化相关边的连接点
+  const optimizeEdgesAfterDrag = useCallback((draggedNodeId: string) => {
+    if (!EDGE_OPTIMIZATION_CONFIG.ENABLED) return;
+
+    // 清除之前的定时器
+    if (edgeOptimizeTimerRef.current) {
+      clearTimeout(edgeOptimizeTimerRef.current);
+    }
+
+    // 设置新的定时器（防抖）
+    edgeOptimizeTimerRef.current = setTimeout(() => {
+      const { nodes, edges: allEdges, updateEdge } = useGraphStore.getState();
+
+      // 找到与拖拽节点相关的边
+      const affectedNodeIds = new Set([draggedNodeId]);
+      const affectedEdges = allEdges.filter(
+        (edge) => edge.source === draggedNodeId || edge.target === draggedNodeId
+      );
+
+      if (affectedEdges.length === 0) return;
+
+      console.log(`🔗 优化 ${affectedEdges.length} 条受影响的边`);
+
+      // 使用批量优化
+      const optimizedEdges = edgeOptimizerRef.current.optimizeBatch(
+        nodes,
+        allEdges,
+        affectedNodeIds
+      );
+
+      // 只更新受影响的边
+      affectedEdges.forEach((edge) => {
+        const optimizedEdge = optimizedEdges.find((e) => e.id === edge.id);
+        if (optimizedEdge && optimizedEdge.sourceHandle && optimizedEdge.targetHandle) {
+          updateEdge(edge.id, {
+            sourceHandle: optimizedEdge.sourceHandle,
+            targetHandle: optimizedEdge.targetHandle,
+          });
+        }
+      });
+    }, EDGE_OPTIMIZATION_CONFIG.DEBOUNCE_DELAY);
+  }, []);
 
   // ⚡ 优化：使用 useMemo 缓存节点转换结果
   const processedNodes = useMemo(() => {
@@ -243,6 +292,9 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         updateGroupBoundary(storeGroup.groupId!);
       }
 
+      // ⚡ 优化边连接点
+      optimizeEdgesAfterDrag(node.id);
+
       // ⚡ 优化：立即重置拖拽状态
       isDraggingRef.current = false;
     } else {
@@ -280,11 +332,14 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         updateGroupBoundary(storeNode.groupId!);
       }
 
+      // ⚡ 优化边连接点
+      optimizeEdgesAfterDrag(node.id);
+
       // ⚡ 优化：立即重置拖拽状态（不需要延迟）
       isDraggingRef.current = false;
       lastDraggedNodeRef.current = null;
     }
-  }, [reactFlowInstance, storeNodes, handleGroupMove, updateNodePosition, updateGroupBoundary]);
+  }, [reactFlowInstance, storeNodes, handleGroupMove, updateNodePosition, updateGroupBoundary, optimizeEdgesAfterDrag]);
 
   // MiniMap 节点颜色
   const nodeColor = useCallback((node: ReactFlowNode) => {

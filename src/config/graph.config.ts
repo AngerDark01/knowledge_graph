@@ -210,6 +210,26 @@ export const EDGE_CONFIG = {
   CROSS_GROUP_DASH_ARRAY: '5,5',
 } as const;
 
+// ========== 边优化配置 ==========
+export const EDGE_OPTIMIZATION_CONFIG = {
+  /** 是否启用边优化 */
+  ENABLED: true,
+  /** 角度阈值（用于确定连接点方向） */
+  ANGLE_THRESHOLDS: {
+    /** π/4，用于判断是水平还是垂直方向 */
+    QUADRANT: Math.PI / 4,
+  },
+  /** 防抖延迟（毫秒） - 拖拽时避免频繁计算 */
+  DEBOUNCE_DELAY: 100,
+  /** 批量优化时的性能阈值 */
+  PERFORMANCE: {
+    /** 边数量超过此值时启用性能优化模式 */
+    BATCH_THRESHOLD: 100,
+    /** 使用 requestIdleCallback 的边数量阈值 */
+    IDLE_CALLBACK_THRESHOLD: 50,
+  },
+} as const;
+
 // ========== 布局配置 ==========
 export const LAYOUT_CONFIG = {
   general: {

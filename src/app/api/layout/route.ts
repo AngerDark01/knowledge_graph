@@ -1,14 +1,11 @@
 // src/app/api/layout/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { Node, Group, Edge } from '@/types/graph/models';
-import { LayoutManager, GridCenterLayoutStrategy, GroupAwareLayoutStrategy, EdgeOptimizationStrategy, CompositeLayoutStrategy } from '@/services/layout';
+import { LayoutManager, GridCenterLayoutStrategy } from '@/services/layout';
 
 // 初始化布局管理器并注册策略
 const layoutManager = new LayoutManager();
 layoutManager.registerStrategy('grid-center-layout', new GridCenterLayoutStrategy());
-layoutManager.registerStrategy('group-aware-layout', new GroupAwareLayoutStrategy());
-layoutManager.registerStrategy('edge-optimization', new EdgeOptimizationStrategy());
-layoutManager.registerStrategy('composite-layout', new CompositeLayoutStrategy());
 
 // 定义请求和响应类型
 interface LayoutRequest {
@@ -129,13 +126,7 @@ export async function GET(request: NextRequest) {
 function getStrategyDescription(strategyId: string): string {
   switch (strategyId) {
     case 'grid-center-layout':
-      return 'A layout strategy that places high-weight nodes in the center and arranges others around them in a grid pattern';
-    case 'group-aware-layout':
-      return 'A layout strategy that respects group structures, arranging nodes within their respective groups';
-    case 'edge-optimization':
-      return 'A strategy that optimizes edge routing and connection points to minimize crossings and improve readability';
-    case 'composite-layout':
-      return 'A comprehensive layout strategy that combines node placement, group layout, and edge optimization';
+      return 'Grid center layout with automatic edge optimization - places high-weight nodes in the center and optimizes edge connection points';
     default:
       return 'A layout strategy';
   }
