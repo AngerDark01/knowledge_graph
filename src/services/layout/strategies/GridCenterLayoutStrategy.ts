@@ -23,6 +23,134 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     this.edgeOptimizer = new EdgeOptimizer();
   }
 
+  /**
+   * 根据布局选项获取目标节点
+   * @param allNodes 所有节点
+   * @param options 布局选项
+   * @returns 需要参与布局的节点列表
+   */
+  private getTargetNodes(
+    allNodes: (Node | Group)[],
+    options?: GridCenterLayoutOptions
+  ): (Node | Group)[] {
+    const targetGroupId = options?.targetGroupId;
+
+    if (!targetGroupId) {
+      // 原有逻辑：返回顶层节点（没有 groupId 的节点）
+      return allNodes.filter(node =>
+        !('groupId' in node) || !(node as Node).groupId
+      );
+    }
+
+    // 新逻辑：返回指定群组的直接子节点
+    return allNodes.filter(node =>
+      'groupId' in node && (node as Node).groupId === targetGroupId
+    );
+  }
+
+  /**
+   * 将节点约束在群组边界内
+   * @param nodes 需要约束的节点列表
+   * @param parentGroup 父群组
+   * @param options 布局选项
+   * @returns 约束后的节点列表
+   */
+  private constrainToGroupBoundary(
+    nodes: (Node | Group)[],
+    parentGroup: Group,
+    options?: GridCenterLayoutOptions
+  ): (Node | Group)[] {
+    const padding = LAYOUT_CONFIG.group;
+
+    const groupBounds = {
+      minX: parentGroup.position.x + padding.paddingLeft,
+      minY: parentGroup.position.y + padding.paddingTop,
+      maxX: parentGroup.position.x + (parentGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width) - padding.paddingRight,
+      maxY: parentGroup.position.y + (parentGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height) - padding.paddingBottom
+    };
+
+    return nodes.map(node => {
+      const nodeWidth = node.width || LAYOUT_CONFIG.nodeSize.defaultNode.width;
+      const nodeHeight = node.height || LAYOUT_CONFIG.nodeSize.defaultNode.height;
+
+      // 确保节点中心点在群组边界内
+      const constrainedX = Math.max(
+        groupBounds.minX + nodeWidth / 2,
+        Math.min(groupBounds.maxX - nodeWidth / 2, node.position.x)
+      );
+
+      const constrainedY = Math.max(
+        groupBounds.minY + nodeHeight / 2,
+        Math.min(groupBounds.maxY - nodeHeight / 2, node.position.y)
+      );
+
+      return {
+        ...node,
+        position: { x: constrainedX, y: constrainedY }
+      };
+    });
+  }
+
+  /**
+   * 计算群组内部的网格布局
+   * @param nodes 需要布局的节点
+   * @param parentGroup 父群组
+   * @param options 布局选项
+   * @returns 布局后的节点列表
+   */
+  private calculateGroupGridLayout(
+    nodes: (Node | Group)[],
+    parentGroup: Group,
+    options?: GridCenterLayoutOptions
+  ): (Node | Group)[] {
+    if (nodes.length === 0) return nodes;
+
+    const padding = LAYOUT_CONFIG.group;
+
+    // 可用空间
+    const availableWidth = (parentGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width) - padding.paddingLeft - padding.paddingRight;
+    const availableHeight = (parentGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height) - padding.paddingTop - padding.paddingBottom;
+
+    // 节点尺寸
+    const nodeWidth = LAYOUT_CONFIG.nodeSize.defaultNode.width;
+    const nodeHeight = LAYOUT_CONFIG.nodeSize.defaultNode.height;
+
+    // 计算最优列数（尽量不超过可用宽度）
+    const maxCols = Math.max(1, Math.floor(availableWidth / (nodeWidth + GRID_LAYOUT.HORIZONTAL_SPACING)));
+    const cols = Math.min(maxCols, Math.max(1, Math.ceil(Math.sqrt(nodes.length))));
+    const rows = Math.ceil(nodes.length / cols);
+
+    // 计算间距
+    const totalNodeWidth = nodeWidth * cols;
+    const totalNodeHeight = nodeHeight * rows;
+
+    const horizontalSpacing = cols > 1
+      ? Math.min(GRID_LAYOUT.HORIZONTAL_SPACING, (availableWidth - totalNodeWidth) / (cols - 1))
+      : GRID_LAYOUT.HORIZONTAL_SPACING;
+
+    const verticalSpacing = rows > 1
+      ? Math.min(GRID_LAYOUT.VERTICAL_SPACING, (availableHeight - totalNodeHeight) / (rows - 1))
+      : GRID_LAYOUT.VERTICAL_SPACING;
+
+    // 起始位置（群组的左上角 + padding）
+    const startX = parentGroup.position.x + padding.paddingLeft;
+    const startY = parentGroup.position.y + padding.paddingTop;
+
+    // 布局节点
+    return nodes.map((node, index) => {
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+
+      const x = startX + col * (nodeWidth + horizontalSpacing) + nodeWidth / 2;
+      const y = startY + row * (nodeHeight + verticalSpacing) + nodeHeight / 2;
+
+      return {
+        ...node,
+        position: { x, y }
+      };
+    });
+  }
+
   async applyLayout(
     nodes: (Node | Group)[],
     edges: Edge[],
@@ -31,12 +159,71 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     const startTime = performance.now();
 
     try {
+      // ✨ 使用新的节点过滤方法获取目标节点
+      const targetNodes = this.getTargetNodes(nodes, options);
+      const otherNodes = nodes.filter(n => !targetNodes.some(tn => tn.id === n.id));
+
       // 首先标准化节点尺寸，对有子节点的Group保持原始尺寸（为了边优化）
       const normalizedNodes = this.normalizeNodeSizes(nodes);
 
+      // ✨ 如果是群组内部布局，使用群组网格布局
+      if (options?.targetGroupId) {
+        const parentGroup = nodes.find(n =>
+          n.id === options.targetGroupId && n.type === BlockEnum.GROUP
+        ) as Group | undefined;
+
+        if (!parentGroup) {
+          throw new Error(`目标群组 ${options.targetGroupId} 不存在`);
+        }
+
+        console.log(`📐 对群组 ${parentGroup.id} 内的 ${targetNodes.length} 个子节点进行布局`);
+
+        // 使用群组网格布局
+        let positionedTargetNodes = this.calculateGroupGridLayout(targetNodes, parentGroup, options);
+
+        // 应用边界约束
+        positionedTargetNodes = this.constrainToGroupBoundary(positionedTargetNodes, parentGroup, options);
+
+        // 解决节点碰撞
+        positionedTargetNodes = this.resolveCollisions(positionedTargetNodes);
+
+        // 合并布局后的节点和未参与布局的节点
+        const finalNodes = [...positionedTargetNodes, ...otherNodes];
+
+        // 优化边的连接点
+        const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(finalNodes, edges);
+
+        const endTime = performance.now();
+
+        // 创建结果映射
+        const nodePositions = new Map<string, { x: number; y: number }>();
+        for (const node of finalNodes) {
+          nodePositions.set(node.id, node.position);
+        }
+
+        // 创建边映射
+        const edgeHandles = new Map<string, OptimizedEdge>();
+        for (const edge of optimizedEdges) {
+          edgeHandles.set(edge.id, edge);
+        }
+
+        return {
+          success: true,
+          nodes: nodePositions,
+          edges: edgeHandles,
+          errors: [],
+          stats: {
+            duration: endTime - startTime,
+            iterations: 1,
+            collisions: this.countCollisions(positionedTargetNodes)
+          }
+        };
+      }
+
+      // 原有逻辑：全画布布局
       // 分离顶层节点和嵌套节点，仅对顶层节点应用网格布局
-      const originalTopLevelNodes = nodes.filter(node => !('groupId' in node) || !(node as Node).groupId);
-      const originalNestedNodes = nodes.filter(node => 'groupId' in node && (node as Node).groupId);
+      const originalTopLevelNodes = targetNodes;
+      const originalNestedNodes = otherNodes;
 
       // 仅对顶层节点进行网格布局处理
       const normalizedTopLevelNodes = this.normalizeNodeSizes(originalTopLevelNodes);

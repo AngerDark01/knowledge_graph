@@ -8,6 +8,11 @@ export type LayoutEdge = Edge;
 export interface LayoutOptions {
   strategy?: string;
   animate?: boolean;
+
+  // 布局范围控制
+  targetGroupId?: string | null;  // null 或 undefined = 全画布布局，string = 指定群组ID
+  layoutScope?: 'canvas' | 'group';  // 布局范围类型
+
   onProgress?: (progress: { currentLevel: number; totalLevels: number; processedNodes: number; totalNodes: number }) => void;
   [key: string]: any;
 }
