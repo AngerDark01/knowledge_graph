@@ -93,7 +93,10 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
   }
 
   /**
-   * 计算群组内部的网格布局
+   * 计算群组内部的网格布局（使用相对位置）
+   * 核心改进：先计算相对于群组的相对坐标，再转换为绝对坐标
+   * 这样可以提高空间利用率，逻辑更清晰
+   *
    * @param nodes 需要布局的节点
    * @param parentGroup 父群组
    * @param options 布局选项
@@ -107,47 +110,70 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     if (nodes.length === 0) return nodes;
 
     const padding = LAYOUT_CONFIG.group;
+    const groupWidth = parentGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width;
+    const groupHeight = parentGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height;
 
-    // 可用空间
-    const availableWidth = (parentGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width) - padding.paddingLeft - padding.paddingRight;
-    const availableHeight = (parentGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height) - padding.paddingTop - padding.paddingBottom;
+    // 1. 计算可用空间（相对于群组内部）
+    const availableWidth = groupWidth - padding.paddingLeft - padding.paddingRight;
+    const availableHeight = groupHeight - padding.paddingTop - padding.paddingBottom;
 
-    // 节点尺寸
-    const nodeWidth = LAYOUT_CONFIG.nodeSize.defaultNode.width;
-    const nodeHeight = LAYOUT_CONFIG.nodeSize.defaultNode.height;
+    // 2. 获取节点尺寸（支持不同节点不同尺寸）
+    const nodeWidths = nodes.map(n => n.width || LAYOUT_CONFIG.nodeSize.defaultNode.width);
+    const nodeHeights = nodes.map(n => n.height || LAYOUT_CONFIG.nodeSize.defaultNode.height);
+    const avgNodeWidth = nodeWidths.reduce((a, b) => a + b, 0) / nodes.length;
+    const avgNodeHeight = nodeHeights.reduce((a, b) => a + b, 0) / nodes.length;
 
-    // 计算最优列数（尽量不超过可用宽度）
-    const maxCols = Math.max(1, Math.floor(availableWidth / (nodeWidth + GRID_LAYOUT.HORIZONTAL_SPACING)));
-    const cols = Math.min(maxCols, Math.max(1, Math.ceil(Math.sqrt(nodes.length))));
-    const rows = Math.ceil(nodes.length / cols);
+    // 3. 智能计算最优列数（考虑可用空间）
+    const minSpacing = 20; // 最小间距
+    const estimatedCols = Math.floor(availableWidth / (avgNodeWidth + minSpacing));
+    const optimalCols = Math.max(1, Math.min(estimatedCols, Math.ceil(Math.sqrt(nodes.length))));
+    const rows = Math.ceil(nodes.length / optimalCols);
 
-    // 计算间距
-    const totalNodeWidth = nodeWidth * cols;
-    const totalNodeHeight = nodeHeight * rows;
+    console.log(`  └─ 群组内布局: ${nodes.length}个节点, ${optimalCols}列 x ${rows}行, 可用空间: ${Math.round(availableWidth)}x${Math.round(availableHeight)}`);
 
-    const horizontalSpacing = cols > 1
-      ? Math.min(GRID_LAYOUT.HORIZONTAL_SPACING, (availableWidth - totalNodeWidth) / (cols - 1))
-      : GRID_LAYOUT.HORIZONTAL_SPACING;
+    // 4. 计算节点网格的总尺寸
+    const totalNodesWidth = avgNodeWidth * optimalCols;
+    const totalNodesHeight = avgNodeHeight * rows;
+
+    // 5. 计算自适应间距（充分利用空间）
+    const horizontalSpacing = optimalCols > 1
+      ? Math.max(minSpacing, (availableWidth - totalNodesWidth) / (optimalCols - 1))
+      : minSpacing;
 
     const verticalSpacing = rows > 1
-      ? Math.min(GRID_LAYOUT.VERTICAL_SPACING, (availableHeight - totalNodeHeight) / (rows - 1))
-      : GRID_LAYOUT.VERTICAL_SPACING;
+      ? Math.max(minSpacing, (availableHeight - totalNodesHeight) / (rows - 1))
+      : minSpacing;
 
-    // 起始位置（群组的左上角 + padding）
-    const startX = parentGroup.position.x + padding.paddingLeft;
-    const startY = parentGroup.position.y + padding.paddingTop;
+    // 6. 计算网格在可用空间中的起始偏移（居中对齐）
+    const gridWidth = totalNodesWidth + horizontalSpacing * Math.max(0, optimalCols - 1);
+    const gridHeight = totalNodesHeight + verticalSpacing * Math.max(0, rows - 1);
 
-    // 布局节点
+    const offsetX = Math.max(0, (availableWidth - gridWidth) / 2);
+    const offsetY = Math.max(0, (availableHeight - gridHeight) / 2);
+
+    // 7. 使用相对位置布局每个节点
     return nodes.map((node, index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
+      const row = Math.floor(index / optimalCols);
+      const col = index % optimalCols;
 
-      const x = startX + col * (nodeWidth + horizontalSpacing) + nodeWidth / 2;
-      const y = startY + row * (nodeHeight + verticalSpacing) + nodeHeight / 2;
+      const nodeWidth = nodeWidths[index];
+      const nodeHeight = nodeHeights[index];
+
+      // 7.1 计算相对于群组内部padding区域的相对位置
+      const relativeX = offsetX + col * (avgNodeWidth + horizontalSpacing) + nodeWidth / 2;
+      const relativeY = offsetY + row * (avgNodeHeight + verticalSpacing) + nodeHeight / 2;
+
+      // 7.2 转换为相对于群组左上角的位置（加上padding）
+      const groupRelativeX = padding.paddingLeft + relativeX;
+      const groupRelativeY = padding.paddingTop + relativeY;
+
+      // 7.3 转换为画布绝对位置
+      const absoluteX = parentGroup.position.x + groupRelativeX;
+      const absoluteY = parentGroup.position.y + groupRelativeY;
 
       return {
         ...node,
-        position: { x, y }
+        position: { x: absoluteX, y: absoluteY }
       };
     });
   }
@@ -992,8 +1018,9 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
   }
 
   /**
-   * 🔧 递归调整父节点大小以包含所有子节点
+   * 🔧 递归调整父节点大小以包含所有子节点（优化版 - 使用相对位置计算）
    * 从最深层开始，逐层向上调整每个群组的大小
+   * 核心改进：基于子节点相对于群组的相对位置来计算所需大小
    *
    * @param nodes 所有节点
    * @param treeBuilder 嵌套树构建器
@@ -1011,6 +1038,8 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     const workingNodes = nodes.map(n => ({ ...n }));
     const nodeMap = new Map(workingNodes.map(n => [n.id, n]));
 
+    console.log(`🔧 开始调整群组大小（从深度 ${maxDepth} 到 0）`);
+
     // 从最深层向上逐层调整群组大小
     for (let depth = maxDepth; depth >= 0; depth--) {
       const groupsAtDepth = treeBuilder.getGroupsAtDepth(depthGroups, depth);
@@ -1026,35 +1055,37 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
 
         if (children.length === 0) continue;
 
-        // 计算子节点的边界
-        const childrenBounds = this.calculateNodesBoundary(children);
-
-        // 计算需要的群组大小（加上padding）
+        // 计算子节点相对于群组的边界（使用相对坐标）
         const padding = LAYOUT_CONFIG.group;
+        const childrenRelativeBounds = this.calculateChildrenRelativeBounds(
+          children,
+          workingGroup
+        );
 
-        const requiredWidth =
-          (childrenBounds.maxX - childrenBounds.minX) +
-          padding.paddingLeft +
-          padding.paddingRight +
-          20; // 额外边距
+        // 计算需要的内容区域大小（子节点占用的空间）
+        const contentWidth = childrenRelativeBounds.maxX - childrenRelativeBounds.minX;
+        const contentHeight = childrenRelativeBounds.maxY - childrenRelativeBounds.minY;
 
-        const requiredHeight =
-          (childrenBounds.maxY - childrenBounds.minY) +
-          padding.paddingTop +
-          padding.paddingBottom +
-          20; // 额外边距
+        // 计算总的群组大小（内容 + padding + 额外边距）
+        const extraMargin = 30; // 额外边距，确保有足够空间
+        const requiredWidth = contentWidth + padding.paddingLeft + padding.paddingRight + extraMargin;
+        const requiredHeight = contentHeight + padding.paddingTop + padding.paddingBottom + extraMargin;
 
-        // 更新群组大小（只扩大，不缩小）
-        const currentWidth = workingGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width;
-        const currentHeight = workingGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height;
+        // 应用最小尺寸限制
+        const minWidth = LAYOUT_CONFIG.nodeSize.groupNode.width;
+        const minHeight = LAYOUT_CONFIG.nodeSize.groupNode.height;
 
-        const newWidth = Math.max(currentWidth, requiredWidth);
-        const newHeight = Math.max(currentHeight, requiredHeight);
+        const currentWidth = workingGroup.width || minWidth;
+        const currentHeight = workingGroup.height || minHeight;
+
+        // 只扩大不缩小（避免压缩已有内容）
+        const newWidth = Math.max(currentWidth, requiredWidth, minWidth);
+        const newHeight = Math.max(currentHeight, requiredHeight, minHeight);
 
         if (newWidth !== currentWidth || newHeight !== currentHeight) {
           console.log(
-            `  └─ 调整群组 ${group.id} 大小: ` +
-            `${currentWidth}x${currentHeight} -> ${Math.round(newWidth)}x${Math.round(newHeight)}`
+            `  └─ 深度${depth} 群组${group.id}: ${Math.round(currentWidth)}x${Math.round(currentHeight)} -> ` +
+            `${Math.round(newWidth)}x${Math.round(newHeight)} (内容: ${Math.round(contentWidth)}x${Math.round(contentHeight)})`
           );
 
           workingGroup.width = newWidth;
@@ -1072,6 +1103,46 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     }
 
     return workingNodes;
+  }
+
+  /**
+   * 计算子节点相对于父群组的边界
+   * 返回子节点在群组内的相对坐标范围
+   */
+  private calculateChildrenRelativeBounds(
+    children: (Node | Group)[],
+    parentGroup: Group
+  ): { minX: number; minY: number; maxX: number; maxY: number } {
+    if (children.length === 0) {
+      return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const child of children) {
+      const nodeWidth = child.width || LAYOUT_CONFIG.nodeSize.defaultNode.width;
+      const nodeHeight = child.height || LAYOUT_CONFIG.nodeSize.defaultNode.height;
+
+      // 计算子节点相对于父群组左上角的相对位置
+      const relativeX = child.position.x - parentGroup.position.x;
+      const relativeY = child.position.y - parentGroup.position.y;
+
+      // 计算节点边界（相对坐标）
+      const nodeMinX = relativeX - nodeWidth / 2;
+      const nodeMinY = relativeY - nodeHeight / 2;
+      const nodeMaxX = relativeX + nodeWidth / 2;
+      const nodeMaxY = relativeY + nodeHeight / 2;
+
+      minX = Math.min(minX, nodeMinX);
+      minY = Math.min(minY, nodeMinY);
+      maxX = Math.max(maxX, nodeMaxX);
+      maxY = Math.max(maxY, nodeMaxY);
+    }
+
+    return { minX, minY, maxX, maxY };
   }
 
   /**
