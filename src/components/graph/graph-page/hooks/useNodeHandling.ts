@@ -3,13 +3,8 @@ import { useReactFlow } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 
-// 群组内边距常量 - 标题高度约40px，所以顶部需要更多空间
-const GROUP_PADDING = { 
-  top: 70,    // 增加顶部边距，避免与标题重叠
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
+// 🔧 使用配置文件的常量
+import { CONTAINER_PADDING as GROUP_PADDING, NODE_DIMENSIONS, GRID_LAYOUT } from '@/config/layout';
 
 // 安全的数值验证和默认值函数
 const safeNumber = (value: any, defaultValue: number = 0): number => {
@@ -17,13 +12,12 @@ const safeNumber = (value: any, defaultValue: number = 0): number => {
   return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
 };
 
-// 🆕 根据节点类型获取默认尺寸
+// 🆕 根据节点类型获取默认尺寸（使用配置文件）
 const getDefaultNodeSize = (nodeType: BlockEnum) => {
   if (nodeType === BlockEnum.NODE) {
-    // NoteNode 的初始尺寸
-    return { width: 350, height: 280 };
+    return NODE_DIMENSIONS.NOTE.collapsed;
   } else if (nodeType === BlockEnum.GROUP) {
-    return { width: 300, height: 200 };
+    return NODE_DIMENSIONS.GROUP.default;
   }
   return { width: 150, height: 100 };
 };
@@ -73,14 +67,11 @@ export const useNodeHandling = () => {
         n.type === BlockEnum.NODE && (n as Node).groupId === selectedGroup.id
       );
       
-      // 使用网格布局避免节点重叠
-      const nodesPerRow = 2; // 🔧 从3改为2,因为节点变大了
+      // 使用网格布局避免节点重叠（使用配置文件）
+      const { columns: nodesPerRow, spacingX: nodeSpacingX, spacingY: nodeSpacingY } = GRID_LAYOUT;
       const nodeIndex = existingNodesInGroup.length;
       const row = Math.floor(nodeIndex / nodesPerRow);
       const col = nodeIndex % nodesPerRow;
-      
-      const nodeSpacingX = 380; // 🔧 节点宽度(350) + 间距(30)
-      const nodeSpacingY = 310; // 🔧 节点高度(280) + 间距(30)
       
       // 计算节点在群组内的相对位置
       const relativeX = GROUP_PADDING.left + (col * nodeSpacingX);

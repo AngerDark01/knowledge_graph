@@ -33,19 +33,12 @@ import { useViewportControls } from './hooks/useViewportControls';
 import { ZoomIndicator } from './components/ZoomIndicator';
 import { Toolbar } from './components/Toolbar';
 
+// 🔧 使用配置文件的常量
+import { CONTAINER_PADDING as GROUP_PADDING, NODE_VISUAL_PADDING, NODE_DIMENSIONS } from '@/config/layout';
+
 interface GraphPageProps {
   className?: string;
 }
-
-// 群组内边距常量
-const GROUP_PADDING = { 
-  top: 70,
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
-
-const NODE_VISUAL_PADDING = 4;
 
 // 安全数值验证
 const safeNumber = (value: any, defaultValue: number = 0): number => {

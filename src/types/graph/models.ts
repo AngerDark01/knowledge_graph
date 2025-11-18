@@ -32,6 +32,7 @@ export interface Node extends CommonNodeType {
   isExpanded?: boolean; // 是否展开状态
   customExpandedSize?: { width: number; height: number }; // 用户自定义的展开尺寸
   style?: CSSProperties; // 样式属性
+  childNodeIds?: string[]; // 🆕 子节点ID列表（用于嵌套布局）
   createdAt: Date;
   updatedAt: Date;
 }
@@ -103,6 +104,7 @@ export const NodeSchema = z.object({
   width: z.number().optional(),
   height: z.number().optional(),
   groupId: z.string().optional(),
+  childNodeIds: z.array(z.string()).optional(), // 🆕 子节点ID列表
   createdAt: z.date(),
   updatedAt: z.date(),
 });

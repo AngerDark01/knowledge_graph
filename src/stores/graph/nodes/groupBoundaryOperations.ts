@@ -1,5 +1,6 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
-import { GroupBoundaryOperationsSlice, GROUP_PADDING, NODE_VISUAL_PADDING, safePosition, safeNumber } from './types';
+import { GroupBoundaryOperationsSlice, safePosition, safeNumber } from './types';
+import { CONTAINER_PADDING as GROUP_PADDING, NODE_VISUAL_PADDING, NODE_DIMENSIONS } from '@/config/layout';
 
 export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBoundaryOperationsSlice => {
   return {

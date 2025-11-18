@@ -1,15 +1,9 @@
 import { Node, Group, Edge } from '@/types/graph/models';
+import { CONTAINER_PADDING, NODE_VISUAL_PADDING as CONFIG_NODE_VISUAL_PADDING } from '@/config/layout';
 
-// 群组内边距常量
-export const GROUP_PADDING = { 
-  top: 70,    // 标题栏高度 + 额外间距
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
-
-// 节点外框的额外空间（阴影、边框等视觉效果）
-export const NODE_VISUAL_PADDING = 4;
+// 🔧 使用配置文件的常量（向后兼容）
+export const GROUP_PADDING = CONTAINER_PADDING;
+export const NODE_VISUAL_PADDING = CONFIG_NODE_VISUAL_PADDING;
 
 // 安全的数值验证函数
 export const safeNumber = (value: any, defaultValue: number = 0): number => {
@@ -83,3 +77,7 @@ export interface ConstraintOperationsSlice {
 export interface GroupBoundaryOperationsSlice {
   updateGroupBoundary: (groupId: string) => void;
 }
+
+// 🆕 导出新的Slice接口
+export type { ChildrenOperationsSlice } from './childrenOperations';
+export type { ContainerBoundaryOperationsSlice } from './containerBoundaryOperations';
