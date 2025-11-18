@@ -91,7 +91,7 @@ export const createChildrenOperationsSlice = (set: any, get: any): ChildrenOpera
 
     // 计算每个子节点的新位置
     const updatedNodes = state.nodes.map((node: Node | Group) => {
-      const childIndex = children.findIndex(c => c.id === node.id);
+      const childIndex = children.findIndex((c: Node | Group) => c.id === node.id);
       if (childIndex === -1) return node; // 不是子节点，保持不变
 
       const row = Math.floor(childIndex / columns);
