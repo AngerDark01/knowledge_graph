@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useReactFlow } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
+import { NODE_SIZES } from '@/config/graph.config';
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 
 // 群组内边距常量 - 标题高度约40px，所以顶部需要更多空间
@@ -21,9 +22,15 @@ const safeNumber = (value: any, defaultValue: number = 0): number => {
 const getDefaultNodeSize = (nodeType: BlockEnum) => {
   if (nodeType === BlockEnum.NODE) {
     // NoteNode 的初始尺寸
-    return { width: 350, height: 280 };
+    return {
+      width: NODE_SIZES.NOTE.DEFAULT_WIDTH,
+      height: NODE_SIZES.NOTE.DEFAULT_HEIGHT
+    };
   } else if (nodeType === BlockEnum.GROUP) {
-    return { width: 300, height: 200 };
+    return {
+      width: NODE_SIZES.GROUP.DEFAULT_WIDTH,
+      height: NODE_SIZES.GROUP.DEFAULT_HEIGHT
+    };
   }
   return { width: 150, height: 100 };
 };

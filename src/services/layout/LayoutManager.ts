@@ -46,16 +46,24 @@ export class LayoutManager implements ILayoutManager {
     this.config = LAYOUT_CONFIG;
     this.isOperationCancelled = false;
 
-    // 可以在这里注册默认策略
-    // this.registerDefaultStrategies();
+    // 注册默认策略
+    this.registerDefaultStrategies();
   }
   
   /**
    * 注册默认布局策略
    */
   private registerDefaultStrategies(): void {
-    // 这里可以注册默认策略
-    // 这个方法将在后续开发中实现具体策略
+    // 动态导入 GridCenterLayoutStrategy 并注册
+    import('./strategies/GridCenterLayoutStrategy')
+      .then(({ GridCenterLayoutStrategy }) => {
+        const strategy = new GridCenterLayoutStrategy();
+        this.strategies.set(strategy.id, strategy);
+        console.log(`✅ 默认布局策略已注册: ${strategy.name} (${strategy.id})`);
+      })
+      .catch(error => {
+        console.error('❌ 加载默认布局策略失败:', error);
+      });
   }
   
   async applyLayout(nodes: (Node | Group)[], edges: Edge[], options?: LayoutOptions): Promise<LayoutResult> {

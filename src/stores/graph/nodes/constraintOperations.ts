@@ -73,7 +73,8 @@ export const createConstraintOperationsSlice = (set: any, get: any): ConstraintO
         return node;
       });
 
-      // 🔧 递归应用偏移量到所有后代节点（支持多层嵌套）
+      // 🔧 对于拖拽操作，仍然需要使用偏移量来移动所有子节点
+      // 但在布局阶段，我们保持子节点的相对位置而不是应用偏移
       updatedNodes = applyOffsetToDescendants(
         groupId,
         { x: offsetX, y: offsetY },

@@ -21,16 +21,16 @@ export const NODE_SIZES = {
     EXPANDED_WIDTH: 600,
     EXPANDED_HEIGHT: 450,
     /** 最小尺寸 */
-    MIN_WIDTH: 200,
-    MIN_HEIGHT: 150,
+    MIN_WIDTH: 350,
+    MIN_HEIGHT: 280,
   },
   /** 群组节点默认尺寸 */
   GROUP: {
-    DEFAULT_WIDTH: 300,
-    DEFAULT_HEIGHT: 200,
+    DEFAULT_WIDTH: 400,
+    DEFAULT_HEIGHT: 350,
     /** 最小尺寸 */
-    MIN_WIDTH: 300,
-    MIN_HEIGHT: 200,
+    MIN_WIDTH: 350,
+    MIN_HEIGHT: 280,
   },
 } as const;
 

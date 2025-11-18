@@ -2,16 +2,15 @@
 
 import { useEffect } from 'react';
 import GraphPage from '@/components/graph/core';
-import generateTestData from '@/utils/tempDataGenerator';
+import { useGraphStore } from '@/stores/graph';
 
 export default function Home() {
   useEffect(() => {
     // 在客户端渲染时生成临时数据
     // 检查store是否已经有数据，避免重复生成
-    const { getNodes, getEdges } = require('@/stores/graph').useGraphStore.getState();
+    const { getNodes, getEdges } = useGraphStore.getState();
     if (getNodes().length === 0 && getEdges().length === 0) {
       console.log('🔍 Store为空，生成临时数据...');
-      generateTestData();
     } else {
       console.log('📊 Store已有数据，跳过临时数据生成');
     }

@@ -105,12 +105,22 @@ export class EdgeOptimizer implements IEdgeOptimizer {
       sourceHandle = 'left';   // 目标在左侧
     }
 
-    // 选择目标节点的连接点（与源节点相反）
-    switch (sourceHandle) {
-      case 'right': targetHandle = 'left'; break;
-      case 'left': targetHandle = 'right'; break;
-      case 'top': targetHandle = 'bottom'; break;
-      case 'bottom': targetHandle = 'top'; break;
+    // 优化目标节点的连接点选择逻辑
+    // 根据源节点和目标节点的相对位置来选择目标节点的连接点
+    // 重新计算从源节点到目标节点的角度（以确定目标节点上的最佳连接点）
+    // 但这次使用源节点的相对位置作为参考
+    if (normalizedAngle >= -QUADRANT && normalizedAngle < QUADRANT) {
+      // 目标在源节点的右侧
+      targetHandle = 'left';  // 所以连接到目标节点的左侧
+    } else if (normalizedAngle >= QUADRANT && normalizedAngle < 3 * QUADRANT) {
+      // 目标在源节点的下方
+      targetHandle = 'top';   // 所以连接到目标节点的顶部
+    } else if (normalizedAngle >= -3 * QUADRANT && normalizedAngle < -QUADRANT) {
+      // 目标在源节点的上方
+      targetHandle = 'bottom'; // 所以连接到目标节点的底部
+    } else {
+      // 目标在源节点的左侧
+      targetHandle = 'right';  // 所以连接到目标节点的右侧
     }
 
     return { sourceHandle, targetHandle };

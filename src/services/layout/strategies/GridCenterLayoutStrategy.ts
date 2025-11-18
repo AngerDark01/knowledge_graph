@@ -2,7 +2,7 @@
 import { Node, Group, Edge, BlockEnum } from '../../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTypes';
 import { GeometryUtils } from '../utils/GeometryUtils';
-import { LAYOUT_CONFIG } from '../../../config/graph.config';
+import { LAYOUT_CONFIG, GRID_LAYOUT } from '../../../config/graph.config';
 import { applyOffsetToDescendants, getAbsolutePosition } from '../../../utils/graph/recursiveMoveHelpers';
 import { EdgeOptimizer, OptimizedEdge } from '../algorithms/EdgeOptimizer';
 
@@ -31,33 +31,57 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     const startTime = performance.now();
 
     try {
-      // 首先标准化节点尺寸，对有子节点的Group保持原始尺寸
+      // 首先标准化节点尺寸，对有子节点的Group保持原始尺寸（为了边优化）
       const normalizedNodes = this.normalizeNodeSizes(nodes);
 
-      // 计算节点权重来影响布局
-      const weights = this.calculateWeights(normalizedNodes, edges);
-      let processedNodes = [...normalizedNodes];
+      // 分离顶层节点和嵌套节点，仅对顶层节点应用网格布局
+      const originalTopLevelNodes = nodes.filter(node => !('groupId' in node) || !(node as Node).groupId);
+      const originalNestedNodes = nodes.filter(node => 'groupId' in node && (node as Node).groupId);
 
-      // 按权重排序节点（高权重节点优先）
+      // 仅对顶层节点进行网格布局处理
+      const normalizedTopLevelNodes = this.normalizeNodeSizes(originalTopLevelNodes);
+      const topLevelWeights = this.calculateWeights(normalizedTopLevelNodes, edges);
+      let processedTopLevelNodes = [...normalizedTopLevelNodes];
+
       if (options?.useWeightedLayout) {
-        processedNodes = this.sortNodesByWeight(normalizedNodes, weights);
+        processedTopLevelNodes = this.sortNodesByWeight(normalizedTopLevelNodes, topLevelWeights);
       }
 
-      // 应用网格布局 - 以权重为主要考虑因素
+      // 计算顶层节点的网格布局位置
       const gridOptions = {
-        rows: Math.ceil(Math.sqrt(processedNodes.length)),
-        cols: Math.ceil(processedNodes.length / Math.ceil(Math.sqrt(processedNodes.length))),
-        spacing: options?.gridSpacing || LAYOUT_CONFIG.layoutAlgorithm.gridSpacing
+        rows: Math.ceil(processedTopLevelNodes.length / GRID_LAYOUT.NODES_PER_ROW),
+        cols: GRID_LAYOUT.NODES_PER_ROW,
+        spacing: options?.gridSpacing || LAYOUT_CONFIG.layoutAlgorithm.gridSpacing,
+        horizontalSpacing: GRID_LAYOUT.HORIZONTAL_SPACING,
+        verticalSpacing: GRID_LAYOUT.VERTICAL_SPACING
       };
 
-      // 计算网格中心位置
-      const positionedNodes = this.calculateGridCenterPositions(processedNodes, gridOptions);
+      const positionedTopLevelNodes = this.calculateGridCenterPositions(processedTopLevelNodes, gridOptions);
 
-      // 重点：解决同层节点之间的碰撞
-      const resolvedNodes = this.resolveCollisions(positionedNodes);
+      // 解决顶层节点之间的碰撞
+      const resolvedTopLevelNodes = this.resolveCollisions(positionedTopLevelNodes);
+
+      // 创建一个包含所有节点的数组，顶层节点用新位置，嵌套节点用原始位置
+      // 重要：保持原始节点顺序，只替换顶层节点的位置
+      const positionedNodes = nodes.map(node => {
+        // 检查是否为顶层节点
+        if (!('groupId' in node) || !(node as Node).groupId) {
+          // 查找对应的布局后节点
+          const layoutNode = resolvedTopLevelNodes.find(n => n.id === node.id);
+          if (layoutNode) {
+            // 返回布局后的位置，但保留其他属性
+            return {
+              ...node,
+              position: layoutNode.position
+            };
+          }
+        }
+        // 如果是嵌套节点或未找到对应布局的顶层节点，返回原始节点
+        return node;
+      });
 
       // 实现嵌套节点的相对位置保持机制
-      const finalNodes = this.updateNestedNodePositions(nodes, resolvedNodes);
+      const finalNodes = this.updateNestedNodePositions(nodes, positionedNodes);
 
       // 优化边的连接点
       const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(finalNodes, edges);
@@ -84,7 +108,7 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
         stats: {
           duration: endTime - startTime,
           iterations: 1,
-          collisions: this.countCollisions(resolvedNodes)
+          collisions: this.countCollisions(resolvedTopLevelNodes)
         }
       };
     } catch (error) {
@@ -189,32 +213,42 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
   /**
    * 计算网格中心布局位置
    */
-  private calculateGridCenterPositions(nodes: (Node | Group)[], opts: { rows: number; cols: number; spacing: number }): (Node | Group)[] {
+  private calculateGridCenterPositions(nodes: (Node | Group)[], opts: {
+    rows: number;
+    cols: number;
+    spacing: number;
+    horizontalSpacing?: number;
+    verticalSpacing?: number;
+  }): (Node | Group)[] {
     const result: (Node | Group)[] = [];
-    
+
     // 计算网格中心
     const nodeWidth = nodes.length > 0 ? (nodes[0].width || LAYOUT_CONFIG.nodeSize.defaultNode.width) : LAYOUT_CONFIG.nodeSize.defaultNode.width;
     const nodeHeight = nodes.length > 0 ? (nodes[0].height || LAYOUT_CONFIG.nodeSize.defaultNode.height) : LAYOUT_CONFIG.nodeSize.defaultNode.height;
 
-    const gridWidth = (opts.cols - 1) * opts.spacing + opts.cols * nodeWidth;
-    const gridHeight = (opts.rows - 1) * opts.spacing + opts.rows * nodeHeight;
+    // 使用GRID_LAYOUT配置的间距，如果未提供则使用默认间距
+    const horizontalSpacing = opts.horizontalSpacing || opts.spacing;
+    const verticalSpacing = opts.verticalSpacing || opts.spacing;
+
+    const gridWidth = (opts.cols - 1) * horizontalSpacing + opts.cols * nodeWidth;
+    const gridHeight = (opts.rows - 1) * verticalSpacing + opts.rows * nodeHeight;
 
     const offsetX = -gridWidth / 2;
     const offsetY = -gridHeight / 2;
-    
+
     for (let i = 0; i < nodes.length; i++) {
       const row = Math.floor(i / opts.cols);
       const col = i % opts.cols;
-      
-      const x = offsetX + col * (nodeWidth + opts.spacing) + nodeWidth / 2;
-      const y = offsetY + row * (nodeHeight + opts.spacing) + nodeHeight / 2;
-      
+
+      const x = offsetX + col * (nodeWidth + horizontalSpacing) + nodeWidth / 2;
+      const y = offsetY + row * (nodeHeight + verticalSpacing) + nodeHeight / 2;
+
       result.push({
         ...nodes[i],
         position: { x, y }
       });
     }
-    
+
     return result;
   }
   
@@ -339,6 +373,7 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
   /**
    * 根据父节点的新位置更新嵌套节点的相对位置
    * 在布局算法中，我们只移动顶层节点，保持所有嵌套节点相对于父节点的相对位置不变
+   * 支持多层嵌套结构（Group嵌套Group，再嵌套Node）
    */
   private updateNestedNodePositions(
     originalNodes: (Node | Group)[],
@@ -349,49 +384,31 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
       !('groupId' in node) || !node.groupId
     );
 
+    // 创建节点映射以便快速查找
+    const originalNodeMap = new Map(originalNodes.map(node => [node.id, node]));
+    const positionedNodeMap = new Map(positionedNodes.map(node => [node.id, node]));
+
+    // 构建结果数组，顶层节点使用布局后的位置
+    let resultNodes = [...topLevelNodes];
+
     // 找出嵌套节点（属于某个群组的节点）
     const nestedNodes = originalNodes.filter(node =>
       'groupId' in node && node.groupId
     );
 
-    // 构建结果数组，顶层节点使用布局后的位置
-    let resultNodes = [...topLevelNodes];
-
-    // 对于嵌套节点，需要保持它们相对于父群组的相对位置
+    // 对于每个嵌套节点，计算其绝对位置
     for (const nestedNode of nestedNodes) {
-      // 找到原始的父群组
-      const originalParentGroup = originalNodes.find(
-        node => node.id === nestedNode.groupId && node.type === BlockEnum.GROUP
-      ) as Group;
+      const absolutePosition = this.calculateAbsolutePosition(
+        nestedNode,
+        originalNodeMap,
+        positionedNodeMap
+      );
 
-      if (originalParentGroup) {
-        // 找到布局后的新父群组位置
-        const newParentGroup = positionedNodes.find(
-          node => node.id === nestedNode.groupId && node.type === BlockEnum.GROUP
-        ) as Group;
-
-        if (newParentGroup) {
-          // 计算嵌套节点相对于原始父群组的相对位置
-          const relativeX = nestedNode.position.x - originalParentGroup.position.x;
-          const relativeY = nestedNode.position.y - originalParentGroup.position.y;
-
-          // 基于新父群组位置和相对位置，确定嵌套节点的新绝对位置
-          const newX = newParentGroup.position.x + relativeX;
-          const newY = newParentGroup.position.y + relativeY;
-
-          // 添加到结果中，保持相对于父群组的相对位置
-          resultNodes.push({
-            ...nestedNode,
-            position: { x: newX, y: newY }
-          });
-        } else {
-          // 如果父群组在布局后不存在，则保持原始位置
-          resultNodes.push(nestedNode);
-        }
-      } else {
-        // 如果找不到原始父群组，保持原始位置
-        resultNodes.push(nestedNode);
-      }
+      // 将计算出的绝对位置应用到节点
+      resultNodes.push({
+        ...nestedNode,
+        position: absolutePosition
+      });
     }
 
     // 重要：在布局阶段完成节点定位，避免后续约束逻辑影响
@@ -402,66 +419,177 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
   }
 
   /**
+   * 递归计算嵌套节点的绝对位置
+   * 这个方法会查找节点的所有祖先群组，计算其相对于最顶层父群组的最终位置
+   */
+  private calculateAbsolutePosition(
+    node: Node | Group,
+    originalNodeMap: Map<string, Node | Group>,
+    positionedNodeMap: Map<string, Node | Group>
+  ): { x: number; y: number } {
+    // 如果节点没有父群组，返回其在positionedNodes中的位置
+    if (!('groupId' in node) || !node.groupId) {
+      const positionedNode = positionedNodeMap.get(node.id);
+      return positionedNode ? positionedNode.position : node.position;
+    }
+
+    // 获取原始父群组
+    const originalParentGroup = originalNodeMap.get(node.groupId) as Group;
+    if (!originalParentGroup) {
+      // 如果找不到原始父群组，返回原位置
+      return node.position;
+    }
+
+    // 递归计算父群组的新绝对位置
+    const parentAbsolutePosition = this.calculateAbsolutePosition(
+      originalParentGroup,
+      originalNodeMap,
+      positionedNodeMap
+    );
+
+    // 获取原始父群组的位置（在原始状态下的位置）
+    const originalParentAbsolutePosition = this.getOriginalAbsolutePosition(
+      originalParentGroup,
+      originalNodeMap
+    );
+
+    // 计算节点相对于原始父群组的相对位置
+    const relativeX = node.position.x - originalParentGroup.position.x;
+    const relativeY = node.position.y - originalParentGroup.position.y;
+
+    // 基于父群组的新绝对位置和节点的相对位置，计算节点的新绝对位置
+    const newAbsoluteX = parentAbsolutePosition.x + relativeX;
+    const newAbsoluteY = parentAbsolutePosition.y + relativeY;
+
+    // 确保计算结果是正确的（避免无限递归）
+    // 检查节点是否在原始父群组内，如果是，应用相对偏移
+    return { x: newAbsoluteX, y: newAbsoluteY };
+  }
+
+  /**
+   * 递归计算节点的原始绝对位置
+   * 获取节点在原始状态下的绝对位置（考虑到所有祖先的位置）
+   */
+  private getOriginalAbsolutePosition(
+    node: Node | Group,
+    originalNodeMap: Map<string, Node | Group>
+  ): { x: number; y: number } {
+    // 如果节点没有父群组，直接返回其位置
+    if (!('groupId' in node) || !node.groupId) {
+      return node.position;
+    }
+
+    // 获取原始父群组
+    const originalParentGroup = originalNodeMap.get(node.groupId) as Group;
+    if (!originalParentGroup) {
+      // 如果找不到原始父群组，返回原位置
+      return node.position;
+    }
+
+    // 递归计算父群组的原始绝对位置
+    const parentOriginalAbsolutePosition = this.getOriginalAbsolutePosition(
+      originalParentGroup,
+      originalNodeMap
+    );
+
+    // 计算节点相对于父群组的相对位置
+    const relativeX = node.position.x - originalParentGroup.position.x;
+    const relativeY = node.position.y - originalParentGroup.position.y;
+
+    // 计算节点的原始绝对位置
+    return {
+      x: parentOriginalAbsolutePosition.x + relativeX,
+      y: parentOriginalAbsolutePosition.y + relativeY
+    };
+  }
+
+  /**
    * 调整嵌套节点确保它们在父群组边界内，同时保持彼此间的相对位置
+   * 优化以保留节点相对于父群组的原始相对位置，支持多层嵌套
    */
   private adjustNestedNodesWithinBounds(nodes: (Node | Group)[]): (Node | Group)[] {
-    return nodes.map(node => {
-      // 只处理有父群组的节点
-      if ('groupId' in node && node.groupId) {
-        const parentGroup = nodes.find(n => n.id === node.groupId && n.type === BlockEnum.GROUP) as Group;
+    // 创建映射以便快速查找节点
+    const nodeMap = new Map(nodes.map(node => [node.id, node]));
 
-        if (parentGroup) {
-          // 获取节点在父群组内的相对位置
-          let { x, y } = node.position;
+    // 为了处理多层嵌套，我们需要多次迭代确保所有嵌套层级都正确约束
+    let resultNodes = [...nodes];
+    let hasChanges = true;
+    let iterations = 0;
+    const maxIterations = 10; // 防止无限循环
 
-          // 计算节点在父群组内的相对坐标（以父群组左上角为原点）
-          const relativeX = x - parentGroup.position.x;
-          const relativeY = y - parentGroup.position.y;
+    while (hasChanges && iterations < maxIterations) {
+      hasChanges = false;
+      const currentNodes = [...resultNodes];
 
-          // 获取节点和群组的尺寸
-          const nodeWidth = node.width || LAYOUT_CONFIG.nodeSize.defaultNode.width;
-          const nodeHeight = node.height || LAYOUT_CONFIG.nodeSize.defaultNode.height;
-          const groupWidth = parentGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width;
-          const groupHeight = parentGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height;
+      resultNodes = currentNodes.map(node => {
+        // 只处理有父群组的节点
+        if ('groupId' in node && node.groupId) {
+          const parentGroup = nodeMap.get(node.groupId) as Group;
 
-          // 检查是否超出边界，并调整相对位置
-          let adjustedRelativeX = relativeX;
-          let adjustedRelativeY = relativeY;
+          if (parentGroup) {
+            // 获取节点和群组的尺寸
+            const nodeWidth = node.width || LAYOUT_CONFIG.nodeSize.defaultNode.width;
+            const nodeHeight = node.height || LAYOUT_CONFIG.nodeSize.defaultNode.height;
+            const groupWidth = parentGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width;
+            const groupHeight = parentGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height;
 
-          // 检查右边界和下边界 - 确保节点不超出群组
-          if (relativeX + nodeWidth > groupWidth - 20) {  // 20px 为边距
-            adjustedRelativeX = groupWidth - nodeWidth - 20;
-          }
-          if (relativeY + nodeHeight > groupHeight - 20) {
-            adjustedRelativeY = groupHeight - nodeHeight - 20;
-          }
+            // 计算节点相对于父群组的当前相对位置
+            const currentRelativeX = node.position.x - parentGroup.position.x;
+            const currentRelativeY = node.position.y - parentGroup.position.y;
 
-          // 检查左边界和上边界
-          if (relativeX < 20) {
-            adjustedRelativeX = 20;
-          }
-          if (relativeY < 20) {
-            adjustedRelativeY = 20;
-          }
-
-          // 如果位置被调整，更新节点位置
-          if (adjustedRelativeX !== relativeX || adjustedRelativeY !== relativeY) {
-            const absoluteX = parentGroup.position.x + adjustedRelativeX;
-            const absoluteY = parentGroup.position.y + adjustedRelativeY;
-
-            return {
-              ...node,
-              position: {
-                x: absoluteX,
-                y: absoluteY
-              }
+            // 确定可以放置节点的安全区域（考虑边距）
+            // 使用GRID_LAYOUT配置的初始偏移作为群组内布局的起始点
+            const marginX = GRID_LAYOUT.INITIAL_OFFSET.x; // 使用配置的x偏移作为水平边距
+            const marginY = GRID_LAYOUT.INITIAL_OFFSET.y; // 使用配置的y偏移作为垂直边距
+            const safeArea = {
+              minX: marginX,
+              minY: marginY,
+              maxX: groupWidth - nodeWidth - marginX,
+              maxY: groupHeight - nodeHeight - marginY
             };
+
+            // 检查当前相对位置是否在安全区域内
+            let adjustedRelativeX = currentRelativeX;
+            let adjustedRelativeY = currentRelativeY;
+
+            // 确保节点在父群组边界内
+            if (currentRelativeX < safeArea.minX) {
+              adjustedRelativeX = safeArea.minX;
+              hasChanges = true;
+            }
+            if (currentRelativeX > safeArea.maxX) {
+              adjustedRelativeX = safeArea.maxX;
+              hasChanges = true;
+            }
+            if (currentRelativeY < safeArea.minY) {
+              adjustedRelativeY = safeArea.minY;
+              hasChanges = true;
+            }
+            if (currentRelativeY > safeArea.maxY) {
+              adjustedRelativeY = safeArea.maxY;
+              hasChanges = true;
+            }
+
+            // 如果位置需要调整，返回新位置
+            if (adjustedRelativeX !== currentRelativeX || adjustedRelativeY !== currentRelativeY) {
+              return {
+                ...node,
+                position: {
+                  x: parentGroup.position.x + adjustedRelativeX,
+                  y: parentGroup.position.y + adjustedRelativeY
+                }
+              };
+            }
           }
         }
-      }
 
-      return node;
-    });
+        return node;
+      });
+
+      iterations++;
+    }
+
+    return resultNodes;
   }
 
   validateConfig(config: any): boolean {

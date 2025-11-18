@@ -1,9 +1,10 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
-import { 
-  NodeOperationsSlice, 
-  safePosition, 
-  safeNumber, 
-  constrainNodeToGroupBoundary 
+import { NODE_SIZES } from '@/config/graph.config';
+import {
+  NodeOperationsSlice,
+  safePosition,
+  safeNumber,
+  constrainNodeToGroupBoundary
 } from './types';
 
 export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSlice & { isLayoutMode: boolean; setIsLayoutMode: (isLayoutMode: boolean) => void } => {
@@ -31,20 +32,24 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
     addNode: (node) => {
       const state = get();
       console.log('➕ 添加节点:', node.id, node);
-      
+
       // 🔧 根据节点类型确定默认尺寸
-      let defaultWidth = 150;
-      let defaultHeight = 100;
-      
+      let defaultWidth, defaultHeight;
+
       if (node.type === BlockEnum.NODE) {
-        // 普通节点使用 NoteNode 的初始尺寸
-        defaultWidth = 350;
-        defaultHeight = 280;
+        // 普通节点使用 NOTE 配置的默认尺寸
+        defaultWidth = NODE_SIZES.NOTE.DEFAULT_WIDTH;
+        defaultHeight = NODE_SIZES.NOTE.DEFAULT_HEIGHT;
       } else if (node.type === BlockEnum.GROUP) {
-        defaultWidth = 300;
-        defaultHeight = 200;
+        // 群组节点使用 GROUP 配置的默认尺寸
+        defaultWidth = NODE_SIZES.GROUP.DEFAULT_WIDTH;
+        defaultHeight = NODE_SIZES.GROUP.DEFAULT_HEIGHT;
+      } else {
+        // 默认值
+        defaultWidth = 150;
+        defaultHeight = 100;
       }
-      
+
       // 验证并修复节点位置和尺寸
       const safeNode = {
         ...node,
@@ -108,16 +113,24 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
             
             // 🔧 如果更新了 width 或 height,自动同步到 style
             if (updates.width !== undefined || updates.height !== undefined) {
-              const newWidth = updates.width ?? node.width ?? 350;
-              const newHeight = updates.height ?? node.height ?? 280;
-              
+              // 获取节点类型的默认尺寸
+              const nodeDefaultWidth = node.type === BlockEnum.GROUP
+                ? NODE_SIZES.GROUP.DEFAULT_WIDTH
+                : NODE_SIZES.NOTE.DEFAULT_WIDTH;
+              const nodeDefaultHeight = node.type === BlockEnum.GROUP
+                ? NODE_SIZES.GROUP.DEFAULT_HEIGHT
+                : NODE_SIZES.NOTE.DEFAULT_HEIGHT;
+
+              const newWidth = updates.width ?? node.width ?? nodeDefaultWidth;
+              const newHeight = updates.height ?? node.height ?? nodeDefaultHeight;
+
               updatedNode.style = {
                 ...(node.style || {}),
                 ...(updates.style || {}),
                 width: newWidth,
                 height: newHeight,
               };
-              
+
               updatedNode.width = newWidth;
               updatedNode.height = newHeight;
             } else if (updates.style !== undefined) {

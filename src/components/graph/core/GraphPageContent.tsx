@@ -137,20 +137,39 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     // 如果正在拖拽，返回当前节点（避免覆盖用户操作）
     if (isDraggingRef.current) {
       console.log('⏸️ 拖拽中，使用当前节点');
-      return reactFlowNodes;
+      return reactFlowNodes || [];
     }
 
     const nodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
     console.log('🔄 同步节点到ReactFlow:', nodes.length);
     return nodes as ReactFlowNode[];
-  }, [storeNodes, selectedNodeId]); // 移除 reactFlowNodes 依赖，避免循环
+  }, [storeNodes, selectedNodeId, reactFlowNodes, isDraggingRef.current]); // 添加 isDraggingRef.current 依赖以确保一致性
 
   // ⚡ 优化：仅在 processedNodes 真正变化时更新
   useEffect(() => {
-    if (!isDraggingRef.current && processedNodes !== reactFlowNodes) {
-      setReactFlowNodes(processedNodes);
+    if (!isDraggingRef.current && processedNodes && reactFlowNodes) {
+      // 检查节点数量是否变化或者节点位置是否变化
+      const nodeIdsChanged = processedNodes.length !== reactFlowNodes.length ||
+        JSON.stringify(processedNodes.map(n => n.id).sort()) !== JSON.stringify(reactFlowNodes.map(n => n.id).sort());
+
+      // 检查是否有节点的位置发生了变化
+      let positionChanged = false;
+      if (!nodeIdsChanged) {
+        for (let i = 0; i < processedNodes.length; i++) {
+          const oldNode = reactFlowNodes.find(n => n.id === processedNodes[i].id);
+          if (oldNode && (oldNode.position.x !== processedNodes[i].position.x ||
+                         oldNode.position.y !== processedNodes[i].position.y)) {
+            positionChanged = true;
+            break;
+          }
+        }
+      }
+
+      if (nodeIdsChanged || positionChanged) {
+        setReactFlowNodes(processedNodes);
+      }
     }
-  }, [processedNodes, setReactFlowNodes]);
+  }, [processedNodes, setReactFlowNodes, reactFlowNodes, isDraggingRef.current]);
 
   // 同步边
   useEffect(() => {
@@ -196,7 +215,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   // 监听缩放
   useEffect(() => {
     if (!rfInstance) {
-      // 即使在条件不满足时也保持相同的hook调用顺序
       return;
     }
 
@@ -214,7 +232,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         }
       };
     }
-  }, [rfInstance]);
+  }, [rfInstance, setZoomValue]); // 添加 setZoomValue 依赖以确保一致性
 
   // 节点点击
   const onNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
@@ -254,88 +272,95 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     console.log('🎯 拖拽结束:', node.id);
 
-    const currentNode = reactFlowInstance?.getNode(node.id);
-    if (!currentNode) {
-      isDraggingRef.current = false;
-      return;
-    }
-
-    if (currentNode.type === 'group') {
-      const storeGroup = storeNodes.find(n => n.id === node.id) as Group;
-      if (!storeGroup) {
+    try {
+      const currentNode = reactFlowInstance?.getNode(node.id);
+      if (!currentNode) {
         isDraggingRef.current = false;
         return;
       }
 
-      // 🔧 计算绝对位置（如果是嵌套群组）
-      let absolutePosition = {
-        x: Number(currentNode.position.x),
-        y: Number(currentNode.position.y)
-      };
-
-      if (storeGroup.groupId) {
-        const parentGroup = storeNodes.find(n => n.id === storeGroup.groupId) as Group;
-        if (parentGroup) {
-          absolutePosition = {
-            x: Number(currentNode.position.x) + Number(parentGroup.position.x),
-            y: Number(currentNode.position.y) + Number(parentGroup.position.y)
-          };
-          console.log('📍 群组 相对→绝对:', currentNode.position, '→', absolutePosition);
+      if (currentNode.type === 'group') {
+        const storeGroup = storeNodes.find(n => n.id === node.id) as Group;
+        if (!storeGroup) {
+          isDraggingRef.current = false;
+          return;
         }
-      }
 
-      handleGroupMove(node.id, absolutePosition);
+        // 🔧 计算绝对位置（如果是嵌套群组）
+        let absolutePosition = {
+          x: Number(currentNode.position.x),
+          y: Number(currentNode.position.y)
+        };
 
-      // ⚡ 优化：直接更新父群组边界（防抖已在 updateGroupBoundary 中处理）
-      if (storeGroup.groupId) {
-        console.log('📐 更新父群组边界:', storeGroup.groupId);
-        updateGroupBoundary(storeGroup.groupId!);
-      }
+        if (storeGroup.groupId) {
+          const parentGroup = storeNodes.find(n => n.id === storeGroup.groupId) as Group;
+          if (parentGroup) {
+            absolutePosition = {
+              x: Number(currentNode.position.x) + Number(parentGroup.position.x),
+              y: Number(currentNode.position.y) + Number(parentGroup.position.y)
+            };
+            console.log('📍 群组 相对→绝对:', currentNode.position, '→', absolutePosition);
+          }
+        }
 
-      // ⚡ 优化边连接点
-      optimizeEdgesAfterDrag(node.id);
+        handleGroupMove(node.id, absolutePosition);
 
-      // ⚡ 优化：立即重置拖拽状态
-      isDraggingRef.current = false;
-    } else {
-      const storeNode = storeNodes.find(n => n.id === node.id) as Node;
-      if (!storeNode) {
+        // ⚡ 优化：直接更新父群组边界（防抖已在 updateGroupBoundary 中处理）
+        if (storeGroup.groupId) {
+          console.log('📐 更新父群组边界:', storeGroup.groupId);
+          updateGroupBoundary(storeGroup.groupId!);
+        }
+
+        // ⚡ 优化边连接点
+        optimizeEdgesAfterDrag(node.id);
+
+        // ⚡ 优化：立即重置拖拽状态
         isDraggingRef.current = false;
-        return;
-      }
-
-      let absolutePosition = {
-        x: Number(currentNode.position.x),
-        y: Number(currentNode.position.y)
-      };
-
-      if (storeNode.groupId) {
-        const parentGroup = storeNodes.find(n => n.id === storeNode.groupId) as Group;
-        if (parentGroup) {
-          // 使用同步函数中的转换逻辑
-          absolutePosition = {
-            x: Number(currentNode.position.x) + Number(parentGroup.position.x),
-            y: Number(currentNode.position.y) + Number(parentGroup.position.y)
-          };
-          console.log('📍 相对→绝对:', currentNode.position, '→', absolutePosition);
-          console.log('  父群组位置:', parentGroup.position);
+      } else {
+        const storeNode = storeNodes.find(n => n.id === node.id) as Node;
+        if (!storeNode) {
+          isDraggingRef.current = false;
+          return;
         }
+
+        let absolutePosition = {
+          x: Number(currentNode.position.x),
+          y: Number(currentNode.position.y)
+        };
+
+        if (storeNode.groupId) {
+          const parentGroup = storeNodes.find(n => n.id === storeNode.groupId) as Group;
+          if (parentGroup) {
+            // 使用同步函数中的转换逻辑
+            absolutePosition = {
+              x: Number(currentNode.position.x) + Number(parentGroup.position.x),
+              y: Number(currentNode.position.y) + Number(parentGroup.position.y)
+            };
+            console.log('📍 相对→绝对:', currentNode.position, '→', absolutePosition);
+            console.log('  父群组位置:', parentGroup.position);
+          }
+        }
+
+        console.log('💾 最终保存位置:', absolutePosition);
+
+        // 先更新位置
+        updateNodePosition(node.id, absolutePosition);
+
+        // ⚡ 优化：直接更新群组边界（防抖已在 updateGroupBoundary 中处理）
+        if (storeNode.groupId) {
+          updateGroupBoundary(storeNode.groupId!);
+        }
+
+        // ⚡ 优化边连接点
+        optimizeEdgesAfterDrag(node.id);
+
+        // ⚡ 优化：立即重置拖拽状态（不需要延迟）
+        isDraggingRef.current = false;
+        lastDraggedNodeRef.current = null;
       }
-
-      console.log('💾 最终保存位置:', absolutePosition);
-
-      // 先更新位置
-      updateNodePosition(node.id, absolutePosition);
-
-      // ⚡ 优化：直接更新群组边界（防抖已在 updateGroupBoundary 中处理）
-      if (storeNode.groupId) {
-        updateGroupBoundary(storeNode.groupId!);
-      }
-
-      // ⚡ 优化边连接点
-      optimizeEdgesAfterDrag(node.id);
-
-      // ⚡ 优化：立即重置拖拽状态（不需要延迟）
+    } catch (error) {
+      console.error('处理节点拖拽停止时出错:', error);
+      // 确保无论如何都重置拖拽状态以避免问题
       isDraggingRef.current = false;
       lastDraggedNodeRef.current = null;
     }
@@ -407,69 +432,75 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           nodesConnectable={true}
           onEdgesChange={(changes) => {
             onEdgesChange(changes);
-            changes.forEach((change: EdgeChange) => {
-              if (change.type === 'remove') {
-                deleteEdge(change.id);
-                if (selectedEdgeId === change.id) {
-                  setSelectedEdgeId(null);
+
+            requestAnimationFrame(() => {
+              changes.forEach((change: EdgeChange) => {
+                if (change.type === 'remove') {
+                  deleteEdge(change.id);
+                  if (selectedEdgeId === change.id) {
+                    setSelectedEdgeId(null);
+                  }
                 }
-              }
+              });
             });
           }}
           onDragOver={onDragOver}
           onDrop={onDrop}
           onNodesChange={(changes) => {
             onNodesChange(changes);
-            
-            changes.forEach((change: NodeChange) => {
-              if (change.type === 'remove') {
-                deleteNode(change.id);
-                if (selectedNodeId === change.id) {
-                  setSelectedNodeId(null);
-                }
-              }
-              
-              // ⚡ 优化版：尺寸变化处理（减少 setTimeout 嵌套）
-              if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
-                if (resizeTimeoutRef.current[change.id]) {
-                  clearTimeout(resizeTimeoutRef.current[change.id]);
+
+            // 使用批处理来确保状态更新的一致性
+            requestAnimationFrame(() => {
+              changes.forEach((change: NodeChange) => {
+                if (change.type === 'remove') {
+                  deleteNode(change.id);
+                  if (selectedNodeId === change.id) {
+                    setSelectedNodeId(null);
+                  }
                 }
 
-                resizeTimeoutRef.current[change.id] = setTimeout(() => {
-                  const currentNode = reactFlowInstance?.getNode(change.id);
-
-                  if (currentNode) {
-                    const newWidth = Number(change.dimensions!.width);
-                    const newHeight = Number(change.dimensions!.height);
-
-                    // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
-                    updateNode(change.id, {
-                      width: newWidth || 350,
-                      height: newHeight || 280,
-                      style: {
-                        ...(currentNode.style || {}),
-                        width: newWidth || 350,
-                        height: newHeight || 280,
-                      }
-                    });
-
-                    if (currentNode.type === 'group') {
-                      const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
-
-                      // ⚡ 优化：直接更新边界（防抖已在 updateGroupBoundary 中处理）
-                      updateGroupBoundary(change.id);
-
-                      // ⚡ 优化：直接更新父群组边界（防抖已处理）
-                      if (storeGroup?.groupId) {
-                        console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
-                        updateGroupBoundary(storeGroup.groupId!);
-                      }
-                    }
+                // ⚡ 优化版：尺寸变化处理（减少 setTimeout 嵌套）
+                if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
+                  if (resizeTimeoutRef.current[change.id]) {
+                    clearTimeout(resizeTimeoutRef.current[change.id]);
                   }
 
-                  delete resizeTimeoutRef.current[change.id];
-                }, 100);
-              }
+                  resizeTimeoutRef.current[change.id] = setTimeout(() => {
+                    const currentNode = reactFlowInstance?.getNode(change.id);
+
+                    if (currentNode) {
+                      const newWidth = Number(change.dimensions!.width);
+                      const newHeight = Number(change.dimensions!.height);
+
+                      // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
+                      updateNode(change.id, {
+                        width: newWidth || 350,
+                        height: newHeight || 280,
+                        style: {
+                          ...(currentNode.style || {}),
+                          width: newWidth || 350,
+                          height: newHeight || 280,
+                        }
+                      });
+
+                      if (currentNode.type === 'group') {
+                        const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
+
+                        // ⚡ 优化：直接更新边界（防抖已在 updateGroupBoundary 中处理）
+                        updateGroupBoundary(change.id);
+
+                        // ⚡ 优化：直接更新父群组边界（防抖已处理）
+                        if (storeGroup?.groupId) {
+                          console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
+                          updateGroupBoundary(storeGroup.groupId!);
+                        }
+                      }
+                    }
+
+                    delete resizeTimeoutRef.current[change.id];
+                  }, 100);
+                }
+              });
             });
           }}
           onInit={(instance) => {

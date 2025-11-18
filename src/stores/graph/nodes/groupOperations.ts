@@ -1,4 +1,5 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
+import { NODE_SIZES } from '@/config/graph.config';
 import { GroupOperationsSlice, safePosition, safeNumber, constrainNodeToGroupBoundary } from './types';
 import { hasCircularNesting, validateNestingDepth, getAllDescendants } from '@/utils/graph/nestingHelpers';
 
@@ -32,8 +33,8 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
         const safeGroup = {
           ...group,
           position: safePosition(group.position),
-          width: safeNumber(group.width, 300),
-          height: safeNumber(group.height, 200)
+          width: safeNumber(group.width, NODE_SIZES.GROUP.DEFAULT_WIDTH),
+          height: safeNumber(group.height, NODE_SIZES.GROUP.DEFAULT_HEIGHT)
         };
 
         if (parentGroup) {
@@ -49,8 +50,8 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
       const safeGroup = {
         ...group,
         position: safePosition(group.position),
-        width: safeNumber(group.width, 300),
-        height: safeNumber(group.height, 200)
+        width: safeNumber(group.width, NODE_SIZES.GROUP.DEFAULT_WIDTH),
+        height: safeNumber(group.height, NODE_SIZES.GROUP.DEFAULT_HEIGHT)
       };
       return { nodes: [...state.nodes, safeGroup] };
     }),
@@ -79,8 +80,8 @@ export const createGroupOperationsSlice = (set: any, get: any): GroupOperationsS
               position: updates.position !== undefined
                 ? safePosition(updates.position)
                 : safePosition(group.position),
-              width: safeNumber(updates.width ?? group.width, 300),
-              height: safeNumber(updates.height ?? group.height, 200),
+              width: safeNumber(updates.width ?? group.width, NODE_SIZES.GROUP.DEFAULT_WIDTH),
+              height: safeNumber(updates.height ?? group.height, NODE_SIZES.GROUP.DEFAULT_HEIGHT),
               validationError,
               updatedAt: new Date(),
             };

@@ -54,28 +54,54 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 启用布局模式以防止约束逻辑干扰
         useGraphStore.getState().setIsLayoutMode(true);
 
-        try {
-          // 更新节点位置
-          for (const [nodeId, position] of layoutResult.nodes) {
-            updateNode(nodeId, { position });
-          }
-
-          // 更新边的连接点
-          layoutResult.edges.forEach((edgeData, edgeId) => {
-            updateEdge(edgeId, {
-              sourceHandle: edgeData.sourceHandle,
-              targetHandle: edgeData.targetHandle
-            });
-          });
-
-          // 清除选中状态
-          setSelectedNodeId(null);
-        } finally {
-          // 禁用布局模式
-          useGraphStore.getState().setIsLayoutMode(false);
+        // 更新节点位置
+        for (const [nodeId, position] of layoutResult.nodes) {
+          updateNode(nodeId, { position });
         }
+
+        // 更新边的连接点
+        layoutResult.edges.forEach((edgeData, edgeId) => {
+          updateEdge(edgeId, {
+            sourceHandle: edgeData.sourceHandle,
+            targetHandle: edgeData.targetHandle
+          });
+        });
+
+        // 清除选中状态
+        setSelectedNodeId(null);
+
+        // 额外的边优化：确保所有边的连接点基于最终节点位置进行了优化
+        const finalNodes = useGraphStore.getState().getNodes();
+        const finalEdges = useGraphStore.getState().getEdges();
+
+        // 创建边优化器实例并优化所有边
+        import('@/services/layout/algorithms/EdgeOptimizer')
+          .then(({ EdgeOptimizer }) => {
+            const edgeOptimizer = new EdgeOptimizer();
+            const optimizedEdges = edgeOptimizer.optimizeEdgeHandles(finalNodes, finalEdges);
+
+            // 更新所有边的连接点
+            optimizedEdges.forEach((edgeData) => {
+              updateEdge(edgeData.id, {
+                sourceHandle: edgeData.sourceHandle,
+                targetHandle: edgeData.targetHandle
+              });
+            });
+
+            console.log(`🔄 布局后优化了 ${optimizedEdges.length} 条边的连接点`);
+          })
+          .catch(error => {
+            console.error("额外边优化失败:", error);
+          })
+          .finally(() => {
+            // 确保在所有操作完成后，禁用布局模式
+            useGraphStore.getState().setIsLayoutMode(false);
+          });
       } else {
         console.error("Layout failed:", layoutResult.errors);
+
+        // 即使布局失败，也要确保禁用布局模式
+        useGraphStore.getState().setIsLayoutMode(false);
       }
     } catch (error) {
       console.error("Layout error:", error);
