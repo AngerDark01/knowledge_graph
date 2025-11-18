@@ -13,6 +13,9 @@ export interface LayoutOptions {
   targetGroupId?: string | null;  // null 或 undefined = 全画布布局，string = 指定群组ID
   layoutScope?: 'canvas' | 'group';  // 布局范围类型
 
+  // 递归布局模式
+  layoutMode?: 'normal' | 'recursive';  // normal = 单层布局，recursive = 递归布局所有嵌套层级
+
   onProgress?: (progress: { currentLevel: number; totalLevels: number; processedNodes: number; totalNodes: number }) => void;
   [key: string]: any;
 }

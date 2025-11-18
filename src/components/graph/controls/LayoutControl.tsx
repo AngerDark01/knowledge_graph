@@ -216,6 +216,87 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
     }
   }, [nodes, edges, isProcessing, selectedNodeId, isGroupSelected, childrenCount, updateNode, updateEdge]);
 
+  // 🌳 递归布局处理函数 - 从最深层到顶层逐层布局所有嵌套结构
+  const handleRecursiveLayout = useCallback(async () => {
+    if (isProcessing) {
+      console.log("Layout already in progress");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+
+      console.log(`🌳 开始递归布局，处理所有 ${nodes.length} 个节点`);
+
+      // 初始化布局管理器
+      const layoutManager = new LayoutManager();
+      const gridCenterStrategy = new GridCenterLayoutStrategy();
+      layoutManager.registerStrategy('grid-center-layout', gridCenterStrategy);
+
+      // 应用递归布局算法
+      const layoutResult = await layoutManager.applyLayout(
+        nodes,
+        edges,
+        {
+          strategy: 'grid-center-layout',
+          layoutMode: 'recursive',  // ✨ 启用递归模式
+          animate: true,
+          useWeightedLayout: true,
+          onProgress: (progress) => {
+            console.log(
+              `📊 布局进度: 深度 ${progress.currentLevel}/${progress.totalLevels}, ` +
+              `已处理 ${progress.processedNodes}/${progress.totalNodes} 个节点`
+            );
+          }
+        }
+      );
+
+      if (layoutResult.success) {
+        // 启用布局模式以防止约束逻辑干扰
+        useGraphStore.getState().setIsLayoutMode(true);
+
+        // 更新节点位置和大小
+        for (const [nodeId, positionData] of layoutResult.nodes) {
+          const updateData: any = { position: { x: positionData.x, y: positionData.y } };
+
+          // 如果布局结果包含尺寸信息（群组节点），也一并更新
+          if ((positionData as any).width !== undefined) {
+            updateData.width = (positionData as any).width;
+          }
+          if ((positionData as any).height !== undefined) {
+            updateData.height = (positionData as any).height;
+          }
+
+          updateNode(nodeId, updateData);
+        }
+
+        // 更新边连接点
+        layoutResult.edges.forEach((edgeData, edgeId) => {
+          updateEdge(edgeId, {
+            sourceHandle: edgeData.sourceHandle,
+            targetHandle: edgeData.targetHandle
+          });
+        });
+
+        console.log(`✅ 递归布局完成，更新了 ${layoutResult.nodes.size} 个节点`);
+        console.log(`📊 统计: 耗时 ${layoutResult.stats.duration.toFixed(0)}ms, 迭代 ${layoutResult.stats.iterations} 次`);
+
+        // 清除选中状态
+        setSelectedNodeId(null);
+
+        useGraphStore.getState().setIsLayoutMode(false);
+      } else {
+        console.error("Recursive layout failed:", layoutResult.errors);
+        useGraphStore.getState().setIsLayoutMode(false);
+      }
+    } catch (error) {
+      console.error("Recursive layout error:", error);
+      useGraphStore.getState().setIsLayoutMode(false);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [nodes, edges, isProcessing, updateNode, updateEdge, setSelectedNodeId]);
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <Button
@@ -292,6 +373,46 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           )}
         </Button>
       )}
+
+      {/* 🌳 递归布局按钮 */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRecursiveLayout}
+        disabled={isProcessing}
+        className="flex items-center gap-2 border-green-300 text-green-600 hover:bg-green-50"
+        title="递归布局所有嵌套群组（从最深层开始）"
+      >
+        {isProcessing ? (
+          <>
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            递归布局中...
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            递归布局全部
+          </>
+        )}
+      </Button>
 
       {/* 配置按钮 - 暂时未实现功能 */}
       <Button

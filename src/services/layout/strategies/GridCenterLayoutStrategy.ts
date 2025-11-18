@@ -5,6 +5,7 @@ import { GeometryUtils } from '../utils/GeometryUtils';
 import { LAYOUT_CONFIG, GRID_LAYOUT } from '../../../config/graph.config';
 import { applyOffsetToDescendants, getAbsolutePosition } from '../../../utils/graph/recursiveMoveHelpers';
 import { EdgeOptimizer, OptimizedEdge } from '../algorithms/EdgeOptimizer';
+import { NestingTreeBuilder } from '../utils/NestingTreeBuilder';
 
 export interface GridCenterLayoutOptions extends LayoutOptions {
   centerWeight?: number;
@@ -159,6 +160,11 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     const startTime = performance.now();
 
     try {
+      // ✨ 检测是否为递归布局模式
+      if (options?.layoutMode === 'recursive') {
+        console.log('🌳 启动递归布局模式');
+        return this.applyRecursiveLayout(nodes, edges, options);
+      }
       // ✨ 使用新的节点过滤方法获取目标节点
       const targetNodes = this.getTargetNodes(nodes, options);
       const otherNodes = nodes.filter(n => !targetNodes.some(tn => tn.id === n.id));
@@ -777,6 +783,332 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     }
 
     return resultNodes;
+  }
+
+  /**
+   * 🌳 递归布局方法 - 从最深层群组开始逐层向上布局
+   * 核心思路：
+   * 1. 使用 NestingTreeBuilder 计算所有节点的嵌套深度
+   * 2. 从最深层开始，逐层布局每个群组的子节点
+   * 3. 最后布局顶层节点
+   * 4. 使用同一套 GridCenterLayoutStrategy 算法
+   */
+  private async applyRecursiveLayout(
+    nodes: (Node | Group)[],
+    edges: Edge[],
+    options?: GridCenterLayoutOptions
+  ): Promise<LayoutResult> {
+    const startTime = performance.now();
+    const stats = { duration: 0, iterations: 0, collisions: 0 };
+
+    try {
+      console.log(`🌳 开始递归布局，共 ${nodes.length} 个节点`);
+
+      // 1. 构建嵌套层级树
+      const treeBuilder = new NestingTreeBuilder();
+      const depthGroups = treeBuilder.groupNodesByDepth(nodes);
+      const maxDepth = treeBuilder.getMaxDepth(depthGroups);
+
+      console.log(`🌳 检测到 ${depthGroups.size} 层嵌套结构，最大深度: ${maxDepth}`);
+
+      // 2. 创建工作节点副本（用于逐步更新位置）
+      let workingNodes = nodes.map(n => ({ ...n, position: { ...n.position } }));
+      const allUpdatedPositions = new Map<string, { x: number; y: number }>();
+
+      let totalProcessedNodes = 0;
+      const totalNodes = nodes.length;
+
+      // 3. 从最深层向上逐层布局
+      for (let depth = maxDepth; depth > 0; depth--) {
+        const groupsAtDepth = treeBuilder.getGroupsAtDepth(depthGroups, depth);
+
+        if (groupsAtDepth.length === 0) {
+          console.log(`📐 深度 ${depth} 没有群组，跳过`);
+          continue;
+        }
+
+        console.log(`📐 处理深度 ${depth}，群组数量: ${groupsAtDepth.length}`);
+
+        // 布局每个群组的子节点
+        for (const group of groupsAtDepth) {
+          // 获取该群组的子节点数量
+          const childrenCount = workingNodes.filter(n =>
+            'groupId' in n && (n as Node).groupId === group.id
+          ).length;
+
+          if (childrenCount === 0) {
+            console.log(`  └─ 群组 ${group.id} 没有子节点，跳过`);
+            continue;
+          }
+
+          console.log(`  └─ 布局群组 ${group.id} 的 ${childrenCount} 个子节点`);
+
+          // 使用现有的单群组布局逻辑
+          const layoutResult = await this.layoutSingleGroup(
+            group.id,
+            workingNodes,
+            edges,
+            options
+          );
+
+          // 合并布局结果到工作节点
+          layoutResult.nodes.forEach((pos, id) => {
+            allUpdatedPositions.set(id, pos);
+            const node = workingNodes.find(n => n.id === id);
+            if (node) {
+              node.position = pos;
+            }
+          });
+
+          stats.iterations += layoutResult.stats.iterations;
+          stats.collisions += layoutResult.stats.collisions;
+          totalProcessedNodes += layoutResult.nodes.size;
+
+          // 发送进度更新
+          if (options?.onProgress) {
+            options.onProgress({
+              currentLevel: maxDepth - depth + 1,
+              totalLevels: maxDepth + 1,
+              processedNodes: totalProcessedNodes,
+              totalNodes: totalNodes
+            });
+          }
+        }
+      }
+
+      // 4. 最后布局顶层节点
+      console.log(`📐 处理顶层节点`);
+      const topLevelResult = await this.applyLayout(workingNodes, edges, {
+        ...options,
+        layoutMode: 'normal', // 确保使用普通模式，避免递归调用
+        targetGroupId: undefined,
+      });
+
+      // 合并顶层布局结果
+      topLevelResult.nodes.forEach((pos, id) => {
+        allUpdatedPositions.set(id, pos);
+        const node = workingNodes.find(n => n.id === id);
+        if (node) {
+          node.position = pos;
+        }
+      });
+
+      stats.iterations += topLevelResult.stats.iterations;
+      stats.collisions += topLevelResult.stats.collisions;
+      totalProcessedNodes = allUpdatedPositions.size;
+
+      // 发送最终进度
+      if (options?.onProgress) {
+        options.onProgress({
+          currentLevel: maxDepth + 1,
+          totalLevels: maxDepth + 1,
+          processedNodes: totalProcessedNodes,
+          totalNodes: totalNodes
+        });
+      }
+
+      // 5. 🔧 递归调整父节点大小以包含所有子节点（从深到浅）
+      console.log(`🔧 调整父节点大小以包含子节点`);
+      const adjustedNodes = this.adjustParentNodeSizes(
+        workingNodes,
+        treeBuilder,
+        depthGroups,
+        maxDepth
+      );
+
+      // 更新调整后的节点大小到结果中
+      for (const node of adjustedNodes) {
+        if (node.type === BlockEnum.GROUP && (node.width || node.height)) {
+          const currentPos = allUpdatedPositions.get(node.id);
+          if (currentPos) {
+            // 保持位置不变，只更新大小信息
+            allUpdatedPositions.set(node.id, currentPos);
+          }
+          // 将尺寸信息也存储到特殊字段（用于UI更新）
+          const pos = allUpdatedPositions.get(node.id);
+          if (pos) {
+            (pos as any).width = node.width;
+            (pos as any).height = node.height;
+          }
+        }
+      }
+
+      // 6. 优化所有边的连接点
+      console.log(`🔄 优化边的连接点`);
+      const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(
+        adjustedNodes,
+        edges
+      );
+
+      const endTime = performance.now();
+      stats.duration = endTime - startTime;
+
+      console.log(`✅ 递归布局完成！`);
+      console.log(`   • 处理了 ${maxDepth + 1} 层嵌套结构`);
+      console.log(`   • 更新了 ${allUpdatedPositions.size} 个节点`);
+      console.log(`   • 调整了父节点大小`);
+      console.log(`   • 优化了 ${optimizedEdges.length} 条边`);
+      console.log(`   • 总迭代次数: ${stats.iterations}`);
+      console.log(`   • 碰撞处理次数: ${stats.collisions}`);
+      console.log(`   • 耗时: ${stats.duration.toFixed(0)}ms`);
+
+      return {
+        success: true,
+        nodes: allUpdatedPositions,
+        edges: new Map(optimizedEdges.map(e => [e.id, e])),
+        errors: [],
+        stats
+      };
+
+    } catch (error) {
+      const endTime = performance.now();
+      console.error('❌ 递归布局失败:', error);
+      return {
+        success: false,
+        nodes: new Map(),
+        edges: new Map(),
+        errors: [error instanceof Error ? error.message : 'Unknown error in recursive layout'],
+        stats: { ...stats, duration: endTime - startTime }
+      };
+    }
+  }
+
+  /**
+   * 布局单个群组的子节点
+   * 复用现有的 applyLayout 逻辑，指定 targetGroupId
+   */
+  private async layoutSingleGroup(
+    groupId: string,
+    nodes: (Node | Group)[],
+    edges: Edge[],
+    options?: GridCenterLayoutOptions
+  ): Promise<LayoutResult> {
+    return this.applyLayout(nodes, edges, {
+      ...options,
+      layoutMode: 'normal', // 确保使用普通模式
+      targetGroupId: groupId,
+      layoutScope: 'group',
+    });
+  }
+
+  /**
+   * 🔧 递归调整父节点大小以包含所有子节点
+   * 从最深层开始，逐层向上调整每个群组的大小
+   *
+   * @param nodes 所有节点
+   * @param treeBuilder 嵌套树构建器
+   * @param depthGroups 深度分组
+   * @param maxDepth 最大深度
+   * @returns 调整后的节点列表
+   */
+  private adjustParentNodeSizes(
+    nodes: (Node | Group)[],
+    treeBuilder: NestingTreeBuilder,
+    depthGroups: Map<number, (Node | Group)[]>,
+    maxDepth: number
+  ): (Node | Group)[] {
+    // 创建节点副本
+    const workingNodes = nodes.map(n => ({ ...n }));
+    const nodeMap = new Map(workingNodes.map(n => [n.id, n]));
+
+    // 从最深层向上逐层调整群组大小
+    for (let depth = maxDepth; depth >= 0; depth--) {
+      const groupsAtDepth = treeBuilder.getGroupsAtDepth(depthGroups, depth);
+
+      for (const group of groupsAtDepth) {
+        const workingGroup = nodeMap.get(group.id) as Group;
+        if (!workingGroup) continue;
+
+        // 获取该群组的所有直接子节点
+        const children = workingNodes.filter(n =>
+          'groupId' in n && (n as Node).groupId === group.id
+        );
+
+        if (children.length === 0) continue;
+
+        // 计算子节点的边界
+        const childrenBounds = this.calculateNodesBoundary(children);
+
+        // 计算需要的群组大小（加上padding）
+        const padding = LAYOUT_CONFIG.group;
+
+        const requiredWidth =
+          (childrenBounds.maxX - childrenBounds.minX) +
+          padding.paddingLeft +
+          padding.paddingRight +
+          20; // 额外边距
+
+        const requiredHeight =
+          (childrenBounds.maxY - childrenBounds.minY) +
+          padding.paddingTop +
+          padding.paddingBottom +
+          20; // 额外边距
+
+        // 更新群组大小（只扩大，不缩小）
+        const currentWidth = workingGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width;
+        const currentHeight = workingGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height;
+
+        const newWidth = Math.max(currentWidth, requiredWidth);
+        const newHeight = Math.max(currentHeight, requiredHeight);
+
+        if (newWidth !== currentWidth || newHeight !== currentHeight) {
+          console.log(
+            `  └─ 调整群组 ${group.id} 大小: ` +
+            `${currentWidth}x${currentHeight} -> ${Math.round(newWidth)}x${Math.round(newHeight)}`
+          );
+
+          workingGroup.width = newWidth;
+          workingGroup.height = newHeight;
+
+          // 更新 boundary
+          workingGroup.boundary = {
+            minX: workingGroup.position.x,
+            minY: workingGroup.position.y,
+            maxX: workingGroup.position.x + newWidth,
+            maxY: workingGroup.position.y + newHeight
+          };
+        }
+      }
+    }
+
+    return workingNodes;
+  }
+
+  /**
+   * 计算多个节点的边界
+   */
+  private calculateNodesBoundary(nodes: (Node | Group)[]): {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  } {
+    if (nodes.length === 0) {
+      return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const node of nodes) {
+      const nodeWidth = node.width || LAYOUT_CONFIG.nodeSize.defaultNode.width;
+      const nodeHeight = node.height || LAYOUT_CONFIG.nodeSize.defaultNode.height;
+
+      // 节点的边界（考虑节点中心点）
+      const nodeMinX = node.position.x - nodeWidth / 2;
+      const nodeMinY = node.position.y - nodeHeight / 2;
+      const nodeMaxX = node.position.x + nodeWidth / 2;
+      const nodeMaxY = node.position.y + nodeHeight / 2;
+
+      minX = Math.min(minX, nodeMinX);
+      minY = Math.min(minY, nodeMinY);
+      maxX = Math.max(maxX, nodeMaxX);
+      maxY = Math.max(maxY, nodeMaxY);
+    }
+
+    return { minX, minY, maxX, maxY };
   }
 
   validateConfig(config: any): boolean {
