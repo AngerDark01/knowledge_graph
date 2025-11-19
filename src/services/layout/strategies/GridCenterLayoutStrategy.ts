@@ -671,37 +671,38 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
       return positionedNode ? positionedNode.position : node.position;
     }
 
-    // 获取原始父群组
+    // 🔧 关键修复：优先使用positionedNodeMap中的父群组（可能已被布局算法移动）
+    const positionedParentGroup = positionedNodeMap.get(node.groupId);
     const originalParentGroup = originalNodeMap.get(node.groupId) as Group;
+
     if (!originalParentGroup) {
       // 如果找不到原始父群组，返回原位置
       return node.position;
     }
 
-    // 递归计算父群组的新绝对位置
+    // 计算节点相对于原始父群组的相对位置
+    const relativeX = node.position.x - originalParentGroup.position.x;
+    const relativeY = node.position.y - originalParentGroup.position.y;
+
+    // 🔧 如果父群组在positionedNodeMap中（已被处理），直接使用其新位置
+    if (positionedParentGroup) {
+      return {
+        x: positionedParentGroup.position.x + relativeX,
+        y: positionedParentGroup.position.y + relativeY
+      };
+    }
+
+    // 否则递归计算父群组的新绝对位置（用于嵌套更深的情况）
     const parentAbsolutePosition = this.calculateAbsolutePosition(
       originalParentGroup,
       originalNodeMap,
       positionedNodeMap
     );
 
-    // 获取原始父群组的位置（在原始状态下的位置）
-    const originalParentAbsolutePosition = this.getOriginalAbsolutePosition(
-      originalParentGroup,
-      originalNodeMap
-    );
-
-    // 计算节点相对于原始父群组的相对位置
-    const relativeX = node.position.x - originalParentGroup.position.x;
-    const relativeY = node.position.y - originalParentGroup.position.y;
-
-    // 基于父群组的新绝对位置和节点的相对位置，计算节点的新绝对位置
-    const newAbsoluteX = parentAbsolutePosition.x + relativeX;
-    const newAbsoluteY = parentAbsolutePosition.y + relativeY;
-
-    // 确保计算结果是正确的（避免无限递归）
-    // 检查节点是否在原始父群组内，如果是，应用相对偏移
-    return { x: newAbsoluteX, y: newAbsoluteY };
+    return {
+      x: parentAbsolutePosition.x + relativeX,
+      y: parentAbsolutePosition.y + relativeY
+    };
   }
 
   /**
