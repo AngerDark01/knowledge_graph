@@ -152,20 +152,29 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       const nodeIdsChanged = processedNodes.length !== reactFlowNodes.length ||
         JSON.stringify(processedNodes.map(n => n.id).sort()) !== JSON.stringify(reactFlowNodes.map(n => n.id).sort());
 
-      // 检查是否有节点的位置发生了变化
-      let positionChanged = false;
+      // 检查是否有节点的位置或尺寸发生了变化
+      let nodeChanged = false;
       if (!nodeIdsChanged) {
         for (let i = 0; i < processedNodes.length; i++) {
           const oldNode = reactFlowNodes.find(n => n.id === processedNodes[i].id);
-          if (oldNode && (oldNode.position.x !== processedNodes[i].position.x ||
-                         oldNode.position.y !== processedNodes[i].position.y)) {
-            positionChanged = true;
-            break;
+          if (oldNode) {
+            // 检查位置变化
+            const positionChanged = oldNode.position.x !== processedNodes[i].position.x ||
+                                   oldNode.position.y !== processedNodes[i].position.y;
+
+            // 🔧 检查尺寸变化（width、height）
+            const sizeChanged = oldNode.style?.width !== processedNodes[i].style?.width ||
+                               oldNode.style?.height !== processedNodes[i].style?.height;
+
+            if (positionChanged || sizeChanged) {
+              nodeChanged = true;
+              break;
+            }
           }
         }
       }
 
-      if (nodeIdsChanged || positionChanged) {
+      if (nodeIdsChanged || nodeChanged) {
         setReactFlowNodes(processedNodes);
       }
     }
