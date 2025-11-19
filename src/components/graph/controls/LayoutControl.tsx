@@ -19,6 +19,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
   const updateEdge = useGraphStore(state => state.updateEdge);
   const setSelectedNodeId = useGraphStore(state => state.setSelectedNodeId);
   const selectedNodeId = useGraphStore(state => state.selectedNodeId);
+  const updateGroupBoundary = useGraphStore(state => state.updateGroupBoundary);
 
   // 检查选中的节点是否为群组
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
@@ -181,6 +182,10 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
         console.log(`✅ 群组布局完成，更新了 ${layoutResult.nodes.size} 个节点`);
 
+        // 🔧 触发群组边界更新以确保父群组大小及时调整
+        console.log(`🔧 触发群组边界更新: ${selectedNodeId}`);
+        updateGroupBoundary(selectedNodeId);
+
         // 额外的边优化
         const finalNodes = useGraphStore.getState().getNodes();
         const finalEdges = useGraphStore.getState().getEdges();
@@ -214,7 +219,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [nodes, edges, isProcessing, selectedNodeId, isGroupSelected, childrenCount, updateNode, updateEdge]);
+  }, [nodes, edges, isProcessing, selectedNodeId, isGroupSelected, childrenCount, updateNode, updateEdge, updateGroupBoundary]);
 
   // 🌳 递归布局处理函数 - 从最深层到顶层逐层布局所有嵌套结构
   const handleRecursiveLayout = useCallback(async () => {
@@ -285,6 +290,29 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         console.log(`✅ 递归布局完成，更新了 ${layoutResult.nodes.size} 个节点`);
         console.log(`📊 统计: 耗时 ${layoutResult.stats.duration.toFixed(0)}ms, 迭代 ${layoutResult.stats.iterations} 次`);
 
+        // 🔧 触发所有群组节点的边界更新，确保父节点大小及时调整
+        // 收集所有更新了大小的群组节点
+        const updatedGroupIds: string[] = [];
+        for (const [nodeId, positionData] of layoutResult.nodes) {
+          if ((positionData as any).width !== undefined || (positionData as any).height !== undefined) {
+            // 检查这个节点是否是群组
+            const node = nodes.find(n => n.id === nodeId);
+            if (node && node.type === 'group') {
+              updatedGroupIds.push(nodeId);
+            }
+          }
+        }
+
+        // 对每个更新的群组触发边界更新（延迟触发以确保 store 已完全更新）
+        if (updatedGroupIds.length > 0) {
+          console.log(`🔧 触发 ${updatedGroupIds.length} 个群组的边界更新:`, updatedGroupIds);
+          setTimeout(() => {
+            updatedGroupIds.forEach(groupId => {
+              updateGroupBoundary(groupId);
+            });
+          }, 100); // 延迟 100ms 确保所有 updateNode 调用都已完成
+        }
+
         // 清除选中状态
         setSelectedNodeId(null);
 
@@ -299,7 +327,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [nodes, edges, isProcessing, updateNode, updateEdge, setSelectedNodeId]);
+  }, [nodes, edges, isProcessing, updateNode, updateEdge, setSelectedNodeId, updateGroupBoundary]);
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
