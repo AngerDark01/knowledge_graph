@@ -176,6 +176,12 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
           position: { x: safeNumber(newGroupX), y: safeNumber(newGroupY) },
           width: safeNumber(newWidth, 300),
           height: safeNumber(newHeight, 200),
+          boundary: {
+            minX: safeNumber(newGroupX),
+            minY: safeNumber(newGroupY),
+            maxX: safeNumber(newGroupX) + safeNumber(newWidth, 300),
+            maxY: safeNumber(newGroupY) + safeNumber(newHeight, 200)
+          },
           updatedAt: new Date()
         } as Group;
       }
