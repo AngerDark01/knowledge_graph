@@ -78,7 +78,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const [reactFlowNodes, setReactFlowNodes, onNodesChange] = useNodesState([]);
   const [reactFlowEdges, setReactFlowEdges, onEdgesChange] = useEdgesState([]);
   const isDraggingRef = useRef<boolean>(false);
-  const isResizingRef = useRef<boolean>(false); // 🔧 添加resize状态追踪
   const lastDraggedNodeRef = useRef<string | null>(null);
 
   // 边优化器实例和防抖定时器
@@ -135,51 +134,42 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   // ⚡ 优化：使用 useMemo 缓存节点转换结果
   const processedNodes = useMemo(() => {
-    // 🔧 如果正在拖拽或调整大小，返回当前节点（避免覆盖用户操作）
-    if (isDraggingRef.current || isResizingRef.current) {
-      console.log('⏸️ 拖拽/调整大小中，使用当前节点');
+    // 如果正在拖拽，返回当前节点（避免覆盖用户操作）
+    if (isDraggingRef.current) {
+      console.log('⏸️ 拖拽中，使用当前节点');
       return reactFlowNodes || [];
     }
 
     const nodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
     console.log('🔄 同步节点到ReactFlow:', nodes.length);
     return nodes as ReactFlowNode[];
-  }, [storeNodes, selectedNodeId]); // 🔧 移除 reactFlowNodes 和 isDraggingRef.current，避免循环依赖
+  }, [storeNodes, selectedNodeId, reactFlowNodes, isDraggingRef.current]); // 添加 isDraggingRef.current 依赖以确保一致性
 
   // ⚡ 优化：仅在 processedNodes 真正变化时更新
   useEffect(() => {
-    if (!isDraggingRef.current && !isResizingRef.current && processedNodes && reactFlowNodes) {
+    if (!isDraggingRef.current && processedNodes && reactFlowNodes) {
       // 检查节点数量是否变化或者节点位置是否变化
       const nodeIdsChanged = processedNodes.length !== reactFlowNodes.length ||
         JSON.stringify(processedNodes.map(n => n.id).sort()) !== JSON.stringify(reactFlowNodes.map(n => n.id).sort());
 
-      // 检查是否有节点的位置或尺寸发生了变化
-      let nodeChanged = false;
+      // 检查是否有节点的位置发生了变化
+      let positionChanged = false;
       if (!nodeIdsChanged) {
         for (let i = 0; i < processedNodes.length; i++) {
           const oldNode = reactFlowNodes.find(n => n.id === processedNodes[i].id);
-          if (oldNode) {
-            // 检查位置变化
-            const positionChanged = oldNode.position.x !== processedNodes[i].position.x ||
-                                   oldNode.position.y !== processedNodes[i].position.y;
-
-            // 🔧 检查尺寸变化（width、height）
-            const sizeChanged = oldNode.style?.width !== processedNodes[i].style?.width ||
-                               oldNode.style?.height !== processedNodes[i].style?.height;
-
-            if (positionChanged || sizeChanged) {
-              nodeChanged = true;
-              break;
-            }
+          if (oldNode && (oldNode.position.x !== processedNodes[i].position.x ||
+                         oldNode.position.y !== processedNodes[i].position.y)) {
+            positionChanged = true;
+            break;
           }
         }
       }
 
-      if (nodeIdsChanged || nodeChanged) {
+      if (nodeIdsChanged || positionChanged) {
         setReactFlowNodes(processedNodes);
       }
     }
-  }, [processedNodes, setReactFlowNodes, reactFlowNodes, isDraggingRef.current, isResizingRef.current]);
+  }, [processedNodes, setReactFlowNodes, reactFlowNodes, isDraggingRef.current]);
 
   // 同步边
   useEffect(() => {
@@ -469,58 +459,46 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                   }
                 }
 
-                // 🔧 优化版：尺寸变化处理（追踪resize状态）
-                if (change.type === 'dimensions' && change.dimensions) {
-                  // 🔧 追踪resize状态
-                  if (change.resizing) {
-                    isResizingRef.current = true;
-                    console.log('🔧 开始调整大小:', change.id);
-                  } else {
-                    // resize完成，清除状态并更新store
-                    isResizingRef.current = false;
-                    console.log('✅ 完成调整大小:', change.id);
+                // ⚡ 优化版：尺寸变化处理（减少 setTimeout 嵌套）
+                if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
+                  if (resizeTimeoutRef.current[change.id]) {
+                    clearTimeout(resizeTimeoutRef.current[change.id]);
+                  }
 
-                    if (resizeTimeoutRef.current[change.id]) {
-                      clearTimeout(resizeTimeoutRef.current[change.id]);
-                    }
+                  resizeTimeoutRef.current[change.id] = setTimeout(() => {
+                    const currentNode = reactFlowInstance?.getNode(change.id);
 
-                    resizeTimeoutRef.current[change.id] = setTimeout(() => {
-                      const currentNode = reactFlowInstance?.getNode(change.id);
+                    if (currentNode) {
+                      const newWidth = Number(change.dimensions!.width);
+                      const newHeight = Number(change.dimensions!.height);
 
-                      if (currentNode) {
-                        const newWidth = Number(change.dimensions!.width);
-                        const newHeight = Number(change.dimensions!.height);
-
-                        console.log('💾 保存新尺寸:', { id: change.id, width: newWidth, height: newHeight });
-
-                        // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
-                        updateNode(change.id, {
+                      // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
+                      updateNode(change.id, {
+                        width: newWidth || 350,
+                        height: newHeight || 280,
+                        style: {
+                          ...(currentNode.style || {}),
                           width: newWidth || 350,
                           height: newHeight || 280,
-                          style: {
-                            ...(currentNode.style || {}),
-                            width: newWidth || 350,
-                            height: newHeight || 280,
-                          }
-                        });
+                        }
+                      });
 
-                        if (currentNode.type === 'group') {
-                          const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
+                      if (currentNode.type === 'group') {
+                        const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
 
-                          // ⚡ 优化：直接更新边界（防抖已在 updateGroupBoundary 中处理）
-                          updateGroupBoundary(change.id);
+                        // ⚡ 优化：直接更新边界（防抖已在 updateGroupBoundary 中处理）
+                        updateGroupBoundary(change.id);
 
-                          // ⚡ 优化：直接更新父群组边界（防抖已处理）
-                          if (storeGroup?.groupId) {
-                            console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
-                            updateGroupBoundary(storeGroup.groupId!);
-                          }
+                        // ⚡ 优化：直接更新父群组边界（防抖已处理）
+                        if (storeGroup?.groupId) {
+                          console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
+                          updateGroupBoundary(storeGroup.groupId!);
                         }
                       }
+                    }
 
-                      delete resizeTimeoutRef.current[change.id];
-                    }, 100);
-                  }
+                    delete resizeTimeoutRef.current[change.id];
+                  }, 100);
                 }
               });
             });

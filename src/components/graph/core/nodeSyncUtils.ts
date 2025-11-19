@@ -129,7 +129,6 @@ export const syncStoreToReactFlowNodes = (
         position: finalPosition,
         selected: node.id === selectedNodeId,
         draggable: true,
-        resizable: true, // 🔧 启用resize功能
         // 🔧 如果 Group 有父群组，设置 parentId 和 extent
         ...(groupNode.groupId && {
           parentId: groupNode.groupId,
@@ -181,7 +180,6 @@ export const syncStoreToReactFlowNodes = (
         position: finalPosition,
         selected: node.id === selectedNodeId,
         draggable: true,
-        resizable: true, // 🔧 启用resize功能
         ...(regularNode.groupId && {
           parentId: regularNode.groupId,
           extent: 'parent' as const,
