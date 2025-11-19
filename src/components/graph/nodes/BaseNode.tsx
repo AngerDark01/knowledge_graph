@@ -18,7 +18,7 @@ const ConnectionHandles = ({ isGroup = false, selected = false }) => {
     : 'w-3 h-3 bg-gray-500 hover:bg-blue-500 rounded-full border-2 border-white';
   
   const handleStyle = {
-    zIndex: 50,
+    zIndex: 10, // 🔧 降低z-index，避免覆盖resize控制器
   };
   
   return (
@@ -188,31 +188,46 @@ const BaseNode: React.FC<BaseNodeProps> = ({
         </>
       )}
       
-      {/* 尺寸调整器 */}
+      {/* 🔧 尺寸调整器 - 移除wrapper div，添加nodrag/nopan类，提高z-index */}
       {showResizeControl && (
-        <div className={`
-          hidden group-hover:block
-          ${selected ? '!block' : ''}
-        `}>
-          <NodeResizeControl
-            position="bottom-right"
-            className="!border-none !bg-transparent"
-            minWidth={minWidth}
-            minHeight={minHeight}
+        <NodeResizeControl
+          position="bottom-right"
+          minWidth={minWidth}
+          minHeight={minHeight}
+          style={{ zIndex: 100 }}
+        >
+          <div
+            className={`
+              nodrag nopan
+              absolute bottom-0 right-0
+              w-5 h-5
+              cursor-nwse-resize
+              flex items-center justify-center
+              ${selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+              transition-opacity duration-200
+            `}
+            style={{
+              pointerEvents: 'auto',
+              touchAction: 'none',
+            }}
           >
-            <div className="absolute bottom-[1px] right-[1px]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path 
-                  d="M5.19009 11.8398C8.26416 10.6196 10.7144 8.16562 11.9297 5.08904" 
-                  stroke="black" 
-                  strokeOpacity="0.16" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                />
-              </svg>
-            </div>
-          </NodeResizeControl>
-        </div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="text-gray-400 hover:text-blue-500 transition-colors"
+            >
+              <path
+                d="M8 16L16 8M8 12L12 8M12 16L16 12"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </NodeResizeControl>
       )}
     </div>
   );
