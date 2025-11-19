@@ -266,6 +266,10 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           if ((positionData as any).height !== undefined) {
             updateData.height = (positionData as any).height;
           }
+          // 🔧 如果包含边界信息，也一并更新（确保群组边界及时同步）
+          if ((positionData as any).boundary !== undefined) {
+            updateData.boundary = (positionData as any).boundary;
+          }
 
           updateNode(nodeId, updateData);
         }

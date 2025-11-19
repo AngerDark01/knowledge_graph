@@ -133,9 +133,24 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
 
               updatedNode.width = newWidth;
               updatedNode.height = newHeight;
+
+              // 🔧 如果是群组节点且没有显式提供 boundary，自动计算 boundary
+              if (node.type === BlockEnum.GROUP && updates.boundary === undefined) {
+                (updatedNode as any).boundary = {
+                  minX: updatedNode.position.x,
+                  minY: updatedNode.position.y,
+                  maxX: updatedNode.position.x + newWidth,
+                  maxY: updatedNode.position.y + newHeight,
+                };
+              }
             } else if (updates.style !== undefined) {
               // 如果只更新了 style,保持原有的合并逻辑
               updatedNode.style = { ...node.style, ...updates.style };
+            }
+
+            // 🔧 如果显式提供了 boundary，使用提供的值（仅适用于群组节点）
+            if (updates.boundary !== undefined && node.type === BlockEnum.GROUP) {
+              (updatedNode as any).boundary = updates.boundary;
             }
             
             // 🔧 如果节点（Node 或 Group）属于群组，确保位置在群组边界内

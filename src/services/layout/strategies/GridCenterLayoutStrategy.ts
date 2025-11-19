@@ -950,11 +950,15 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
             // 保持位置不变，只更新大小信息
             allUpdatedPositions.set(node.id, currentPos);
           }
-          // 将尺寸信息也存储到特殊字段（用于UI更新）
+          // 将尺寸信息和边界信息也存储到特殊字段（用于UI更新）
           const pos = allUpdatedPositions.get(node.id);
           if (pos) {
             (pos as any).width = node.width;
             (pos as any).height = node.height;
+            // 🔧 同时传递 boundary 信息，确保群组边界及时更新
+            if ((node as Group).boundary) {
+              (pos as any).boundary = (node as Group).boundary;
+            }
           }
         }
       }
