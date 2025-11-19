@@ -135,14 +135,30 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     const totalNodesWidth = avgNodeWidth * optimalCols;
     const totalNodesHeight = avgNodeHeight * rows;
 
-    // 5. 计算自适应间距（充分利用空间）
+    // 5. 🔧 计算自适应间距（混合策略：有上限限制，防止过度分散）
+    // 最大间距限制：取较小值 - 80px 或节点宽度/高度的 50%
+    const maxHorizontalSpacing = Math.min(80, avgNodeWidth * 0.5);
+    const maxVerticalSpacing = Math.min(80, avgNodeHeight * 0.5);
+
+    // 计算理想间距（基于可用空间）
+    const idealHorizontalSpacing = optimalCols > 1
+      ? (availableWidth - totalNodesWidth) / (optimalCols - 1)
+      : minSpacing;
+
+    const idealVerticalSpacing = rows > 1
+      ? (availableHeight - totalNodesHeight) / (rows - 1)
+      : minSpacing;
+
+    // 应用限制：minSpacing ≤ spacing ≤ maxSpacing
     const horizontalSpacing = optimalCols > 1
-      ? Math.max(minSpacing, (availableWidth - totalNodesWidth) / (optimalCols - 1))
+      ? Math.max(minSpacing, Math.min(maxHorizontalSpacing, idealHorizontalSpacing))
       : minSpacing;
 
     const verticalSpacing = rows > 1
-      ? Math.max(minSpacing, (availableHeight - totalNodesHeight) / (rows - 1))
+      ? Math.max(minSpacing, Math.min(maxVerticalSpacing, idealVerticalSpacing))
       : minSpacing;
+
+    console.log(`  └─ 间距控制: 水平=${Math.round(horizontalSpacing)}px (理想=${Math.round(idealHorizontalSpacing)}px, 上限=${Math.round(maxHorizontalSpacing)}px), 垂直=${Math.round(verticalSpacing)}px`);
 
     // 6. 计算网格在可用空间中的起始偏移（居中对齐）
     const gridWidth = totalNodesWidth + horizontalSpacing * Math.max(0, optimalCols - 1);
