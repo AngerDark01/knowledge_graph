@@ -214,7 +214,7 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
       // 首先标准化节点尺寸，对有子节点的Group保持原始尺寸（为了边优化）
       const normalizedNodes = this.normalizeNodeSizes(nodes);
 
-      // ✨ 如果是群组内部布局，使用群组网格布局
+      // ✨ 如果是群组内部布局，使用顶层布局算法 + 第四象限转换算子
       if (options?.targetGroupId) {
         const parentGroup = nodes.find(n =>
           n.id === options.targetGroupId && n.type === BlockEnum.GROUP
@@ -226,22 +226,73 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
 
         console.log(`📐 对群组 ${parentGroup.id} 内的 ${targetNodes.length} 个子节点进行布局`);
 
-        // 使用群组网格布局
-        let positionedTargetNodes = this.calculateGroupGridLayout(targetNodes, parentGroup, options);
+        // ✅ 1. 使用和顶层相同的布局算法
+        const gridOptions = {
+          rows: Math.ceil(targetNodes.length / GRID_LAYOUT.NODES_PER_ROW),
+          cols: GRID_LAYOUT.NODES_PER_ROW,
+          spacing: options?.gridSpacing || LAYOUT_CONFIG.layoutAlgorithm.gridSpacing,
+          horizontalSpacing: GRID_LAYOUT.HORIZONTAL_SPACING,
+          verticalSpacing: GRID_LAYOUT.VERTICAL_SPACING
+        };
 
-        // 应用边界约束
-        positionedTargetNodes = this.constrainToGroupBoundary(positionedTargetNodes, parentGroup, options);
+        // ✅ 2. 计算相对于原点(0,0)的布局（和顶层一样）
+        const relativePositionedNodes = this.calculateGridCenterPositions(targetNodes, gridOptions);
 
-        // 解决节点碰撞
-        positionedTargetNodes = this.resolveCollisions(positionedTargetNodes);
+        // ✅ 3. 转换算子：计算网格边界框
+        let minX = Infinity, minY = Infinity;
 
-        // 合并布局后的节点和未参与布局的节点
-        const mergedNodes = [...positionedTargetNodes, ...otherNodes];
+        relativePositionedNodes.forEach(node => {
+          const nodeWidth = node.width || LAYOUT_CONFIG.nodeSize.defaultNode.width;
+          const nodeHeight = node.height || LAYOUT_CONFIG.nodeSize.defaultNode.height;
+          minX = Math.min(minX, node.position.x - nodeWidth / 2);
+          minY = Math.min(minY, node.position.y - nodeHeight / 2);
+        });
 
-        // 🔧 重要：保持嵌套节点的相对位置（当移动包含子节点的群组时）
-        const finalNodes = this.updateNestedNodePositions(nodes, mergedNodes);
+        // ✅ 4. 转换算子：计算移到第四象限的偏移量
+        const offsetToQuadrant = {
+          x: -minX,
+          y: -minY
+        };
 
-        // 优化边的连接点
+        console.log(`  └─ 网格边界左上角: (${Math.round(minX)}, ${Math.round(minY)})`);
+        console.log(`  └─ 移到第四象限偏移: (${Math.round(offsetToQuadrant.x)}, ${Math.round(offsetToQuadrant.y)})`);
+
+        // ✅ 5. 固定原点：父节点左上角 + padding
+        const padding = LAYOUT_CONFIG.group;
+        const originX = parentGroup.position.x + padding.paddingLeft;
+        const originY = parentGroup.position.y + padding.paddingTop;
+
+        console.log(`  └─ 固定原点（父节点左上角+padding）: (${Math.round(originX)}, ${Math.round(originY)})`);
+
+        // ✅ 6. 转换为绝对坐标：原点 + 相对位置 + 第四象限偏移
+        const positionedTargetNodes = relativePositionedNodes.map(node => ({
+          ...node,
+          position: {
+            x: originX + node.position.x + offsetToQuadrant.x,
+            y: originY + node.position.y + offsetToQuadrant.y
+          }
+        }));
+
+        console.log(`  └─ 第一个节点最终位置: (${Math.round(positionedTargetNodes[0].position.x)}, ${Math.round(positionedTargetNodes[0].position.y)})`);
+
+        // ✅ 7. 碰撞检测（和顶层一样）
+        const resolvedTargetNodes = this.resolveCollisions(positionedTargetNodes);
+
+        // ✅ 8. 合并节点（和顶层一样的逻辑）
+        const positionedNodes = nodes.map(node => {
+          if ('groupId' in node && (node as Node).groupId === options.targetGroupId) {
+            const layoutNode = resolvedTargetNodes.find(n => n.id === node.id);
+            if (layoutNode) {
+              return { ...node, position: layoutNode.position };
+            }
+          }
+          return node;
+        });
+
+        // ✅ 9. 更新嵌套节点位置（和顶层一样）
+        const finalNodes = this.updateNestedNodePositions(nodes, positionedNodes);
+
+        // ✅ 10. 优化边（和顶层一样）
         const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(finalNodes, edges);
 
         const endTime = performance.now();
@@ -266,7 +317,7 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
           stats: {
             duration: endTime - startTime,
             iterations: 1,
-            collisions: this.countCollisions(positionedTargetNodes)
+            collisions: this.countCollisions(resolvedTargetNodes)
           }
         };
       }
