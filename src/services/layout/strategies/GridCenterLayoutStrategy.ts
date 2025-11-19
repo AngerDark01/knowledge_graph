@@ -236,7 +236,10 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
         positionedTargetNodes = this.resolveCollisions(positionedTargetNodes);
 
         // 合并布局后的节点和未参与布局的节点
-        const finalNodes = [...positionedTargetNodes, ...otherNodes];
+        const mergedNodes = [...positionedTargetNodes, ...otherNodes];
+
+        // 🔧 重要：保持嵌套节点的相对位置（当移动包含子节点的群组时）
+        const finalNodes = this.updateNestedNodePositions(nodes, mergedNodes);
 
         // 优化边的连接点
         const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(finalNodes, edges);
