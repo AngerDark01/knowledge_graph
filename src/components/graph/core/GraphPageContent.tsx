@@ -143,7 +143,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     const nodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
     console.log('🔄 同步节点到ReactFlow:', nodes.length);
     return nodes as ReactFlowNode[];
-  }, [storeNodes, selectedNodeId, reactFlowNodes, isDraggingRef.current]); // 添加 isDraggingRef.current 依赖以确保一致性
+  }, [storeNodes, selectedNodeId]); // 🔧 移除 reactFlowNodes 和 isDraggingRef.current，避免循环依赖
 
   // ⚡ 优化：仅在 processedNodes 真正变化时更新
   useEffect(() => {
