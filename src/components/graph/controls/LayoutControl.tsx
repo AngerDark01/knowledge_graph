@@ -330,13 +330,13 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
   }, [nodes, edges, isProcessing, updateNode, updateEdge, setSelectedNodeId, updateGroupBoundary]);
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex flex-col gap-2 w-full ${className}`}>
       <Button
         variant="outline"
         size="sm"
         onClick={handleLayout}
         disabled={isProcessing}
-        className="flex items-center gap-2"
+        className="w-full flex items-center justify-center gap-2"
         title="应用网格中心布局（自动优化边连接点）"
       >
         {isProcessing ? (
@@ -374,7 +374,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           size="sm"
           onClick={handleGroupLayout}
           disabled={isProcessing}
-          className="flex items-center gap-2 border-blue-300 text-blue-600 hover:bg-blue-50"
+          className="w-full flex items-center justify-center gap-2 border-blue-300 text-blue-600 hover:bg-blue-50"
           title={`布局选中群组的 ${childrenCount} 个子节点`}
         >
           {isProcessing ? (
@@ -412,7 +412,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         size="sm"
         onClick={handleRecursiveLayout}
         disabled={isProcessing}
-        className="flex items-center gap-2 border-green-300 text-green-600 hover:bg-green-50"
+        className="w-full flex items-center justify-center gap-2 border-green-300 text-green-600 hover:bg-green-50"
         title="递归布局所有嵌套群组（从最深层开始）"
       >
         {isProcessing ? (
@@ -452,9 +452,11 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         size="sm"
         onClick={() => console.log("Layout configuration clicked")}
         disabled={isProcessing}
+        className="w-full flex items-center justify-center gap-2"
         title="布局配置"
       >
         <CogIcon className="w-4 h-4" />
+        <span>布局配置</span>
       </Button>
     </div>
   );
