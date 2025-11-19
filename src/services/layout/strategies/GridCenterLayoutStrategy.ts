@@ -832,6 +832,7 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
   /**
    * 调整嵌套节点确保它们在父群组边界内，同时保持彼此间的相对位置
    * 优化以保留节点相对于父群组的原始相对位置，支持多层嵌套
+   * 🔧 关键修复：当调整节点位置时，同步移动其所有子节点
    */
   private adjustNestedNodesWithinBounds(nodes: (Node | Group)[]): (Node | Group)[] {
     // 创建映射以便快速查找节点
@@ -846,6 +847,9 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
     while (hasChanges && iterations < maxIterations) {
       hasChanges = false;
       const currentNodes = [...resultNodes];
+
+      // 🔧 记录每个节点的位置变化（delta），用于同步移动子节点
+      const positionDeltas = new Map<string, { dx: number; dy: number }>();
 
       resultNodes = currentNodes.map(node => {
         // 只处理有父群组的节点
@@ -898,11 +902,19 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
 
             // 如果位置需要调整，返回新位置
             if (adjustedRelativeX !== currentRelativeX || adjustedRelativeY !== currentRelativeY) {
+              const newX = parentGroup.position.x + adjustedRelativeX;
+              const newY = parentGroup.position.y + adjustedRelativeY;
+
+              // 🔧 记录位置变化，用于同步移动子节点
+              const dx = newX - node.position.x;
+              const dy = newY - node.position.y;
+              positionDeltas.set(node.id, { dx, dy });
+
               return {
                 ...node,
                 position: {
-                  x: parentGroup.position.x + adjustedRelativeX,
-                  y: parentGroup.position.y + adjustedRelativeY
+                  x: newX,
+                  y: newY
                 }
               };
             }
@@ -911,6 +923,27 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
 
         return node;
       });
+
+      // 🔧 关键修复：将位置变化应用到所有子节点
+      if (positionDeltas.size > 0) {
+        resultNodes = resultNodes.map(node => {
+          // 检查该节点的父节点是否被调整了位置
+          if ('groupId' in node && node.groupId) {
+            const parentDelta = positionDeltas.get(node.groupId);
+            if (parentDelta) {
+              // 同步移动子节点
+              return {
+                ...node,
+                position: {
+                  x: node.position.x + parentDelta.dx,
+                  y: node.position.y + parentDelta.dy
+                }
+              };
+            }
+          }
+          return node;
+        });
+      }
 
       iterations++;
     }
