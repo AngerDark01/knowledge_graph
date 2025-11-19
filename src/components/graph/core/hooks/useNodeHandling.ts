@@ -178,11 +178,8 @@ export const useNodeHandling = () => {
     };
     
     console.log('✅ 创建节点:', newNode);
-    
+
     // 添加节点到store
-    addNode(newNode);
-    setSelectedNodeId(newNode.id);
-    
     addNode(newNode);
     setSelectedNodeId(newNode.id);
 

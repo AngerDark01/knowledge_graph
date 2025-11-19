@@ -31,6 +31,15 @@ export const createBasicOperationsSlice = (set: any, get: any): NodeOperationsSl
     
     addNode: (node) => {
       const state = get();
+
+      // 🔧 防重复检查：如果节点ID已存在，拒绝添加
+      const existing = state.nodes.find((n: Node | Group) => n.id === node.id);
+      if (existing) {
+        console.error(`⚠️ 尝试添加重复节点: ${node.id}`);
+        console.trace('调用栈:');
+        return state;  // 不添加，直接返回当前状态
+      }
+
       console.log('➕ 添加节点:', node.id, node);
 
       // 🔧 根据节点类型确定默认尺寸
