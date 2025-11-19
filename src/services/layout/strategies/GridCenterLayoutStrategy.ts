@@ -28,7 +28,7 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
    * 根据布局选项获取目标节点
    * @param allNodes 所有节点
    * @param options 布局选项
-   * @returns 需要参与布局的节点列表
+   * @returns 需要参与布局的节点列表（去重后）
    */
   private getTargetNodes(
     allNodes: (Node | Group)[],
@@ -36,17 +36,38 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
   ): (Node | Group)[] {
     const targetGroupId = options?.targetGroupId;
 
+    let filteredNodes: (Node | Group)[];
+
     if (!targetGroupId) {
       // 原有逻辑：返回顶层节点（没有 groupId 的节点）
-      return allNodes.filter(node =>
+      filteredNodes = allNodes.filter(node =>
         !('groupId' in node) || !(node as Node).groupId
+      );
+    } else {
+      // 新逻辑：返回指定群组的直接子节点
+      filteredNodes = allNodes.filter(node =>
+        'groupId' in node && (node as Node).groupId === targetGroupId
       );
     }
 
-    // 新逻辑：返回指定群组的直接子节点
-    return allNodes.filter(node =>
-      'groupId' in node && (node as Node).groupId === targetGroupId
-    );
+    // 🔧 关键修复：去重，确保每个节点ID只出现一次
+    const uniqueNodes = new Map<string, Node | Group>();
+    filteredNodes.forEach(node => {
+      if (!uniqueNodes.has(node.id)) {
+        uniqueNodes.set(node.id, node);
+      }
+    });
+
+    const result = Array.from(uniqueNodes.values());
+
+    // 🔍 日志：如果发现重复节点，打印警告
+    if (result.length !== filteredNodes.length) {
+      console.warn(`⚠️ 检测到重复节点！原始数量: ${filteredNodes.length}, 去重后: ${result.length}`);
+      const duplicates = filteredNodes.length - result.length;
+      console.warn(`  └─ 重复节点数量: ${duplicates}`);
+    }
+
+    return result;
   }
 
   /**
