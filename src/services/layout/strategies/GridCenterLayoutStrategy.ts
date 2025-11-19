@@ -226,6 +226,14 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
 
         console.log(`📐 对群组 ${parentGroup.id} 内的 ${targetNodes.length} 个子节点进行布局`);
 
+        // 🔍 详细日志：打印目标节点详情
+        console.log('  └─ 目标节点详情:');
+        targetNodes.forEach((node, idx) => {
+          console.log(`     [${idx}] id=${node.id.substring(0, 20)}..., type=${node.type}, ` +
+                      `groupId=${'groupId' in node ? (node as Node).groupId?.substring(0, 20) : 'N/A'}, ` +
+                      `旧位置=(${Math.round(node.position.x)}, ${Math.round(node.position.y)})`);
+        });
+
         // ✅ 1. 使用和顶层相同的布局算法
         const gridOptions = {
           rows: Math.ceil(targetNodes.length / GRID_LAYOUT.NODES_PER_ROW),
@@ -275,6 +283,15 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
 
         console.log(`  └─ 第一个节点最终位置: (${Math.round(positionedTargetNodes[0].position.x)}, ${Math.round(positionedTargetNodes[0].position.y)})`);
 
+        // 🔍 详细日志：对比新旧位置变化
+        if (targetNodes.length > 0) {
+          const oldNode = targetNodes[0];
+          const newNode = positionedTargetNodes[0];
+          const deltaX = newNode.position.x - oldNode.position.x;
+          const deltaY = newNode.position.y - oldNode.position.y;
+          console.log(`  └─ 第一个节点位置变化: Δx=${Math.round(deltaX)}, Δy=${Math.round(deltaY)}`);
+        }
+
         // ✅ 7. 碰撞检测（和顶层一样）
         const resolvedTargetNodes = this.resolveCollisions(positionedTargetNodes);
 
@@ -290,7 +307,10 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
         });
 
         // ✅ 9. 更新嵌套节点位置（和顶层一样）
-        const finalNodes = this.updateNestedNodePositions(nodes, positionedNodes);
+        // 🔧 关键修复：传递已布局的节点ID集合，避免重新计算覆盖新位置
+        const layoutedNodeIds = new Set(resolvedTargetNodes.map(n => n.id));
+        console.log(`  └─ 已布局节点数量: ${layoutedNodeIds.size}`);
+        const finalNodes = this.updateNestedNodePositions(nodes, positionedNodes, layoutedNodeIds);
 
         // ✅ 10. 优化边（和顶层一样）
         const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(finalNodes, edges);
@@ -663,10 +683,15 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
    * 根据父节点的新位置更新嵌套节点的相对位置
    * 在布局算法中，我们只移动顶层节点，保持所有嵌套节点相对于父节点的相对位置不变
    * 支持多层嵌套结构（Group嵌套Group，再嵌套Node）
+   *
+   * @param originalNodes 原始节点列表
+   * @param positionedNodes 包含新位置的节点列表
+   * @param layoutedNodeIds 已被布局算法显式处理的节点ID集合（这些节点直接使用新位置，不重新计算）
    */
   private updateNestedNodePositions(
     originalNodes: (Node | Group)[],
-    positionedNodes: (Node | Group)[]
+    positionedNodes: (Node | Group)[],
+    layoutedNodeIds?: Set<string>
   ): (Node | Group)[] {
     // 首先，找出哪些是顶层节点（没有父群组的节点）
     const topLevelNodes = positionedNodes.filter(node =>
@@ -687,6 +712,17 @@ export class GridCenterLayoutStrategy implements ILayoutStrategy {
 
     // 对于每个嵌套节点，计算其绝对位置
     for (const nestedNode of nestedNodes) {
+      // 🔧 关键修复：如果该节点刚被布局算法显式处理，直接使用新位置
+      if (layoutedNodeIds && layoutedNodeIds.has(nestedNode.id)) {
+        const layoutedNode = positionedNodeMap.get(nestedNode.id);
+        if (layoutedNode) {
+          // 直接使用布局算法给出的新位置，不重新计算
+          resultNodes.push(layoutedNode);
+          continue;
+        }
+      }
+
+      // 否则，根据父节点的新位置计算嵌套节点的绝对位置
       const absolutePosition = this.calculateAbsolutePosition(
         nestedNode,
         originalNodeMap,
