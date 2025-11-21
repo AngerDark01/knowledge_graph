@@ -60,9 +60,23 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 启用布局模式以防止约束逻辑干扰
         useGraphStore.getState().setIsLayoutMode(true);
 
-        // 更新节点位置
-        for (const [nodeId, position] of layoutResult.nodes) {
-          updateNode(nodeId, { position });
+        // 更新节点位置和尺寸
+        for (const [nodeId, positionData] of layoutResult.nodes) {
+          const updateData: any = { position: { x: positionData.x, y: positionData.y } };
+
+          // 如果布局结果包含尺寸信息（群组节点），也一并更新
+          if ((positionData as any).width !== undefined) {
+            updateData.width = (positionData as any).width;
+          }
+          if ((positionData as any).height !== undefined) {
+            updateData.height = (positionData as any).height;
+          }
+          // 如果包含边界信息，也一并更新
+          if ((positionData as any).boundary !== undefined) {
+            updateData.boundary = (positionData as any).boundary;
+          }
+
+          updateNode(nodeId, updateData);
         }
 
         // 更新边的连接点
@@ -157,9 +171,23 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 启用布局模式以防止约束逻辑干扰
         useGraphStore.getState().setIsLayoutMode(true);
 
-        // 更新节点位置
-        for (const [nodeId, position] of layoutResult.nodes) {
-          updateNode(nodeId, { position });
+        // 更新节点位置和尺寸
+        for (const [nodeId, positionData] of layoutResult.nodes) {
+          const updateData: any = { position: { x: positionData.x, y: positionData.y } };
+
+          // 如果布局结果包含尺寸信息（群组节点），也一并更新
+          if ((positionData as any).width !== undefined) {
+            updateData.width = (positionData as any).width;
+          }
+          if ((positionData as any).height !== undefined) {
+            updateData.height = (positionData as any).height;
+          }
+          // 如果包含边界信息，也一并更新
+          if ((positionData as any).boundary !== undefined) {
+            updateData.boundary = (positionData as any).boundary;
+          }
+
+          updateNode(nodeId, updateData);
         }
 
         // 更新边的连接点
