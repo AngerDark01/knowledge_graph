@@ -175,16 +175,18 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         for (const [nodeId, positionData] of layoutResult.nodes) {
           const updateData: any = { position: { x: positionData.x, y: positionData.y } };
 
-          // 如果布局结果包含尺寸信息（群组节点），也一并更新
-          if ((positionData as any).width !== undefined) {
-            updateData.width = (positionData as any).width;
-          }
-          if ((positionData as any).height !== undefined) {
-            updateData.height = (positionData as any).height;
-          }
-          // 如果包含边界信息，也一并更新
-          if ((positionData as any).boundary !== undefined) {
-            updateData.boundary = (positionData as any).boundary;
+          // 对于非目标群组的节点，更新尺寸信息
+          // 对于目标群组本身，只更新位置，尺寸由 updateGroupBoundary 负责
+          if (nodeId !== selectedNodeId) {
+            if ((positionData as any).width !== undefined) {
+              updateData.width = (positionData as any).width;
+            }
+            if ((positionData as any).height !== undefined) {
+              updateData.height = (positionData as any).height;
+            }
+            if ((positionData as any).boundary !== undefined) {
+              updateData.boundary = (positionData as any).boundary;
+            }
           }
 
           updateNode(nodeId, updateData);
