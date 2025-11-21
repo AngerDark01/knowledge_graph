@@ -3,6 +3,20 @@ import { Node, Group, Edge } from '../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from './types/layoutTypes';
 import { LAYOUT_CONFIG } from '../../config/graph.config';
 
+// 新的策略类（重构后）
+import { GroupLayoutStrategy } from './strategies/GroupLayoutStrategy';
+import { CanvasLayoutStrategy } from './strategies/CanvasLayoutStrategy';
+import { RecursiveLayoutStrategy } from './strategies/RecursiveLayoutStrategy';
+
+// 算法层
+import { GridAlgorithm } from './algorithms/GridAlgorithm';
+import { GridCenterAlgorithm } from './algorithms/GridCenterAlgorithm';
+import { EdgeOptimizer } from './algorithms/EdgeOptimizer';
+
+// 工具层
+import { CollisionResolver } from './utils/CollisionResolver';
+import { NestingTreeBuilder } from './utils/NestingTreeBuilder';
+
 export interface ILayoutManager {
   /**
    * 应用布局算法
@@ -54,15 +68,51 @@ export class LayoutManager implements ILayoutManager {
    * 注册默认布局策略
    */
   private registerDefaultStrategies(): void {
-    // 动态导入 GridCenterLayoutStrategy 并注册
+    // 创建共享的工具实例
+    const collisionResolver = new CollisionResolver();
+    const edgeOptimizer = new EdgeOptimizer();
+    const nestingTreeBuilder = new NestingTreeBuilder();
+
+    // 创建算法实例
+    const gridAlgorithm = new GridAlgorithm();
+    const gridCenterAlgorithm = new GridCenterAlgorithm();
+
+    // 1. 注册群组布局策略
+    const groupStrategy = new GroupLayoutStrategy(
+      gridAlgorithm,
+      collisionResolver
+    );
+    this.strategies.set(groupStrategy.id, groupStrategy);
+    console.log(`✅ 策略已注册: ${groupStrategy.name} (${groupStrategy.id})`);
+
+    // 2. 注册画布布局策略
+    const canvasStrategy = new CanvasLayoutStrategy(
+      gridCenterAlgorithm,
+      collisionResolver,
+      edgeOptimizer
+    );
+    this.strategies.set(canvasStrategy.id, canvasStrategy);
+    console.log(`✅ 策略已注册: ${canvasStrategy.name} (${canvasStrategy.id})`);
+
+    // 3. 注册递归布局策略（依赖前两个策略）
+    const recursiveStrategy = new RecursiveLayoutStrategy(
+      groupStrategy,
+      canvasStrategy,
+      nestingTreeBuilder,
+      edgeOptimizer
+    );
+    this.strategies.set(recursiveStrategy.id, recursiveStrategy);
+    console.log(`✅ 策略已注册: ${recursiveStrategy.name} (${recursiveStrategy.id})`);
+
+    // 4. 注册旧策略（向后兼容，异步加载）
     import('./strategies/GridCenterLayoutStrategy')
       .then(({ GridCenterLayoutStrategy }) => {
-        const strategy = new GridCenterLayoutStrategy();
-        this.strategies.set(strategy.id, strategy);
-        console.log(`✅ 默认布局策略已注册: ${strategy.name} (${strategy.id})`);
+        const legacyStrategy = new GridCenterLayoutStrategy();
+        this.strategies.set(legacyStrategy.id, legacyStrategy);
+        console.log(`✅ 旧策略已注册（向后兼容）: ${legacyStrategy.name} (${legacyStrategy.id})`);
       })
       .catch(error => {
-        console.error('❌ 加载默认布局策略失败:', error);
+        console.warn('⚠️ 加载旧布局策略失败（不影响新策略使用）:', error);
       });
   }
   
@@ -101,24 +151,29 @@ export class LayoutManager implements ILayoutManager {
         stats: { duration: 0, iterations: 0, collisions: 0 }
       };
     }
-    
+
     const startTime = performance.now();
-    
+
     try {
-      // 获取指定的策略
-      const strategy = this.strategies.get(options?.strategy || 'grid-center-layout');
-      
+      // 智能策略选择
+      const strategyId = this.selectStrategy(options);
+
+      console.log(`📋 LayoutManager: 选择策略 "${strategyId}"`);
+
+      // 获取策略实例
+      const strategy = this.strategies.get(strategyId);
+
       if (!strategy) {
-        throw new Error(`Unknown layout strategy: ${options?.strategy}`);
+        throw new Error(`Unknown layout strategy: ${strategyId}`);
       }
-      
+
       // 应用布局
       const result = await strategy.applyLayout(nodes, edges, options);
-      
+
       // 记录执行时间
       const endTime = performance.now();
       result.stats.duration = endTime - startTime;
-      
+
       return result;
     } catch (error) {
       const endTime = performance.now();
@@ -127,13 +182,37 @@ export class LayoutManager implements ILayoutManager {
         nodes: new Map(),
         edges: new Map(),
         errors: [error instanceof Error ? error.message : 'Unknown error'],
-        stats: { 
-          duration: endTime - startTime, 
-          iterations: 0, 
-          collisions: 0 
+        stats: {
+          duration: endTime - startTime,
+          iterations: 0,
+          collisions: 0
         }
       };
     }
+  }
+
+  /**
+   * 智能选择布局策略
+   * 根据 options 自动选择最合适的策略
+   */
+  private selectStrategy(options?: LayoutOptions): string {
+    // 1. 如果显式指定了策略，直接使用
+    if (options?.strategy) {
+      return options.strategy;
+    }
+
+    // 2. 如果是递归布局模式
+    if (options?.layoutMode === 'recursive') {
+      return 'recursive-layout';
+    }
+
+    // 3. 如果指定了目标群组ID（群组内布局）
+    if (options?.targetGroupId) {
+      return 'group-layout';
+    }
+
+    // 4. 默认使用画布布局（顶层节点布局）
+    return 'canvas-layout';
   }
   
   /**

@@ -1,11 +1,10 @@
 // src/app/api/layout/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { Node, Group, Edge } from '@/types/graph/models';
-import { LayoutManager, GridCenterLayoutStrategy } from '@/services/layout';
+import { LayoutManager } from '@/services/layout';
 
-// 初始化布局管理器并注册策略
+// 初始化布局管理器（自动注册所有策略，包括新策略和旧策略）
 const layoutManager = new LayoutManager();
-layoutManager.registerStrategy('grid-center-layout', new GridCenterLayoutStrategy());
 
 // 定义请求和响应类型
 interface LayoutRequest {
@@ -125,8 +124,14 @@ export async function GET(request: NextRequest) {
 // 获取策略描述的辅助函数
 function getStrategyDescription(strategyId: string): string {
   switch (strategyId) {
+    case 'canvas-layout':
+      return 'Canvas layout strategy - layouts top-level nodes with centered grid and automatic edge optimization';
+    case 'group-layout':
+      return 'Group layout strategy - layouts nodes inside a specific group with fixed anchor point';
+    case 'recursive-layout':
+      return 'Recursive layout strategy - recursively layouts all nested groups from deepest to shallowest level';
     case 'grid-center-layout':
-      return 'Grid center layout with automatic edge optimization - places high-weight nodes in the center and optimizes edge connection points';
+      return 'Legacy grid center layout (deprecated) - use canvas-layout, group-layout, or recursive-layout instead';
     default:
       return 'A layout strategy';
   }

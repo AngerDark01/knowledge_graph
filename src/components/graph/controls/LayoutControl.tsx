@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '../../ui/button';
 import { PlayIcon, CogIcon, ArrowsPointingOutIcon } from '@heroicons/react/24/outline';
 import { useGraphStore } from '@/stores/graph';
-import { LayoutManager, GridCenterLayoutStrategy } from '@/services/layout';
+import { LayoutManager } from '@/services/layout';
 
 interface LayoutControlProps {
   className?: string;
@@ -43,19 +43,14 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
       // 禁用用户交互
       useGraphStore.getState().setSelectedNodeId(null);
 
-      // 初始化布局管理器
+      // 初始化布局管理器（自动使用 canvas-layout 策略）
       const layoutManager = new LayoutManager();
-
-      // 注册网格中心布局策略
-      const gridCenterStrategy = new GridCenterLayoutStrategy();
-      layoutManager.registerStrategy('grid-center-layout', gridCenterStrategy);
 
       // 应用布局算法（包含边优化）
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
         {
-          strategy: 'grid-center-layout',
           animate: true,
           useWeightedLayout: true
         }
@@ -143,20 +138,15 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
       console.log(`📐 开始对群组 ${selectedNodeId} 内的 ${childrenCount} 个子节点进行布局`);
 
-      // 初始化布局管理器
+      // 初始化布局管理器（自动使用 group-layout 策略）
       const layoutManager = new LayoutManager();
-
-      // 注册网格中心布局策略
-      const gridCenterStrategy = new GridCenterLayoutStrategy();
-      layoutManager.registerStrategy('grid-center-layout', gridCenterStrategy);
 
       // 应用布局算法（针对选中群组）
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
         {
-          strategy: 'grid-center-layout',
-          targetGroupId: selectedNodeId,  // ✨ 指定目标群组
+          targetGroupId: selectedNodeId,  // ✨ 指定目标群组，自动选择 group-layout
           layoutScope: 'group',
           animate: true,
           useWeightedLayout: true
@@ -233,18 +223,15 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
       console.log(`🌳 开始递归布局，处理所有 ${nodes.length} 个节点`);
 
-      // 初始化布局管理器
+      // 初始化布局管理器（自动使用 recursive-layout 策略）
       const layoutManager = new LayoutManager();
-      const gridCenterStrategy = new GridCenterLayoutStrategy();
-      layoutManager.registerStrategy('grid-center-layout', gridCenterStrategy);
 
       // 应用递归布局算法
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
         {
-          strategy: 'grid-center-layout',
-          layoutMode: 'recursive',  // ✨ 启用递归模式
+          layoutMode: 'recursive',  // ✨ 启用递归模式，自动选择 recursive-layout
           animate: true,
           useWeightedLayout: true,
           onProgress: (progress) => {
