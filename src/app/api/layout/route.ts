@@ -27,7 +27,7 @@ interface LayoutResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { nodes, edges, strategy = 'grid-center-layout', options = {} }: LayoutRequest = await request.json();
+    const { nodes, edges, strategy, options = {} }: LayoutRequest = await request.json();
 
     // 验证请求数据
     if (!Array.isArray(nodes) || !Array.isArray(edges)) {
@@ -130,8 +130,6 @@ function getStrategyDescription(strategyId: string): string {
       return 'Group layout strategy - layouts nodes inside a specific group with fixed anchor point';
     case 'recursive-layout':
       return 'Recursive layout strategy - recursively layouts all nested groups from deepest to shallowest level';
-    case 'grid-center-layout':
-      return 'Legacy grid center layout (deprecated) - use canvas-layout, group-layout, or recursive-layout instead';
     default:
       return 'A layout strategy';
   }

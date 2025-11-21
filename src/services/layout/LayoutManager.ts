@@ -103,17 +103,6 @@ export class LayoutManager implements ILayoutManager {
     );
     this.strategies.set(recursiveStrategy.id, recursiveStrategy);
     console.log(`✅ 策略已注册: ${recursiveStrategy.name} (${recursiveStrategy.id})`);
-
-    // 4. 注册旧策略（向后兼容，异步加载）
-    import('./strategies/GridCenterLayoutStrategy')
-      .then(({ GridCenterLayoutStrategy }) => {
-        const legacyStrategy = new GridCenterLayoutStrategy();
-        this.strategies.set(legacyStrategy.id, legacyStrategy);
-        console.log(`✅ 旧策略已注册（向后兼容）: ${legacyStrategy.name} (${legacyStrategy.id})`);
-      })
-      .catch(error => {
-        console.warn('⚠️ 加载旧布局策略失败（不影响新策略使用）:', error);
-      });
   }
   
   async applyLayout(nodes: (Node | Group)[], edges: Edge[], options?: LayoutOptions): Promise<LayoutResult> {
