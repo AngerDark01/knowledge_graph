@@ -12,9 +12,7 @@ import { ILayoutAlgorithm, GridConfig, LayoutAlgorithmOptions } from './ILayoutA
  * - 节点按行优先顺序排列
  * - 自动计算最优行列数
  *
- * 输出：
- * - 相对坐标，从 (0, 0) 开始
- * - 例如：第一个节点在 (nodeWidth/2, nodeHeight/2)
+ * ⚠️ 重要：输出的是**左上角坐标**（ReactFlow 标准）
  */
 export class GridAlgorithm implements ILayoutAlgorithm {
   readonly name = 'Grid Layout (Top-Left)';
@@ -35,6 +33,8 @@ export class GridAlgorithm implements ILayoutAlgorithm {
 
   /**
    * 计算网格布局
+   * 
+   * ⚠️ 输出的位置是**左上角坐标**
    */
   calculate(
     nodes: (Node | Group)[],
@@ -75,10 +75,10 @@ export class GridAlgorithm implements ILayoutAlgorithm {
       const nodeWidth = nodeSizes[i].width;
       const nodeHeight = nodeSizes[i].height;
 
-      // 从 (0, 0) 开始布局，第四象限坐标
-      // 位置是节点中心点
-      const x = col * (avgWidth + horizontalSpacing) + nodeWidth / 2;
-      const y = row * (avgHeight + verticalSpacing) + nodeHeight / 2;
+      // ⭐ 关键修复：输出左上角坐标，不是中心点！
+      // 位置是节点左上角
+      const x = col * (avgWidth + horizontalSpacing);
+      const y = row * (avgHeight + verticalSpacing);
 
       result.push({
         ...nodes[i],
@@ -155,6 +155,8 @@ export class GridAlgorithm implements ILayoutAlgorithm {
 
   /**
    * 计算布局后的边界（用于调试）
+   * 
+   * ⚠️ 假设输入的节点位置是左上角坐标
    */
   calculateBounds(nodes: (Node | Group)[]): {
     width: number;
@@ -171,8 +173,9 @@ export class GridAlgorithm implements ILayoutAlgorithm {
       const nodeWidth = node.width || this.config.defaultNodeWidth;
       const nodeHeight = node.height || this.config.defaultNodeHeight;
 
-      maxX = Math.max(maxX, node.position.x + nodeWidth / 2);
-      maxY = Math.max(maxY, node.position.y + nodeHeight / 2);
+      // 节点右下角坐标（左上角坐标 + 尺寸）
+      maxX = Math.max(maxX, node.position.x + nodeWidth);
+      maxY = Math.max(maxY, node.position.y + nodeHeight);
     });
 
     return { width: maxX, height: maxY };

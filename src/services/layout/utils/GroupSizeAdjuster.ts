@@ -5,6 +5,8 @@ import { LAYOUT_CONFIG } from '../../../config/graph.config';
 /**
  * 群组大小调整工具类
  * 根据子节点的实际占用空间自动调整父群组的尺寸
+ * 
+ * ⚠️ 重要：本类假设节点位置是**左上角坐标**（ReactFlow 标准）
  */
 export class GroupSizeAdjuster {
   /**
@@ -38,21 +40,30 @@ export class GroupSizeAdjuster {
       return allNodes;
     }
 
-    // 3. 计算子节点相对于群组的边界
+    // 3. 计算子节点相对于群组的边界（使用左上角坐标系统）
     const bounds = this.calculateChildrenRelativeBounds(children, group);
+
+    console.log(`🔍 [DEBUG] GroupSizeAdjuster 计算的子节点边界:`, bounds);
 
     // 4. 计算需要的内容区域大小
     const contentWidth = bounds.maxX - bounds.minX;
     const contentHeight = bounds.maxY - bounds.minY;
 
+    console.log(`🔍 [DEBUG] 内容尺寸: ${contentWidth}x${contentHeight}`);
+
     // 5. 计算总的群组大小（内容 + padding + 额外边距）
     const padding = LAYOUT_CONFIG.group;
     const extraMargin = 30; // 额外边距，确保有足够空间
 
-    const requiredWidth =
-      contentWidth + padding.paddingLeft + padding.paddingRight + extraMargin;
-    const requiredHeight =
-      contentHeight + padding.paddingTop + padding.paddingBottom + extraMargin;
+    // ⭐ 关键修复：需要考虑子节点相对于群组左上角的偏移
+    // bounds.minX 和 bounds.minY 是子节点相对于群组左上角的最小偏移
+    // 如果子节点在 padding 区域内开始，则不需要额外空间
+    // 如果子节点超出了 padding 区域，则需要扩展
+    
+    const requiredWidth = bounds.maxX + padding.paddingRight + extraMargin;
+    const requiredHeight = bounds.maxY + padding.paddingBottom + extraMargin;
+
+    console.log(`🔍 [DEBUG] 需要的尺寸: ${requiredWidth}x${requiredHeight}`);
 
     // 6. 应用最小尺寸限制
     const minWidth = LAYOUT_CONFIG.nodeSize.groupNode.width;
@@ -118,7 +129,8 @@ export class GroupSizeAdjuster {
 
   /**
    * 计算子节点相对于父群组的边界
-   * 返回子节点在群组内的相对坐标范围
+   * 
+   * ⚠️ 重要：假设节点位置是**左上角坐标**（ReactFlow 标准）
    *
    * @param children 子节点列表
    * @param parentGroup 父群组
@@ -147,11 +159,14 @@ export class GroupSizeAdjuster {
       const relativeX = child.position.x - parentGroup.position.x;
       const relativeY = child.position.y - parentGroup.position.y;
 
-      // 计算节点边界（相对坐标）
-      const nodeMinX = relativeX - nodeWidth / 2;
-      const nodeMinY = relativeY - nodeHeight / 2;
-      const nodeMaxX = relativeX + nodeWidth / 2;
-      const nodeMaxY = relativeY + nodeHeight / 2;
+      // ⭐ 关键修复：节点位置是左上角坐标，不是中心点！
+      // 所以节点边界是从 (relativeX, relativeY) 到 (relativeX + width, relativeY + height)
+      const nodeMinX = relativeX;
+      const nodeMinY = relativeY;
+      const nodeMaxX = relativeX + nodeWidth;
+      const nodeMaxY = relativeY + nodeHeight;
+
+      console.log(`🔍 [DEBUG] 子节点 ${child.id.substring(0, 8)}... 相对边界: (${nodeMinX.toFixed(1)}, ${nodeMinY.toFixed(1)}) -> (${nodeMaxX.toFixed(1)}, ${nodeMaxY.toFixed(1)})`);
 
       minX = Math.min(minX, nodeMinX);
       minY = Math.min(minY, nodeMinY);
@@ -186,16 +201,12 @@ export class GroupSizeAdjuster {
     if (children.length === 0) return false;
 
     const bounds = this.calculateChildrenRelativeBounds(children, group);
-    const contentWidth = bounds.maxX - bounds.minX;
-    const contentHeight = bounds.maxY - bounds.minY;
 
     const padding = LAYOUT_CONFIG.group;
     const extraMargin = 30;
 
-    const requiredWidth =
-      contentWidth + padding.paddingLeft + padding.paddingRight + extraMargin;
-    const requiredHeight =
-      contentHeight + padding.paddingTop + padding.paddingBottom + extraMargin;
+    const requiredWidth = bounds.maxX + padding.paddingRight + extraMargin;
+    const requiredHeight = bounds.maxY + padding.paddingBottom + extraMargin;
 
     const currentWidth = group.width || LAYOUT_CONFIG.nodeSize.groupNode.width;
     const currentHeight = group.height || LAYOUT_CONFIG.nodeSize.groupNode.height;

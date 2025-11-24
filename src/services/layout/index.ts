@@ -2,6 +2,7 @@
 import { LayoutManager } from './LayoutManager';
 import { EdgeOptimizer } from './algorithms/EdgeOptimizer';
 import { GeometryUtils } from './utils/GeometryUtils';
+import { NestedNodePositionUpdater } from './utils/NestedNodePositionUpdater';
 
 // 布局策略
 import { GroupLayoutStrategy } from './strategies/GroupLayoutStrategy';
@@ -19,7 +20,8 @@ export {
 
   // 工具和算法
   EdgeOptimizer,
-  GeometryUtils
+  GeometryUtils,
+  NestedNodePositionUpdater
 };
 
 // 导出类型

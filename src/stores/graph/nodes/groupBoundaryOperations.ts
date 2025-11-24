@@ -1,9 +1,6 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 import { GroupBoundaryOperationsSlice, GROUP_PADDING, NODE_VISUAL_PADDING, safePosition, safeNumber } from './types';
 
-// ⚡ 优化：防抖定时器映射（每个群组独立的防抖）
-const boundaryUpdateTimers = new Map<string, NodeJS.Timeout>();
-
 // ⚡ 优化：边界计算缓存（避免重复计算相同的边界）
 interface BoundaryCache {
   timestamp: number;
@@ -190,54 +187,40 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
   };
 
   return {
-    // ⚡ 优化版：扩大群组边界，并递归更新父群组（带防抖）
+    // 直接更新群组边界，移除防抖机制
     updateGroupBoundary: (groupId: string) => {
-      // ⚡ 优化：清除该群组的旧定时器
-      if (boundaryUpdateTimers.has(groupId)) {
-        clearTimeout(boundaryUpdateTimers.get(groupId)!);
-      }
+      set((state: any) => {
+        const group = state.nodes.find((node: Node | Group) =>
+          node.id === groupId && node.type === BlockEnum.GROUP
+        ) as Group;
 
-      // ⚡ 优化：使用防抖，避免频繁更新（50ms内的多次调用合并为一次）
-      const timer = setTimeout(() => {
-        set((state: any) => {
-          const group = state.nodes.find((node: Node | Group) =>
-            node.id === groupId && node.type === BlockEnum.GROUP
-          ) as Group;
+        if (!group) {
+          console.log(`⚠️ 群组 ${groupId} 未找到`);
+          return state;
+        }
 
-          if (!group) {
-            console.log(`⚠️ 群组 ${groupId} 未找到`);
-            return state;
-          }
+        // 🔧 使用循环向上递归更新所有祖先群组
+        let updatedNodes = state.nodes;
 
-          // 🔧 使用循环向上递归更新所有祖先群组
-          let updatedNodes = state.nodes;
+        // 收集需要更新的群组链（从当前群组到最顶层）
+        const groupChain: string[] = [];
+        let tempGroupId: string | undefined = groupId;
+        while (tempGroupId) {
+          groupChain.unshift(tempGroupId); // 添加到数组开头，这样最顶层的在前面
+          const tempGroup = updatedNodes.find((n: Node | Group) => n.id === tempGroupId) as Group | undefined;
+          tempGroupId = tempGroup?.groupId;
+        }
 
-          // 收集需要更新的群组链（从当前群组到最顶层）
-          const groupChain: string[] = [];
-          let tempGroupId: string | undefined = groupId;
-          while (tempGroupId) {
-            groupChain.unshift(tempGroupId); // 添加到数组开头，这样最顶层的在前面
-            const tempGroup = updatedNodes.find((n: Node | Group) => n.id === tempGroupId) as Group | undefined;
-            tempGroupId = tempGroup?.groupId;
-          }
+        console.log(`📏 需要更新的群组链（从顶层到当前）:`, groupChain);
 
-          console.log(`📏 需要更新的群组链（从顶层到当前）:`, groupChain);
+        // 从最底层（当前群组）开始向上更新
+        for (let i = groupChain.length - 1; i >= 0; i--) {
+          const targetGroupId = groupChain[i];
+          updatedNodes = updateSingleGroupBoundary(targetGroupId, updatedNodes);
+        }
 
-          // 从最底层（当前群组）开始向上更新
-          for (let i = groupChain.length - 1; i >= 0; i--) {
-            const targetGroupId = groupChain[i];
-            updatedNodes = updateSingleGroupBoundary(targetGroupId, updatedNodes);
-          }
-
-          return { nodes: updatedNodes };
-        });
-
-        // 清除定时器引用
-        boundaryUpdateTimers.delete(groupId);
-      }, 50); // 50ms 防抖延迟
-
-      // 保存定时器引用
-      boundaryUpdateTimers.set(groupId, timer);
+        return { nodes: updatedNodes };
+      });
     },
   };
 };

@@ -10,6 +10,7 @@ import { EdgeOptimizer, OptimizedEdge } from '../algorithms/EdgeOptimizer';
 
 // 工具层
 import { CollisionResolver } from '../utils/CollisionResolver';
+import { NestedNodePositionUpdater } from '../utils/NestedNodePositionUpdater';
 
 /**
  * 全画布布局策略
@@ -92,7 +93,7 @@ export class CanvasLayoutStrategy implements ILayoutStrategy {
       }
 
       // 5. 更新嵌套节点位置（保持相对位置）
-      const finalNodes = this.updateNestedNodePositions(nodes, resolvedNodes);
+      const finalNodes = NestedNodePositionUpdater.updateNestedNodePositionsForCanvasLayout(nodes, resolvedNodes);
 
       // 6. 优化边的连接点
       const optimizedEdges = this.edgeOptimizer.optimizeEdgeHandles(finalNodes, edges);
@@ -193,97 +194,6 @@ export class CanvasLayoutStrategy implements ILayoutStrategy {
     }
 
     return weights;
-  }
-
-  /**
-   * 根据父节点的新位置更新嵌套节点的相对位置
-   * 在布局算法中，我们只移动顶层节点，保持所有嵌套节点相对于父节点的相对位置不变
-   * 支持多层嵌套结构（Group嵌套Group，再嵌套Node）
-   *
-   * @param originalNodes 原始节点列表
-   * @param layoutedTopLevelNodes 布局后的顶层节点
-   * @returns 更新后的所有节点（包括嵌套节点）
-   */
-  private updateNestedNodePositions(
-    originalNodes: (Node | Group)[],
-    layoutedTopLevelNodes: (Node | Group)[]
-  ): (Node | Group)[] {
-    // 创建节点映射以便快速查找
-    const originalNodeMap = new Map(originalNodes.map(node => [node.id, node]));
-    const layoutedNodeMap = new Map(layoutedTopLevelNodes.map(node => [node.id, node]));
-
-    // 顶层节点使用布局后的位置
-    const resultNodes: (Node | Group)[] = [...layoutedTopLevelNodes];
-
-    // 找出嵌套节点（属于某个群组的节点）
-    const nestedNodes = originalNodes.filter(
-      node => 'groupId' in node && node.groupId
-    );
-
-    // 对于每个嵌套节点，计算其新的绝对位置
-    for (const nestedNode of nestedNodes) {
-      const absolutePosition = this.calculateAbsolutePosition(
-        nestedNode,
-        originalNodeMap,
-        layoutedNodeMap
-      );
-
-      resultNodes.push({
-        ...nestedNode,
-        position: absolutePosition
-      });
-    }
-
-    return resultNodes;
-  }
-
-  /**
-   * 递归计算嵌套节点的绝对位置
-   * 这个方法会查找节点的所有祖先群组，计算其相对于最顶层父群组的最终位置
-   */
-  private calculateAbsolutePosition(
-    node: Node | Group,
-    originalNodeMap: Map<string, Node | Group>,
-    layoutedNodeMap: Map<string, Node | Group>
-  ): { x: number; y: number } {
-    // 如果节点没有父群组，返回其在layoutedNodes中的位置
-    if (!('groupId' in node) || !node.groupId) {
-      const layoutedNode = layoutedNodeMap.get(node.id);
-      return layoutedNode ? layoutedNode.position : node.position;
-    }
-
-    // 优先使用layoutedNodeMap中的父群组（可能已被布局算法移动）
-    const layoutedParentGroup = layoutedNodeMap.get(node.groupId);
-    const originalParentGroup = originalNodeMap.get(node.groupId) as Group;
-
-    if (!originalParentGroup) {
-      // 如果找不到原始父群组，返回原位置
-      return node.position;
-    }
-
-    // 计算节点相对于原始父群组的相对位置
-    const relativeX = node.position.x - originalParentGroup.position.x;
-    const relativeY = node.position.y - originalParentGroup.position.y;
-
-    // 如果父群组在layoutedNodeMap中（已被处理），直接使用其新位置
-    if (layoutedParentGroup) {
-      return {
-        x: layoutedParentGroup.position.x + relativeX,
-        y: layoutedParentGroup.position.y + relativeY
-      };
-    }
-
-    // 否则递归计算父群组的新绝对位置（用于嵌套更深的情况）
-    const parentAbsolutePosition = this.calculateAbsolutePosition(
-      originalParentGroup,
-      originalNodeMap,
-      layoutedNodeMap
-    );
-
-    return {
-      x: parentAbsolutePosition.x + relativeX,
-      y: parentAbsolutePosition.y + relativeY
-    };
   }
 
   /**

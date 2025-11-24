@@ -56,8 +56,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const reactFlowInstance = useReactFlow();
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   
-  const resizeTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
-  
   const {
     nodes: storeNodes,
     edges,
@@ -305,7 +303,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
         handleGroupMove(node.id, absolutePosition);
 
-        // ⚡ 优化：直接更新父群组边界（防抖已在 updateGroupBoundary 中处理）
+        // 直接更新父群组边界（防抖已移除）
         if (storeGroup.groupId) {
           console.log('📐 更新父群组边界:', storeGroup.groupId);
           updateGroupBoundary(storeGroup.groupId!);
@@ -346,7 +344,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         // 先更新位置
         updateNodePosition(node.id, absolutePosition);
 
-        // ⚡ 优化：直接更新群组边界（防抖已在 updateGroupBoundary 中处理）
+        // 直接更新群组边界（防抖已移除）
         if (storeNode.groupId) {
           updateGroupBoundary(storeNode.groupId!);
         }
@@ -369,15 +367,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   // MiniMap 节点颜色
   const nodeColor = useCallback((node: ReactFlowNode) => {
     return node.type === 'group' ? '#e0e7ff' : '#93c5fd';
-  }, []);
-
-  // 清理定时器
-  useEffect(() => {
-    return () => {
-      Object.values(resizeTimeoutRef.current).forEach(timeout => {
-        clearTimeout(timeout);
-      });
-    };
   }, []);
 
   return (
@@ -459,46 +448,38 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
                   }
                 }
 
-                // ⚡ 优化版：尺寸变化处理（减少 setTimeout 嵌套）
+                // 直接处理尺寸变化，移除防抖
                 if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
-                  if (resizeTimeoutRef.current[change.id]) {
-                    clearTimeout(resizeTimeoutRef.current[change.id]);
-                  }
+                  const currentNode = reactFlowInstance?.getNode(change.id);
 
-                  resizeTimeoutRef.current[change.id] = setTimeout(() => {
-                    const currentNode = reactFlowInstance?.getNode(change.id);
+                  if (currentNode) {
+                    const newWidth = Number(change.dimensions!.width);
+                    const newHeight = Number(change.dimensions!.height);
 
-                    if (currentNode) {
-                      const newWidth = Number(change.dimensions!.width);
-                      const newHeight = Number(change.dimensions!.height);
-
-                      // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
-                      updateNode(change.id, {
+                    // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
+                    updateNode(change.id, {
+                      width: newWidth || 350,
+                      height: newHeight || 280,
+                      style: {
+                        ...(currentNode.style || {}),
                         width: newWidth || 350,
                         height: newHeight || 280,
-                        style: {
-                          ...(currentNode.style || {}),
-                          width: newWidth || 350,
-                          height: newHeight || 280,
-                        }
-                      });
+                      }
+                    });
 
-                      if (currentNode.type === 'group') {
-                        const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
+                    if (currentNode.type === 'group') {
+                      const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
 
-                        // ⚡ 优化：直接更新边界（防抖已在 updateGroupBoundary 中处理）
-                        updateGroupBoundary(change.id);
+                      // 直接更新边界（防抖已移除）
+                      updateGroupBoundary(change.id);
 
-                        // ⚡ 优化：直接更新父群组边界（防抖已处理）
-                        if (storeGroup?.groupId) {
-                          console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
-                          updateGroupBoundary(storeGroup.groupId!);
-                        }
+                      // 直接更新父群组边界（防抖已移除）
+                      if (storeGroup?.groupId) {
+                        console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
+                        updateGroupBoundary(storeGroup.groupId!);
                       }
                     }
-
-                    delete resizeTimeoutRef.current[change.id];
-                  }, 100);
+                  }
                 }
               });
             });

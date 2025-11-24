@@ -171,24 +171,30 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 启用布局模式以防止约束逻辑干扰
         useGraphStore.getState().setIsLayoutMode(true);
 
-        // 更新节点位置和尺寸
+        // ⭐ 修复：更新所有节点的位置和尺寸（包括目标群组）
         for (const [nodeId, positionData] of layoutResult.nodes) {
           const updateData: any = { position: { x: positionData.x, y: positionData.y } };
 
-          // 对于非目标群组的节点，更新尺寸信息
-          // 对于目标群组本身，只更新位置，尺寸由 updateGroupBoundary 负责
-          if (nodeId !== selectedNodeId) {
-            if ((positionData as any).width !== undefined) {
-              updateData.width = (positionData as any).width;
-            }
-            if ((positionData as any).height !== undefined) {
-              updateData.height = (positionData as any).height;
-            }
-            if ((positionData as any).boundary !== undefined) {
-              updateData.boundary = (positionData as any).boundary;
-            }
+          // ✅ 移除条件判断，让所有节点（包括目标群组）都能更新尺寸
+          if ((positionData as any).width !== undefined) {
+            updateData.width = (positionData as any).width;
+          }
+          if ((positionData as any).height !== undefined) {
+            updateData.height = (positionData as any).height;
+          }
+          if ((positionData as any).boundary !== undefined) {
+            updateData.boundary = (positionData as any).boundary;
+          }
+          
+          // ⭐ 同时更新 style，确保 ReactFlow 渲染正确的尺寸
+          if ((positionData as any).width !== undefined || (positionData as any).height !== undefined) {
+            updateData.style = {
+              width: (positionData as any).width,
+              height: (positionData as any).height
+            };
           }
 
+          console.log(`🔧 更新节点 ${nodeId}:`, updateData);
           updateNode(nodeId, updateData);
         }
 
@@ -202,7 +208,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
         console.log(`✅ 群组布局完成，更新了 ${layoutResult.nodes.size} 个节点`);
 
-        // 🔧 触发群组边界更新以确保父群组大小及时调整
+        // 🔧 触发群组边界更新以确保父群组大小及时调整（用于嵌套群组场景）
         console.log(`🔧 触发群组边界更新: ${selectedNodeId}`);
         updateGroupBoundary(selectedNodeId);
 
@@ -291,6 +297,14 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           // 🔧 如果包含边界信息，也一并更新（确保群组边界及时同步）
           if ((positionData as any).boundary !== undefined) {
             updateData.boundary = (positionData as any).boundary;
+          }
+          
+          // ⭐ 同时更新 style，确保 ReactFlow 渲染正确的尺寸
+          if ((positionData as any).width !== undefined || (positionData as any).height !== undefined) {
+            updateData.style = {
+              width: (positionData as any).width,
+              height: (positionData as any).height
+            };
           }
 
           updateNode(nodeId, updateData);
