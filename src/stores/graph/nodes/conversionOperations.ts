@@ -26,7 +26,7 @@ export interface ConversionOperationsSlice {
  */
 export const createConversionOperationsSlice = (set: any, get: any): ConversionOperationsSlice => ({
   /**
-   * 将节点转换为群组
+   * 將节点转换为群组
    * @param nodeId 要转换的节点ID
    */
   convertNodeToGroup: (nodeId: string) => {
@@ -47,21 +47,25 @@ export const createConversionOperationsSlice = (set: any, get: any): ConversionO
 
     console.log(`🔄 转换节点 ${nodeId} 为群组`);
 
-    // 如果这是一个从群组转换来的节点，则恢复其子节点
+    // 如果这是一个从群组转换来的节点（即支持双向转换）
     if (node.isConverted && node.convertedFrom === BlockEnum.GROUP) {
+      // 从保存的数据恢复群组
+      const savedChildren: (Node | Group)[] = (node as any).savedChildren || [];
+      const savedEdges: Edge[] = (node as any).savedEdges || [];
+
       // 创建新群组
       const group: Group = {
         ...node,
         type: BlockEnum.GROUP,
-        nodeIds: (node as any).savedChildren?.map((child: any) => child.id) || [],
+        nodeIds: savedChildren.map(child => child.id),
         collapsed: false,
-        boundary: { 
-          minX: 0, 
-          minY: 0, 
-          maxX: node.width || 300, 
-          maxY: node.height || 200 
+        boundary: {
+          minX: 0,
+          minY: 0,
+          maxX: node.width || 300,
+          maxY: node.height || 200
         },
-        convertedFrom: BlockEnum.NODE,
+        convertedFrom: BlockEnum.GROUP, // 保持原始类型
         isConverted: true,
       } as Group;
 
@@ -71,13 +75,13 @@ export const createConversionOperationsSlice = (set: any, get: any): ConversionO
         if (n.id === nodeId) {
           return group;
         }
-        
+
         // 如果是被这个转换隐藏的子节点，恢复它们
         if ((n as any)._hiddenByConversion && (n as any)._parentConvertedId === nodeId) {
           const { _hiddenByConversion, _parentConvertedId, ...cleanNode } = n as any;
           return cleanNode;
         }
-        
+
         return n;
       });
 
@@ -100,6 +104,9 @@ export const createConversionOperationsSlice = (set: any, get: any): ConversionO
       if (get().addHistorySnapshot) {
         get().addHistorySnapshot();
       }
+
+      // 强制触发节点类型变化，让ReactFlow重新渲染
+      console.log('🔄 Node to group conversion completed, triggering UI update');
     } else {
       // 创建新的群组，不包含子节点
       const group: Group = {
@@ -107,7 +114,12 @@ export const createConversionOperationsSlice = (set: any, get: any): ConversionO
         type: BlockEnum.GROUP,
         nodeIds: [],
         collapsed: false,
-        boundary: { minX: 0, minY: 0, maxX: node.width || 300, maxY: node.height || 200 },
+        boundary: {
+          minX: 0,
+          minY: 0,
+          maxX: node.width || 300,
+          maxY: node.height || 200
+        },
         convertedFrom: BlockEnum.NODE,
         isConverted: true,
       } as Group;
@@ -124,19 +136,26 @@ export const createConversionOperationsSlice = (set: any, get: any): ConversionO
         get().addHistorySnapshot();
       }
     }
-    },
+  },
 
   /**
-   * 将群组转换为节点
+   * 將群组转换为节点
    * @param groupId 要转换的群组ID
    */
   convertGroupToNode: (groupId: string) => {
     const state = get();
     const { nodes, edges } = state;
-    const group = nodes.find((n: Node | Group) => n.id === groupId);
+    const node = nodes.find((n: Node | Group) => n.id === groupId);
 
-    if (!group || group.type !== BlockEnum.GROUP) {
-      console.error(`Group with ID ${groupId} is not a GroupNode or does not exist`);
+    // 检查节点是否存在
+    if (!node) {
+      console.error(`Node/Group with ID ${groupId} does not exist`);
+      return;
+    }
+
+    // 如果已经是节点类型，不再进行转换
+    if (node.type === BlockEnum.NODE) {
+      console.log(`Node with ID ${groupId} is already a node`);
       return;
     }
 
@@ -162,27 +181,27 @@ export const createConversionOperationsSlice = (set: any, get: any): ConversionO
       // 如果是要转换的群组，转换为 NoteNode
       if (n.id === groupId) {
         const convertedNode: Node = {
-          ...group,
+          ...node,
           type: BlockEnum.NODE,
           convertedFrom: BlockEnum.GROUP,
           isConverted: true,
           savedChildren: childNodes,
           savedEdges: [...edgesToSave, ...groupRelatedEdges],
-          originalPosition: { x: group.position.x, y: group.position.y },
-          originalSize: { width: group.width, height: group.height },
+          originalPosition: { x: node.position.x, y: node.position.y },
+          originalSize: { width: node.width, height: node.height },
         } as Node;
         return convertedNode;
       }
-      
+
       // 如果是子节点，标记为隐藏（但保留在 store 中）
       if (childNodes.some(child => child.id === n.id)) {
-        return { 
-          ...n, 
+        return {
+          ...n,
           _hiddenByConversion: true,  // 标记为被转换隐藏
           _parentConvertedId: groupId  // 记录父节点ID，方便恢复
         } as any;
       }
-      
+
       return n;
     });
 
@@ -199,14 +218,17 @@ export const createConversionOperationsSlice = (set: any, get: any): ConversionO
       return edge;
     });
 
-    set({ 
+    set({
       nodes: updatedNodes,
       edges: updatedEdges
     });
-    
+
     // 添加历史记录快照
     if (get().addHistorySnapshot) {
       get().addHistorySnapshot();
     }
+
+    // 强制触发节点类型变化，让ReactFlow重新渲染
+    console.log('🔄 Group to node conversion completed, triggering UI update');
   }
 });

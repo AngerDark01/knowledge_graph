@@ -28,32 +28,35 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
   const [editTitle, setEditTitle] = useState(data.title || '');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
+  // 从store获取转换函数，这样可以订阅状态变化
+  const { convertNodeToGroup } = useGraphStore();
+
   // 监听节点尺寸变化(用户手动调整)
   useEffect(() => {
     const currentNode = getNodeById(id);
     if (currentNode && isExpanded && currentNode.width && currentNode.height) {
       const currentWidth = currentNode.width;
       const currentHeight = currentNode.height;
-      
+
       // 定义尺寸常量 - 根据HTML实际渲染大小调整
       const collapsedWidth = 350;
       const collapsedHeight = 280; // 增加到280以完整显示所有内容
-      
+
       // 展开时的默认尺寸
       const defaultExpandedWidth = 600;
       const defaultExpandedHeight = 450;
-      
+
       // 获取展开的目标尺寸
       const targetSize = currentNode.customExpandedSize || {
         width: defaultExpandedWidth,
         height: defaultExpandedHeight
       };
-      
+
       // 检查用户是否手动调整了尺寸(与目标尺寸不同且不是收缩尺寸)
-      const isManuallyResized = 
+      const isManuallyResized =
         (currentWidth !== collapsedWidth || currentHeight !== collapsedHeight) &&
         (currentWidth !== targetSize.width || currentHeight !== targetSize.height);
-      
+
       // 如果用户手动调整了尺寸,保存为自定义尺寸
       if (isManuallyResized && !currentNode.customExpandedSize) {
         console.log('💾 保存用户自定义展开尺寸:', { width: currentWidth, height: currentHeight });
@@ -112,7 +115,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
                 autoFocus
               />
             ) : (
-              <h3 
+              <h3
                 className="text-base font-semibold text-gray-900 dark:text-gray-100 cursor-text truncate"
                 onDoubleClick={() => setIsEditingTitle(true)}
                 title={editTitle}
@@ -121,7 +124,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
               </h3>
             )}
           </div>
-          
+
           {/* 右侧按钮组 */}
           <div className="flex-shrink-0 flex items-center gap-1">
             {/* 编辑按钮 */}
@@ -139,13 +142,12 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
                 </svg>
               </button>
             )}
-            
+
             {/* 转换为群组按钮 */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const { convertNodeToGroup } = useGraphStore.getState();
-                convertNodeToGroup(id);
+                convertNodeToGroup(id);  // ✅ 现在使用从hook获取的方法
               }}
               className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
               title="转换为群组"

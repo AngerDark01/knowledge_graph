@@ -16,6 +16,18 @@ const GroupNode: React.FC<GroupNodeProps> = ({ id, data, selected, ...rest }) =>
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(groupNode?.title || data.title || 'Group');
 
+  // 添加渲染日志以查看渲染参数
+  try {
+    console.log(`🎨 渲染 GroupNode ${id}:`, {
+      width: groupNode?.width,
+      height: groupNode?.height,
+      position: groupNode?.position,
+      selected
+    });
+  } catch (error) {
+    console.error("GroupNode渲染日志错误:", error);
+  }
+
   // 计算群组中节点的数量
   const nodeCount = groupNode?.nodeIds ? groupNode.nodeIds.length : 0;
 

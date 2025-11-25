@@ -130,44 +130,19 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     }, EDGE_OPTIMIZATION_CONFIG.DEBOUNCE_DELAY);
   }, []);
 
-  // ⚡ 优化：使用 useMemo 缓存节点转换结果
-  const processedNodes = useMemo(() => {
-    // 如果正在拖拽，返回当前节点（避免覆盖用户操作）
-    if (isDraggingRef.current) {
-      console.log('⏸️ 拖拽中，使用当前节点');
-      return reactFlowNodes || [];
-    }
-
-    const nodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
-    console.log('🔄 同步节点到ReactFlow:', nodes.length);
-    return nodes as ReactFlowNode[];
-  }, [storeNodes, selectedNodeId, reactFlowNodes, isDraggingRef.current]); // 添加 isDraggingRef.current 依赖以确保一致性
-
-  // ⚡ 优化：仅在 processedNodes 真正变化时更新
+  // 同步store到ReactFlow
   useEffect(() => {
-    if (!isDraggingRef.current && processedNodes && reactFlowNodes) {
-      // 检查节点数量是否变化或者节点位置是否变化
-      const nodeIdsChanged = processedNodes.length !== reactFlowNodes.length ||
-        JSON.stringify(processedNodes.map(n => n.id).sort()) !== JSON.stringify(reactFlowNodes.map(n => n.id).sort());
-
-      // 检查是否有节点的位置发生了变化
-      let positionChanged = false;
-      if (!nodeIdsChanged) {
-        for (let i = 0; i < processedNodes.length; i++) {
-          const oldNode = reactFlowNodes.find(n => n.id === processedNodes[i].id);
-          if (oldNode && (oldNode.position.x !== processedNodes[i].position.x ||
-                         oldNode.position.y !== processedNodes[i].position.y)) {
-            positionChanged = true;
-            break;
-          }
-        }
-      }
-
-      if (nodeIdsChanged || positionChanged) {
-        setReactFlowNodes(processedNodes);
-      }
+    // 如果正在拖拽，跳过同步以避免覆盖用户操作
+    if (isDraggingRef.current) {
+      console.log('⏸️ 拖拽中，跳过同步');
+      return;
     }
-  }, [processedNodes, setReactFlowNodes, reactFlowNodes, isDraggingRef.current]);
+
+    const processedNodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
+
+    console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
+    setReactFlowNodes(processedNodes as ReactFlowNode[]);
+  }, [storeNodes, selectedNodeId, setReactFlowNodes, isDraggingRef.current]);
 
   // 同步边
   useEffect(() => {

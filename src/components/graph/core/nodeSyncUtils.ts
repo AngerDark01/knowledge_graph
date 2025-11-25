@@ -135,6 +135,8 @@ export const syncStoreToReactFlowNodes = (
           extent: 'parent' as const,
           expandParent: true,
         }),
+        // 使用包含类型和转换状态的key来确保ReactFlow正确重新渲染
+        key: `${groupNode.id}-${groupNode.type}-${groupNode.isConverted ? 'converted' : 'original'}`,
         style: {
           ...groupNode.style,
           width: safeNumberImpl(groupNode.width, 300),
@@ -185,6 +187,8 @@ export const syncStoreToReactFlowNodes = (
           extent: 'parent' as const,
           expandParent: true,
         }),
+        // 使用包含类型和转换状态的key来确保ReactFlow正确重新渲染
+        key: `${regularNode.id}-${regularNode.type}-${regularNode.isConverted ? 'converted' : 'original'}`,
         style: {
           ...(regularNode as any).style,
           width: safeNumberImpl(regularNode.width, 350),  // 🔧 NoteNode初始宽度
