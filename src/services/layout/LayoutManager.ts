@@ -3,19 +3,8 @@ import { Node, Group, Edge } from '../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from './types/layoutTypes';
 import { LAYOUT_CONFIG } from '../../config/graph.config';
 
-// 新的策略类（重构后）
-import { GroupLayoutStrategy } from './strategies/GroupLayoutStrategy';
-import { CanvasLayoutStrategy } from './strategies/CanvasLayoutStrategy';
-import { RecursiveLayoutStrategy } from './strategies/RecursiveLayoutStrategy';
-
-// 算法层
-import { GridAlgorithm } from './algorithms/GridAlgorithm';
-import { GridCenterAlgorithm } from './algorithms/GridCenterAlgorithm';
-import { EdgeOptimizer } from './algorithms/EdgeOptimizer';
-
-// 工具层
-import { CollisionResolver } from './utils/CollisionResolver';
-import { NestingTreeBuilder } from './utils/NestingTreeBuilder';
+// ELK布局策略
+import { ELKLayoutStrategy } from './strategies/ELKLayoutStrategy';
 
 export interface ILayoutManager {
   /**
@@ -68,41 +57,10 @@ export class LayoutManager implements ILayoutManager {
    * 注册默认布局策略
    */
   private registerDefaultStrategies(): void {
-    // 创建共享的工具实例
-    const collisionResolver = new CollisionResolver();
-    const edgeOptimizer = new EdgeOptimizer();
-    const nestingTreeBuilder = new NestingTreeBuilder();
-
-    // 创建算法实例
-    const gridAlgorithm = new GridAlgorithm();
-    const gridCenterAlgorithm = new GridCenterAlgorithm();
-
-    // 1. 注册群组布局策略
-    const groupStrategy = new GroupLayoutStrategy(
-      gridAlgorithm,
-      collisionResolver
-    );
-    this.strategies.set(groupStrategy.id, groupStrategy);
-    console.log(`✅ 策略已注册: ${groupStrategy.name} (${groupStrategy.id})`);
-
-    // 2. 注册画布布局策略
-    const canvasStrategy = new CanvasLayoutStrategy(
-      gridCenterAlgorithm,
-      collisionResolver,
-      edgeOptimizer
-    );
-    this.strategies.set(canvasStrategy.id, canvasStrategy);
-    console.log(`✅ 策略已注册: ${canvasStrategy.name} (${canvasStrategy.id})`);
-
-    // 3. 注册递归布局策略（依赖前两个策略）
-    const recursiveStrategy = new RecursiveLayoutStrategy(
-      groupStrategy,
-      canvasStrategy,
-      nestingTreeBuilder,
-      edgeOptimizer
-    );
-    this.strategies.set(recursiveStrategy.id, recursiveStrategy);
-    console.log(`✅ 策略已注册: ${recursiveStrategy.name} (${recursiveStrategy.id})`);
+    // 注册 ELK 布局策略
+    const elkStrategy = new ELKLayoutStrategy();
+    this.strategies.set(elkStrategy.id, elkStrategy);
+    console.log(`✅ 策略已注册: ${elkStrategy.name} (${elkStrategy.id})`);
   }
   
   async applyLayout(nodes: (Node | Group)[], edges: Edge[], options?: LayoutOptions): Promise<LayoutResult> {
@@ -185,23 +143,13 @@ export class LayoutManager implements ILayoutManager {
    * 根据 options 自动选择最合适的策略
    */
   private selectStrategy(options?: LayoutOptions): string {
-    // 1. 如果显式指定了策略，直接使用
+    // 如果显式指定了策略，直接使用
     if (options?.strategy) {
       return options.strategy;
     }
 
-    // 2. 如果是递归布局模式
-    if (options?.layoutMode === 'recursive') {
-      return 'recursive-layout';
-    }
-
-    // 3. 如果指定了目标群组ID（群组内布局）
-    if (options?.targetGroupId) {
-      return 'group-layout';
-    }
-
-    // 4. 默认使用画布布局（顶层节点布局）
-    return 'canvas-layout';
+    // 默认使用 ELK 布局（一次性处理所有层级，包括嵌套群组）
+    return 'elk-layout';
   }
   
   /**

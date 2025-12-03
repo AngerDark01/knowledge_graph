@@ -7,11 +7,7 @@ export { GeometryUtils } from './GeometryUtils';
 export { NestingTreeBuilder } from './NestingTreeBuilder';
 export type { NestingTreeNode } from './NestingTreeBuilder';
 
-// 坐标转换工具
-export { CoordinateTransformer } from './CoordinateTransformer';
-
-// 群组大小调整工具
-export { GroupSizeAdjuster } from './GroupSizeAdjuster';
-
-// 碰撞解决工具
-export { CollisionResolver } from './CollisionResolver';
+// ELK相关工具
+export { ELKGraphConverter } from './ELKGraphConverter';
+export type { ElkNode, ElkEdge } from './ELKGraphConverter';
+export { ELKConfigBuilder } from './ELKConfigBuilder';

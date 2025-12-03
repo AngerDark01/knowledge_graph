@@ -43,16 +43,16 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
       // 禁用用户交互
       useGraphStore.getState().setSelectedNodeId(null);
 
-      // 初始化布局管理器（自动使用 canvas-layout 策略）
+      // 初始化布局管理器（自动使用 ELK 布局策略）
       const layoutManager = new LayoutManager();
 
-      // 应用布局算法（包含边优化）
+      // 应用ELK布局算法
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
         {
           animate: true,
-          useWeightedLayout: true
+          strategy: 'elk-layout'
         }
       );
 
@@ -152,18 +152,16 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
       console.log(`📐 开始对群组 ${selectedNodeId} 内的 ${childrenCount} 个子节点进行布局`);
 
-      // 初始化布局管理器（自动使用 group-layout 策略）
+      // 初始化布局管理器（使用 ELK 布局策略）
       const layoutManager = new LayoutManager();
 
-      // 应用布局算法（针对选中群组）
+      // 应用ELK布局算法（ELK会自动处理所有嵌套层级）
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
         {
-          targetGroupId: selectedNodeId,  // ✨ 指定目标群组，自动选择 group-layout
-          layoutScope: 'group',
           animate: true,
-          useWeightedLayout: true
+          strategy: 'elk-layout'
         }
       );
 
@@ -259,23 +257,16 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
       console.log(`🌳 开始递归布局，处理所有 ${nodes.length} 个节点`);
 
-      // 初始化布局管理器（自动使用 recursive-layout 策略）
+      // 初始化布局管理器（使用 ELK 布局策略）
       const layoutManager = new LayoutManager();
 
-      // 应用递归布局算法
+      // 应用ELK递归布局算法（ELK默认就递归处理所有嵌套层级）
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
         {
-          layoutMode: 'recursive',  // ✨ 启用递归模式，自动选择 recursive-layout
           animate: true,
-          useWeightedLayout: true,
-          onProgress: (progress) => {
-            console.log(
-              `📊 布局进度: 深度 ${progress.currentLevel}/${progress.totalLevels}, ` +
-              `已处理 ${progress.processedNodes}/${progress.totalNodes} 个节点`
-            );
-          }
+          strategy: 'elk-layout'
         }
       );
 

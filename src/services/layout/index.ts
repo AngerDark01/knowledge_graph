@@ -2,26 +2,21 @@
 import { LayoutManager } from './LayoutManager';
 import { EdgeOptimizer } from './algorithms/EdgeOptimizer';
 import { GeometryUtils } from './utils/GeometryUtils';
-import { NestedNodePositionUpdater } from './utils/NestedNodePositionUpdater';
-
-// 布局策略
-import { GroupLayoutStrategy } from './strategies/GroupLayoutStrategy';
-import { CanvasLayoutStrategy } from './strategies/CanvasLayoutStrategy';
-import { RecursiveLayoutStrategy } from './strategies/RecursiveLayoutStrategy';
+import { ELKLayoutStrategy } from './strategies/ELKLayoutStrategy';
+import { ELKGraphConverter, ELKConfigBuilder } from './utils';
 
 export {
   // 核心管理器
   LayoutManager,
 
-  // 布局策略
-  GroupLayoutStrategy,
-  CanvasLayoutStrategy,
-  RecursiveLayoutStrategy,
+  // ELK布局策略
+  ELKLayoutStrategy,
 
   // 工具和算法
   EdgeOptimizer,
   GeometryUtils,
-  NestedNodePositionUpdater
+  ELKGraphConverter,
+  ELKConfigBuilder
 };
 
 // 导出类型
