@@ -104,10 +104,13 @@ const CrossGroupEdge = ({
   }
 
   // 根据方向性设置marker
+  // ✅ 修复：如果direction未定义，默认为unidirectional（单向）
+  const direction = data?.direction || 'unidirectional';
+
   let edgeMarkerEnd: string | { type: MarkerType; color: string; width: number; height: number } | undefined = markerEnd;
   let edgeMarkerStart: { type: MarkerType; color: string; width: number; height: number } | undefined;
-  
-  if (data?.direction === 'bidirectional') {
+
+  if (direction === 'bidirectional') {
     // 双向箭头
     edgeMarkerEnd = {
       type: MarkerType.Arrow,
@@ -121,7 +124,7 @@ const CrossGroupEdge = ({
       width: 20,
       height: 20,
     };
-  } else if (data?.direction === 'unidirectional') {
+  } else if (direction === 'unidirectional') {
     // 单向箭头（从源到目标）
     edgeMarkerEnd = {
       type: MarkerType.Arrow,

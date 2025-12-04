@@ -136,35 +136,42 @@ export class ELKGraphConverter {
   }
 
   /**
-   * 从ELK布局结果提取节点位置
+   * 从ELK布局结果提取节点位置和尺寸
+   * ✅ 修复：同时提取width和height，确保群组边界自动调整
    *
    * @param elkLayout ELK布局结果
-   * @returns 节点位置映射 Map<nodeId, {x, y}>
+   * @returns 节点位置和尺寸映射 Map<nodeId, {x, y, width?, height?}>
    */
-  static fromELKLayout(elkLayout: ElkNode): Map<string, { x: number; y: number }> {
+  static fromELKLayout(elkLayout: ElkNode): Map<string, {
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+  }> {
     console.log(`🔄 ELKGraphConverter: 开始提取布局结果`);
 
-    const positions = new Map<string, { x: number; y: number }>();
+    const result = new Map<string, { x: number; y: number; width?: number; height?: number }>();
 
-    // 递归提取所有节点的位置
-    this.extractPositions(elkLayout, positions, 0, 0);
+    // 递归提取所有节点的位置和尺寸
+    this.extractPositions(elkLayout, result, 0, 0);
 
-    console.log(`✅ 提取完成: ${positions.size} 个节点位置`);
+    console.log(`✅ 提取完成: ${result.size} 个节点的位置和尺寸`);
 
-    return positions;
+    return result;
   }
 
   /**
-   * 递归提取节点位置（处理嵌套结构）
+   * 递归提取节点位置和尺寸（处理嵌套结构）
+   * ✅ 修复：同时提取ELK计算的width和height
    *
    * @param elkNode ELK节点
-   * @param positions 位置映射表
+   * @param result 位置和尺寸映射表
    * @param parentX 父节点的绝对X坐标
    * @param parentY 父节点的绝对Y坐标
    */
   private static extractPositions(
     elkNode: ElkNode,
-    positions: Map<string, { x: number; y: number }>,
+    result: Map<string, { x: number; y: number; width?: number; height?: number }>,
     parentX: number,
     parentY: number
   ): void {
@@ -173,7 +180,7 @@ export class ELKGraphConverter {
       // 处理根节点的子节点
       if (elkNode.children) {
         for (const child of elkNode.children) {
-          this.extractPositions(child, positions, 0, 0);
+          this.extractPositions(child, result, 0, 0);
         }
       }
       return;
@@ -183,10 +190,31 @@ export class ELKGraphConverter {
     const absoluteX = parentX + (elkNode.x || 0);
     const absoluteY = parentY + (elkNode.y || 0);
 
-    // 保存位置
-    positions.set(elkNode.id, { x: absoluteX, y: absoluteY });
+    // ✅ 同时保存位置和尺寸
+    const positionData: { x: number; y: number; width?: number; height?: number } = {
+      x: absoluteX,
+      y: absoluteY
+    };
 
-    console.log(`  📍 节点 ${elkNode.id.substring(0, 8)}... 位置: (${Math.round(absoluteX)}, ${Math.round(absoluteY)})`);
+    // ✅ 如果ELK返回了尺寸（通常是群组节点），也保存
+    if (elkNode.width !== undefined) {
+      positionData.width = elkNode.width;
+    }
+    if (elkNode.height !== undefined) {
+      positionData.height = elkNode.height;
+    }
+
+    result.set(elkNode.id, positionData);
+
+    // 输出日志
+    const sizeInfo = positionData.width
+      ? `尺寸: ${Math.round(positionData.width)}x${Math.round(positionData.height!)}`
+      : '';
+    console.log(
+      `  📍 节点 ${elkNode.id.substring(0, 8)}... ` +
+      `位置: (${Math.round(absoluteX)}, ${Math.round(absoluteY)}) ` +
+      `${sizeInfo}`
+    );
 
     // 递归处理子节点
     if (elkNode.children && elkNode.children.length > 0) {
@@ -195,23 +223,58 @@ export class ELKGraphConverter {
       for (const child of elkNode.children) {
         // 子节点的坐标是相对于父节点内容区域的
         // 需要加上父节点的绝对坐标
-        this.extractPositions(child, positions, absoluteX, absoluteY);
+        this.extractPositions(child, result, absoluteX, absoluteY);
       }
     }
   }
 
   /**
    * 获取默认的布局选项
+   * ✅ 优化：移除无用配置，确保ELK考虑节点大小和连接关系
    */
   private static getDefaultLayoutOptions(options?: LayoutOptions): Record<string, any> {
     return {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'DOWN',
-      'elk.spacing.nodeNode': 80,
-      'elk.layered.spacing.nodeNodeBetweenLayers': 100,
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-      'elk.layered.crossingMinimization.semiInteractive': true,
+      // ========== 核心算法 ==========
+      'elk.algorithm': 'layered',  // 层次布局，适合有向图
+      'elk.direction': 'DOWN',     // 从上到下
+
+      // ========== 层级处理 ==========
+      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',  // 一次性处理所有嵌套层级
+
+      // ========== 间距配置 ==========
+      'elk.spacing.nodeNode': 80,  // 同层节点间距
+      'elk.layered.spacing.nodeNodeBetweenLayers': 100,  // 层间节点间距
+
+      // ✅ 新增：边与节点的间距（ELK布局节点时会为边预留空间）
+      'elk.spacing.edgeNode': 15,  // 边与节点间距
+      'elk.spacing.edgeEdge': 10,  // 边与边间距
+      'elk.layered.spacing.edgeNodeBetweenLayers': 15,  // 层间边节点间距
+      'elk.layered.spacing.edgeEdgeBetweenLayers': 10,  // 层间边边间距
+
+      // ========== 节点放置（考虑节点大小）==========
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',  // 最优节点位置
+      'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',  // 平衡对齐
+
+      // ========== 交叉最小化（考虑边的连接关系）==========
+      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',  // 减少边交叉
+      'elk.layered.crossingMinimization.semiInteractive': true,  // 改善深层嵌套
+
+      // ========== 有向图优化（考虑边的方向性）==========
+      'elk.layered.cycleBreaking.strategy': 'GREEDY',  // 处理循环引用
+      'elk.layered.considerModelOrder.strategy': 'PREFER_EDGES',  // 优先考虑边的方向
+      'elk.layered.layering.strategy': 'NETWORK_SIMPLEX',  // 最优分层
+
+      // ========== 组件分离 ==========
+      'elk.separateConnectedComponents': true,  // 分离独立的连通组件
+      'elk.spacing.componentComponent': 50,  // 组件间距
+
+      // ========== 性能与质量平衡 ==========
+      'elk.layered.thoroughness': 7,  // 布局质量（1-10，默认7）
+      'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',  // 紧凑策略
+
+      // ❌ 移除：edgeRouting配置（无用，边路径由ReactFlow计算）
+      // 'elk.edgeRouting': 'ORTHOGONAL',  // 不需要，因为不使用ELK的边路径
+
       // 用户自定义选项可以覆盖默认值
       ...(options?.elkOptions || {})
     };
@@ -227,21 +290,53 @@ export class ELKGraphConverter {
 
   /**
    * 获取节点的默认宽度
+   * ✅ 优化：优先使用节点的实际width，确保ELK获得准确的节点尺寸
    */
   private static getDefaultWidth(node: Node | Group): number {
+    // 优先使用节点的实际宽度
+    if (node.width && node.width > 0) {
+      return node.width;
+    }
+
+    // 如果是群组，使用群组默认尺寸
     if (node.type === BlockEnum.GROUP) {
       return LAYOUT_CONFIG.nodeSize.groupNode.width;
     }
+
+    // 普通节点：检查是否展开状态
+    if ('isExpanded' in node && node.isExpanded && 'customExpandedSize' in node) {
+      const customSize = (node as any).customExpandedSize;
+      if (customSize?.width) {
+        return customSize.width;
+      }
+    }
+
     return LAYOUT_CONFIG.nodeSize.defaultNode.width;
   }
 
   /**
    * 获取节点的默认高度
+   * ✅ 优化：优先使用节点的实际height，确保ELK获得准确的节点尺寸
    */
   private static getDefaultHeight(node: Node | Group): number {
+    // 优先使用节点的实际高度
+    if (node.height && node.height > 0) {
+      return node.height;
+    }
+
+    // 如果是群组，使用群组默认尺寸
     if (node.type === BlockEnum.GROUP) {
       return LAYOUT_CONFIG.nodeSize.groupNode.height;
     }
+
+    // 普通节点：检查是否展开状态
+    if ('isExpanded' in node && node.isExpanded && 'customExpandedSize' in node) {
+      const customSize = (node as any).customExpandedSize;
+      if (customSize?.height) {
+        return customSize.height;
+      }
+    }
+
     return LAYOUT_CONFIG.nodeSize.defaultNode.height;
   }
 
