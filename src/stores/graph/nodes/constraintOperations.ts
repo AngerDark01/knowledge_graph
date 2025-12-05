@@ -18,8 +18,8 @@ export const createConstraintOperationsSlice = (set: any, get: any): ConstraintO
               updatedAt: new Date()
             };
 
-            // 🔧 如果节点（Node 或 Group）属于群组，约束位置
-            if ('groupId' in node && node.groupId) {
+            // 🔧 如果节点（Node 或 Group）属于群组，约束位置（但只在非布局模式下）
+            if (state.isLayoutMode !== true && 'groupId' in node && node.groupId) {
               const parentGroup = state.nodes.find((n: Node | Group) =>
                 n.id === node.groupId && n.type === BlockEnum.GROUP
               ) as Group;
@@ -40,6 +40,12 @@ export const createConstraintOperationsSlice = (set: any, get: any): ConstraintO
     }),
 
     handleGroupMove: (groupId, newPosition) => set((state: any) => {
+      // 如果在布局模式下，直接返回，不执行移动操作
+      if (state.isLayoutMode === true) {
+        console.log(`⚠️ 布局模式下忽略群组移动操作: ${groupId}`);
+        return state;
+      }
+
       const group = state.nodes.find((node: Node | Group) =>
         node.id === groupId && node.type === BlockEnum.GROUP
       ) as Group;

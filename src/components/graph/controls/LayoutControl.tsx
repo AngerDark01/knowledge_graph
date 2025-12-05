@@ -60,7 +60,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 启用布局模式以防止约束逻辑干扰
         useGraphStore.getState().setIsLayoutMode(true);
 
-        // 更新节点位置和尺寸
+        // 批量更新节点位置和尺寸，但避免触发边界更新
         for (const [nodeId, positionData] of layoutResult.nodes) {
           const updateData: any = { position: { x: positionData.x, y: positionData.y } };
 
@@ -114,8 +114,10 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
             console.error("额外边优化失败:", error);
           })
           .finally(() => {
-            // 确保在所有操作完成后，禁用布局模式
-            useGraphStore.getState().setIsLayoutMode(false);
+            // 延迟禁用布局模式，确保所有更新完成
+            setTimeout(() => {
+              useGraphStore.getState().setIsLayoutMode(false);
+            }, 100);
           });
       } else {
         console.error("Layout failed:", layoutResult.errors);
@@ -243,7 +245,11 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
             console.error("额外边优化失败:", error);
           })
           .finally(() => {
-            useGraphStore.getState().setIsLayoutMode(false);
+            // 延迟禁用布局模式，确保所有更新完成
+            setTimeout(() => {
+              // 群组内部布局完成后，需要正确处理嵌套群组的边界
+              useGraphStore.getState().setIsLayoutMode(false);
+            }, 100);
           });
       } else {
         console.error("Group layout failed:", layoutResult.errors);

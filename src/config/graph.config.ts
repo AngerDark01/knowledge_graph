@@ -47,21 +47,6 @@ export const PADDING_CONFIG = {
   NODE_VISUAL_PADDING: 4,
 } as const;
 
-// ========== 网格布局配置 ==========
-export const GRID_LAYOUT = {
-  /** 每行节点数量 */
-  NODES_PER_ROW: 2,
-  /** 水平间距 */
-  HORIZONTAL_SPACING: 400,
-  /** 垂直间距 */
-  VERTICAL_SPACING: 320,
-  /** 群组内第一个节点的起始偏移 */
-  INITIAL_OFFSET: {
-    x: 50,
-    y: 100,
-  },
-} as const;
-
 // ========== z-index 层级配置 ==========
 export const Z_INDEX_CONFIG = {
   /** 基础 z-index */

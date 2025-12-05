@@ -187,9 +187,15 @@ export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBou
   };
 
   return {
-    // 直接更新群组边界，移除防抖机制
+    // 直接更新群组边界，移除防抖机制（但在布局模式下不执行）
     updateGroupBoundary: (groupId: string) => {
       set((state: any) => {
+        // 如果在布局模式下，直接返回，不执行边界更新
+        if (state.isLayoutMode === true) {
+          console.log(`⚠️ 布局模式下忽略群组边界更新: ${groupId}`);
+          return state;
+        }
+
         const group = state.nodes.find((node: Node | Group) =>
           node.id === groupId && node.type === BlockEnum.GROUP
         ) as Group;

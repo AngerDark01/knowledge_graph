@@ -1,24 +1,25 @@
-// src/services/layout/strategies/ELKGroupLayoutStrategy.ts
+// src/services/layout/strategies/ELKGroupLayoutStrategy.ts（正确版本）
 import { Node, Group, Edge } from '../../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTypes';
 import { ELKGraphConverter, ElkNode } from '../utils/ELKGraphConverter';
 import { ELKConfigBuilder } from '../utils/ELKConfigBuilder';
 
-// 动态导入 ELK（按需加载，减小初始包体积）
 let ELK: any;
 
+interface ElkEdge {
+  id: string;
+  sources: string[];
+  targets: string[];
+}
+
 /**
- * ELK群组内部布局策略
- *
- * 职责：
- * - 使用 ELK.js 库对指定群组内的节点进行布局
- * - 只布局选中群组的直接子节点（不处理嵌套群组）
- * - 仅更新群组内节点的位置，保持其他节点不变
- *
- * 特点：
- * - 仅对指定群组内部进行布局
- * - 保持群组外的节点位置不变
- * - 适用于仅对部分节点重新排列的场景
+ * 修正的 ELK 群组布局策略
+ * 
+ * 关键理解：
+ * - ELK 返回的子节点坐标是相对于其【直接父容器的内容区】的相对坐标
+ * - 而不是相对于根群组的坐标
+ * - 所以在递归结构中，每个节点的坐标 = parentOffsetX + elkNode.x
+ * - 而不是累加所有祖先！
  */
 export class ELKGroupLayoutStrategy implements ILayoutStrategy {
   readonly name = 'ELK Group Layout';
@@ -28,16 +29,11 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
   private elkReady: Promise<void>;
 
   constructor() {
-    // 异步加载 ELK 库
     this.elkReady = this.initELK();
   }
 
-  /**
-   * 初始化 ELK 库（懒加载）
-   */
   private async initELK(): Promise<void> {
     try {
-      // 动态导入 ELK
       const elkModule = await import('elkjs/lib/elk.bundled.js');
       ELK = elkModule.default || elkModule;
       this.elk = new ELK();
@@ -48,9 +44,6 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
     }
   }
 
-  /**
-   * 应用ELK群组内部布局
-   */
   async applyLayout(
     nodes: (Node | Group)[],
     edges: Edge[],
@@ -61,209 +54,266 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
     try {
       console.log(`🎯 ELKGroupLayoutStrategy: 开始布局群组内部`);
 
-      // 确保 ELK 已加载
       await this.elkReady;
 
       if (!this.elk) {
         throw new Error('ELK library is not initialized');
       }
 
-      // 从options中获取目标群组ID
       const targetGroupId = options?.groupId;
       if (!targetGroupId) {
         throw new Error('Target group ID is required for group layout');
       }
 
-      console.log(`🔍 目标群组: ${targetGroupId.substring(0, 8)}...`);
-
-      // 找出目标群组及其子节点
       const targetGroup = nodes.find(n => n.id === targetGroupId);
       if (!targetGroup || targetGroup.type !== 'group') {
         throw new Error(`Target node is not a group: ${targetGroupId}`);
       }
 
-      // 找出目标群组的所有子孙节点（包括嵌套群组内的节点）
-      const groupDescendants = this.getAllDescendants(nodes, targetGroupId);
+      console.log(`🔍 目标群组: ${targetGroupId.substring(0, 8)}..., 位置: (${targetGroup.position.x}, ${targetGroup.position.y})`);
 
-      console.log(`📊 群组 ${targetGroupId.substring(0, 8)}... 包含 ${groupDescendants.length} 个子孙节点`);
+      // 提取子图
+      const { subgraphNodes, subgraphEdges } = this.extractSubgraph(nodes, edges, targetGroupId);
 
-      if (groupDescendants.length === 0) {
-        console.warn(`⚠️ 群组 ${targetGroupId} 没有子孙节点，无法进行内部布局`);
+      console.log(`📊 子图包含 ${subgraphNodes.length} 个节点和 ${subgraphEdges.length} 条边`);
+
+      if (subgraphNodes.length === 0) {
+        console.warn(`⚠️ 群组 ${targetGroupId} 没有内部节点，无需布局`);
         return {
           success: true,
           nodes: new Map(),
           edges: new Map(),
           errors: [],
-          stats: {
-            duration: performance.now() - startTime,
-            iterations: 0,
-            collisions: 0
-          }
+          stats: { duration: performance.now() - startTime, iterations: 0, collisions: 0 }
         };
       }
 
-      // 1. 转换目标群组及其子孙节点到ELK图格式
-      console.log('📊 步骤 1/3: 转换群组内部数据格式...');
-      const elkGraph = this.createGroupELKGraph(targetGroup, groupDescendants, edges, options);
+      // 构建 ELK 子图
+      const elkGraph = this.createSubgraph(targetGroup, subgraphNodes, subgraphEdges, options);
 
-      // 2. 调用 ELK 布局
-      console.log('🔄 步骤 2/3: 执行 ELK 群组内部布局算法...');
+      console.log('🔄 执行 ELK 子图布局...');
       const layoutStartTime = performance.now();
-
       const elkLayout: ElkNode = await this.elk.layout(elkGraph);
-
       const layoutDuration = performance.now() - layoutStartTime;
-      console.log(`⚡ ELK 群组布局计算耗时: ${layoutDuration.toFixed(0)}ms`);
+      console.log(`⚡ ELK 子图布局计算耗时: ${layoutDuration.toFixed(0)}ms`);
 
-      // 3. 提取群组内节点位置
-      console.log('📍 步骤 3/3: 提取群组内节点位置...');
-      const nodePositions = ELKGraphConverter.fromELKLayout(elkLayout);
+      // ✅ 正确的坐标转换
+      const nodePositions = this.extractLayoutResults(elkLayout, targetGroup);
 
-      // 4. 将ELK计算的相对位置转换为相对于画布的绝对位置
-      // 保持目标群组的左上角作为锚点，确保群组整体位置不变
-      const anchorX = targetGroup.position.x; // 群组的左上角X坐标
-      const anchorY = targetGroup.position.y; // 群组的左上角Y坐标
-
-      const absoluteNodePositions = new Map<string, { x: number; y: number; width?: number; height?: number }>();
-
-      for (const [nodeId, position] of nodePositions) {
-        // 计算绝对位置：以群组左上角为锚点
-        const absoluteX = anchorX + position.x;
-        const absoluteY = anchorY + position.y;
-
-        // 对于目标群组，保持位置不变，但更新尺寸以适应内容
-        if (nodeId === targetGroup.id) {
-          absoluteNodePositions.set(nodeId, {
-            x: anchorX, // 保持原始X位置
-            y: anchorY, // 保持原始Y位置
-            width: position.width,  // 更新宽度
-            height: position.height // 更新高度
-          });
-        }
-        // 对于目标群组内的其他群组，更新位置，也更新尺寸
-        else if (nodeId.startsWith('group_')) {
-          absoluteNodePositions.set(nodeId, {
-            x: absoluteX,
-            y: absoluteY,
-            width: position.width,
-            height: position.height
-          });
-        }
-        // 对于普通节点，更新位置和尺寸
-        else {
-          absoluteNodePositions.set(nodeId, {
-            x: absoluteX,
-            y: absoluteY,
-            width: position.width,
-            height: position.height
-          });
-        }
-      }
-
-      // 5. 构建返回结果 - 只返回群组内节点的位置
       const endTime = performance.now();
       const totalDuration = endTime - startTime;
 
       console.log(`✅ ELK 群组内部布局完成！`);
-      console.log(`   • 更新了 ${absoluteNodePositions.size} 个群组内节点位置`);
+      console.log(`   • 更新了 ${nodePositions.size} 个节点位置`);
       console.log(`   • 总耗时: ${totalDuration.toFixed(0)}ms`);
-      console.log(`   • 算法: ${elkGraph.layoutOptions?.['elk.algorithm'] || 'layered'}`);
 
       return {
         success: true,
-        nodes: absoluteNodePositions,
-        edges: new Map(), // 不处理边，由 EdgeOptimizer 或 ReactFlow 处理
+        nodes: nodePositions,
+        edges: new Map(),
         errors: [],
-        stats: {
-          duration: totalDuration,
-          iterations: 1,
-          collisions: 0
-        }
+        stats: { duration: totalDuration, iterations: 1, collisions: 0 }
       };
 
     } catch (error) {
       const endTime = performance.now();
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
       console.error('❌ ELK 群组内部布局失败:', error);
-
       return {
         success: false,
         nodes: new Map(),
         edges: new Map(),
         errors: [errorMessage],
-        stats: {
-          duration: endTime - startTime,
-          iterations: 0,
-          collisions: 0
-        }
+        stats: { duration: endTime - startTime, iterations: 0, collisions: 0 }
       };
     }
   }
 
-  /**
-   * 为指定群组创建ELK图格式（仅包含该群组和其所有子孙节点）
-   */
-  private createGroupELKGraph(
-    targetGroup: Node | Group,
-    groupDescendants: (Node | Group)[],
-    originalEdges: Edge[],
-    options?: LayoutOptions
-  ): ElkNode {
-    console.log(`🔄 ELKGroupLayoutStrategy: 为群组 ${targetGroup.id} 创建ELK图`);
+  private extractSubgraph(
+    nodes: (Node | Group)[],
+    edges: Edge[],
+    rootGroupId: string
+  ): { subgraphNodes: (Node | Group)[], subgraphEdges: Edge[] } {
+    const descendantNodes = this.getDescendants(nodes, rootGroupId);
+    const subgraphNodes = [...descendantNodes, ...nodes.filter(n => n.id === rootGroupId)];
 
-    // 构建群组内部的边 - 仅连接群组内部的节点（包括嵌套群组）
-    const groupInternalEdges = originalEdges.filter(
-      edge =>
-        groupDescendants.some(descendant => descendant.id === edge.source) &&
-        groupDescendants.some(descendant => descendant.id === edge.target)
+    const subgraphEdges = edges.filter(edge =>
+      subgraphNodes.some(node => node.id === edge.source) &&
+      subgraphNodes.some(node => node.id === edge.target)
     );
 
-    // 构建ELK根节点 - 表示目标群组
-    const elkGraph: ElkNode = {
-      id: targetGroup.id,
-      width: targetGroup.width,
-      height: targetGroup.height,
-      layoutOptions: this.getDefaultLayoutOptions(options),
-      children: this.convertGroupChildren(groupDescendants),
-      edges: this.convertEdges(groupInternalEdges)
-    };
-
-    // 统计信息
-    const totalChildren = this.countNodes(elkGraph);
-    console.log(`✅ 群组ELK图创建完成: ${totalChildren} 个节点, ${elkGraph.edges?.length || 0} 条群组内边`);
-
-    return elkGraph;
+    return { subgraphNodes, subgraphEdges };
   }
 
-  /**
-   * 转换群组的所有子孙节点（包括嵌套群组）
-   */
-  private convertGroupChildren(children: (Node | Group)[]): ElkNode[] {
-    return children.map(child => {
-      // 如果是群组，递归转换其子节点
+  private getDescendants(nodes: (Node | Group)[], groupId: string): (Node | Group)[] {
+    const descendants: (Node | Group)[] = [];
+    const directChildren = nodes.filter(n =>
+      'groupId' in n && (n as Node | Group).groupId === groupId
+    );
+
+    for (const child of directChildren) {
+      descendants.push(child);
       if (child.type === 'group') {
-        const subChildren = this.getAllDescendants(children, child.id);
-        return {
-          id: child.id,
-          width: child.width || this.getDefaultWidth(child),
-          height: child.height || this.getDefaultHeight(child),
-          children: this.convertGroupChildren(subChildren),
-        };
-      } else {
-        // 普通节点
-        return {
-          id: child.id,
-          width: child.width || this.getDefaultWidth(child),
-          height: child.height || this.getDefaultHeight(child)
-        };
+        const nestedDescendants = this.getDescendants(nodes, child.id);
+        descendants.push(...nestedDescendants);
       }
+    }
+    return descendants;
+  }
+
+  private createSubgraph(
+    targetGroup: Node | Group,
+    subgraphNodes: (Node | Group)[],
+    subgraphEdges: Edge[],
+    options?: LayoutOptions
+  ): ElkNode {
+    const directChildren = subgraphNodes.filter(
+      node => node.id !== targetGroup.id && 'groupId' in node &&
+      (node as any).groupId === targetGroup.id
+    );
+
+    // 配置布局选项，包含群组的padding设置
+    const baseLayoutConfig = ELKConfigBuilder.getLayeredConfig('DOWN');
+    const layoutOptions = {
+      ...baseLayoutConfig,
+      // 设置群组的padding（围绕内容的边距）
+      // 使用与系统配置一致的值，确保与UI组件设计对齐
+      'elk.padding': '[top=70,left=20,bottom=20,right=20]', // 与PADDING_CONFIG.GROUP_PADDING.top保持一致
+      // 确保处理嵌套结构
+      'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+    };
+
+    return {
+      id: targetGroup.id,
+      width: targetGroup.width || 1000,
+      height: targetGroup.height || 600,
+      layoutOptions,
+      children: this.convertNodesRecursive(directChildren, subgraphNodes),
+      edges: this.convertEdges(subgraphEdges)
+    };
+  }
+
+  private convertNodesRecursive(
+    nodesToConvert: (Node | Group)[],
+    allSubgraphNodes: (Node | Group)[]
+  ): ElkNode[] {
+    return nodesToConvert.map(node => {
+      const elkNode: ElkNode = {
+        id: node.id,
+        width: node.width || this.getDefaultWidth(node),
+        height: node.height || this.getDefaultHeight(node)
+      };
+
+      if (node.type === 'group') {
+        const groupChildren = allSubgraphNodes.filter(
+          n => 'groupId' in n && (n as any).groupId === node.id
+        );
+
+        if (groupChildren.length > 0) {
+          // 为嵌套群组设置适当的布局选项，包括padding
+          const baseLayoutConfig = ELKConfigBuilder.getLayeredConfig('DOWN');
+          elkNode.layoutOptions = {
+            ...baseLayoutConfig,
+            'elk.padding': '[top=70,left=20,bottom=20,right=20]', // 为嵌套群组的标题栏和其他边距预留空间
+            'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+          };
+          elkNode.children = this.convertNodesRecursive(groupChildren, allSubgraphNodes);
+        }
+      }
+
+      return elkNode;
     });
   }
 
   /**
-   * 转换边
+   * ✅ 关键修复：正确的坐标转换逻辑
+   * 
+   * ELK 的坐标含义：
+   * - 根节点的子节点坐标相对于根的内容区
+   * - 嵌套群组内的节点坐标相对于该群组的内容区
+   * - 递归结构中，坐标已经是正确的相对值
+   * 
+   * 转换过程：
+   * 1. 递归遍历 ELK 返回的树结构
+   * 2. 维护累积偏移：从根到当前节点的位置累和
+   * 3. 最后加上目标群组在画布中的位置
    */
+  private extractLayoutResults(
+    elkLayout: ElkNode,
+    targetGroup: Node | Group
+  ): Map<string, { x: number; y: number; width?: number; height?: number }> {
+    const nodePositions = new Map<string, { x: number; y: number; width?: number; height?: number }>();
+
+    const groupBaseX = targetGroup.position.x;
+    const groupBaseY = targetGroup.position.y;
+
+    console.log(`📍 群组基准点: (${groupBaseX}, ${groupBaseY})`);
+
+    // 递归处理节点
+    // parentOffsetX/Y: 从根群组到该节点父容器的累积位移
+    const processElkNode = (
+      elkNode: ElkNode,
+      parentOffsetX: number,  // 节点父容器相对于根群组的 X 偏移
+      parentOffsetY: number,  // 节点父容器相对于根群组的 Y 偏移
+      depth: number = 0
+    ) => {
+      // 跳过根节点本身
+      if (elkNode.id === targetGroup.id) {
+        if (elkNode.children) {
+          for (const child of elkNode.children) {
+            // 根的子节点，父偏移就是 (0, 0)
+            processElkNode(child, 0, 0, depth + 1);
+          }
+        }
+        return;
+      }
+
+      // 关键：elkNode.x/y 是相对于直接父容器的坐标
+      const nodeX = elkNode.x || 0;
+      const nodeY = elkNode.y || 0;
+
+      // 当前节点相对于根群组的坐标
+      const offsetX = parentOffsetX + nodeX;
+      const offsetY = parentOffsetY + nodeY;
+
+      // 绝对坐标（相对于画布）
+      const absoluteX = groupBaseX + offsetX;
+      const absoluteY = groupBaseY + offsetY;
+
+      const indent = '  '.repeat(depth);
+      console.log(
+        `${indent}📍 ${elkNode.id.substring(0, 8)}... ` +
+        `相对: (${nodeX.toFixed(0)}, ${nodeY.toFixed(0)}) | ` +
+        `累积: (${offsetX.toFixed(0)}, ${offsetY.toFixed(0)}) | ` +
+        `绝对: (${absoluteX.toFixed(0)}, ${absoluteY.toFixed(0)})`
+      );
+
+      nodePositions.set(elkNode.id, {
+        x: absoluteX,
+        y: absoluteY,
+        width: elkNode.width,
+        height: elkNode.height
+      });
+
+      // 递归处理子节点
+      if (elkNode.children && elkNode.children.length > 0) {
+        console.log(`${indent}🔽 处理 ${elkNode.children.length} 个子节点`);
+        for (const child of elkNode.children) {
+          // 关键：传递当前节点的累积偏移作为子节点的父偏移
+          processElkNode(child, offsetX, offsetY, depth + 1);
+        }
+      }
+    };
+
+    if (elkLayout.children) {
+      for (const child of elkLayout.children) {
+        processElkNode(child, 0, 0, 0);
+      }
+    }
+
+    return nodePositions;
+  }
+
   private convertEdges(edges: Edge[]): ElkEdge[] {
     return edges.map(edge => ({
       id: edge.id,
@@ -272,132 +322,17 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
     }));
   }
 
-  /**
-   * 获取默认的布局选项
-   */
-  private getDefaultLayoutOptions(options?: LayoutOptions): Record<string, any> {
-    return {
-      // ========== 核心算法 ==========
-      'elk.algorithm': 'layered',  // 层次布局，适合有向图
-      'elk.direction': 'DOWN',     // 从上到下
-
-      // ========== 间距配置 ==========
-      'elk.spacing.nodeNode': 80,  // 同层节点间距
-      'elk.layered.spacing.nodeNodeBetweenLayers': 100,  // 层间节点间距
-
-      // ✅ 新增：边与节点的间距（ELK布局节点时会为边预留空间）
-      'elk.spacing.edgeNode': 15,  // 边与节点间距
-      'elk.spacing.edgeEdge': 10,  // 边与边间距
-      'elk.layered.spacing.edgeNodeBetweenLayers': 15,  // 层间边节点间距
-      'elk.layered.spacing.edgeEdgeBetweenLayers': 10,  // 层间边边间距
-
-      // ========== 节点放置（考虑节点大小）==========
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',  // 最优节点位置
-      'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',  // 平衡对齐
-
-      // ========== 交叉最小化（考虑边的连接关系）==========
-      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',  // 减少边交叉
-      'elk.layered.crossingMinimization.semiInteractive': true,  // 改善深层嵌套
-
-      // ========== 有向图优化（考虑边的方向性）==========
-      'elk.layered.cycleBreaking.strategy': 'GREEDY',  // 处理循环引用
-      'elk.layered.considerModelOrder.strategy': 'PREFER_EDGES',  // 优先考虑边的方向
-      'elk.layered.layering.strategy': 'NETWORK_SIMPLEX',  // 最优分层
-
-      // ========== 组件分离 ==========
-      'elk.separateConnectedComponents': true,  // 分离独立的连通组件
-      'elk.spacing.componentComponent': 50,  // 组件间距
-
-      // ========== 性能与质量平衡 ==========
-      'elk.layered.thoroughness': 7,  // 布局质量（1-10，默认7）
-      'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',  // 紧凑策略
-
-      // 用户自定义选项可以覆盖默认值
-      ...(options?.elkOptions || {})
-    };
-  }
-
-  /**
-   * 获取节点的默认宽度
-   */
   private getDefaultWidth(node: Node | Group): number {
-    if (node.width && node.width > 0) {
-      return node.width;
-    }
-
-    // 如果是群组，使用群组默认尺寸
-    if (node.type === 'group') {
-      return 180;
-    }
-
-    return 120;
+    if (node.width && node.width > 0) return node.width;
+    return node.type === 'group' ? 180 : 120;
   }
 
-  /**
-   * 获取节点的默认高度
-   */
   private getDefaultHeight(node: Node | Group): number {
-    if (node.height && node.height > 0) {
-      return node.height;
-    }
-
-    // 如果是群组，使用群组默认尺寸
-    if (node.type === 'group') {
-      return 120;
-    }
-
-    return 60;
+    if (node.height && node.height > 0) return node.height;
+    return node.type === 'group' ? 120 : 60;
   }
 
-  /**
-   * 获取指定群组的所有子孙节点（包括嵌套群组内的节点）
-   */
-  private getAllDescendants(nodes: (Node | Group)[], groupId: string): (Node | Group)[] {
-    const descendants: (Node | Group)[] = [];
-
-    // 查找直接子节点
-    const directChildren = nodes.filter(n =>
-      'groupId' in n && (n as Node | Group).groupId === groupId
-    );
-
-    for (const child of directChildren) {
-      // 添加当前子节点
-      descendants.push(child);
-
-      // 如果当前子节点是一个群组，递归获取其子孙节点
-      if (child.type === 'group') {
-        const nestedDescendants = this.getAllDescendants(nodes, child.id);
-        descendants.push(...nestedDescendants);
-      }
-    }
-
-    return descendants;
-  }
-
-  /**
-   * 统计节点总数（用于调试）
-   */
-  private countNodes(elkNode: ElkNode): number {
-    let count = 1; // 计算当前节点
-    if (elkNode.children) {
-      for (const child of elkNode.children) {
-        count += this.countNodes(child);
-      }
-    }
-    return count;
-  }
-
-  /**
-   * 验证配置
-   */
   validateConfig(config: any): boolean {
     return true;
   }
-}
-
-// ELK边格式定义
-interface ElkEdge {
-  id: string;
-  sources: string[];
-  targets: string[];
 }

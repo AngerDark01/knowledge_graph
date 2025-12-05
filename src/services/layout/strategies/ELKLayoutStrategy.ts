@@ -2,7 +2,6 @@
 import { Node, Group, Edge } from '../../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTypes';
 import { ELKGraphConverter, ElkNode } from '../utils/ELKGraphConverter';
-import { ELKConfigBuilder } from '../utils/ELKConfigBuilder';
 
 // 动态导入 ELK（按需加载，减小初始包体积）
 let ELK: any;

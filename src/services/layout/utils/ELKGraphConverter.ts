@@ -2,6 +2,7 @@
 import { Node, Group, Edge, BlockEnum } from '../../../types/graph/models';
 import { LayoutOptions } from '../types/layoutTypes';
 import { LAYOUT_CONFIG } from '../../../config/graph.config';
+import { ELKConfigBuilder } from './ELKConfigBuilder';
 
 /**
  * ELK节点格式
@@ -233,59 +234,18 @@ export class ELKGraphConverter {
    * ✅ 优化：移除无用配置，确保ELK考虑节点大小和连接关系
    */
   private static getDefaultLayoutOptions(options?: LayoutOptions): Record<string, any> {
-    return {
-      // ========== 核心算法 ==========
-      'elk.algorithm': 'layered',  // 层次布局，适合有向图
-      'elk.direction': 'DOWN',     // 从上到下
-
-      // ========== 层级处理 ==========
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',  // 一次性处理所有嵌套层级
-
-      // ========== 间距配置 ==========
-      'elk.spacing.nodeNode': 80,  // 同层节点间距
-      'elk.layered.spacing.nodeNodeBetweenLayers': 100,  // 层间节点间距
-
-      // ✅ 新增：边与节点的间距（ELK布局节点时会为边预留空间）
-      'elk.spacing.edgeNode': 15,  // 边与节点间距
-      'elk.spacing.edgeEdge': 10,  // 边与边间距
-      'elk.layered.spacing.edgeNodeBetweenLayers': 15,  // 层间边节点间距
-      'elk.layered.spacing.edgeEdgeBetweenLayers': 10,  // 层间边边间距
-
-      // ========== 节点放置（考虑节点大小）==========
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',  // 最优节点位置
-      'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',  // 平衡对齐
-
-      // ========== 交叉最小化（考虑边的连接关系）==========
-      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',  // 减少边交叉
-      'elk.layered.crossingMinimization.semiInteractive': true,  // 改善深层嵌套
-
-      // ========== 有向图优化（考虑边的方向性）==========
-      'elk.layered.cycleBreaking.strategy': 'GREEDY',  // 处理循环引用
-      'elk.layered.considerModelOrder.strategy': 'PREFER_EDGES',  // 优先考虑边的方向
-      'elk.layered.layering.strategy': 'NETWORK_SIMPLEX',  // 最优分层
-
-      // ========== 组件分离 ==========
-      'elk.separateConnectedComponents': true,  // 分离独立的连通组件
-      'elk.spacing.componentComponent': 50,  // 组件间距
-
-      // ========== 性能与质量平衡 ==========
-      'elk.layered.thoroughness': 7,  // 布局质量（1-10，默认7）
-      'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',  // 紧凑策略
-
-      // ❌ 移除：edgeRouting配置（无用，边路径由ReactFlow计算）
-      // 'elk.edgeRouting': 'ORTHOGONAL',  // 不需要，因为不使用ELK的边路径
-
-      // 用户自定义选项可以覆盖默认值
-      ...(options?.elkOptions || {})
-    };
+    // 使用ELKConfigBuilder获取层次布局配置，并合并用户自定义选项
+    const baseConfig = ELKConfigBuilder.getLayeredConfig('DOWN');
+    return ELKConfigBuilder.mergeConfig(baseConfig, options?.elkOptions);
   }
 
   /**
    * 获取群组的padding配置
    */
   private static getGroupPadding(): string {
+    // 使用LAYOUT_CONFIG中定义的标题高度，确保与UI中的标题栏高度一致
     const padding = LAYOUT_CONFIG.group;
-    return `[top=${padding.paddingTop},left=${padding.paddingLeft},bottom=${padding.paddingBottom},right=${padding.paddingRight}]`;
+    return `[top=${padding.titleHeight},left=${padding.paddingLeft},bottom=${padding.paddingBottom},right=${padding.paddingRight}]`;
   }
 
   /**
