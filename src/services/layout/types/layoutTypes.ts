@@ -16,6 +16,9 @@ export interface LayoutOptions {
   // 递归布局模式
   layoutMode?: 'normal' | 'recursive';  // normal = 单层布局，recursive = 递归布局所有嵌套层级
 
+  // 特定功能参数
+  groupId?: string;  // 用于群组内部布局策略
+
   onProgress?: (progress: { currentLevel: number; totalLevels: number; processedNodes: number; totalNodes: number }) => void;
   [key: string]: any;
 }

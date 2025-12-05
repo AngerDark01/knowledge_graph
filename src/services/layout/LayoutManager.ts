@@ -5,6 +5,7 @@ import { LAYOUT_CONFIG } from '../../config/graph.config';
 
 // ELK布局策略
 import { ELKLayoutStrategy } from './strategies/ELKLayoutStrategy';
+import { ELKGroupLayoutStrategy } from './strategies/ELKGroupLayoutStrategy';
 
 export interface ILayoutManager {
   /**
@@ -61,6 +62,11 @@ export class LayoutManager implements ILayoutManager {
     const elkStrategy = new ELKLayoutStrategy();
     this.strategies.set(elkStrategy.id, elkStrategy);
     console.log(`✅ 策略已注册: ${elkStrategy.name} (${elkStrategy.id})`);
+
+    // 注册 ELK 群组布局策略
+    const elkGroupStrategy = new ELKGroupLayoutStrategy();
+    this.strategies.set(elkGroupStrategy.id, elkGroupStrategy);
+    console.log(`✅ 策略已注册: ${elkGroupStrategy.name} (${elkGroupStrategy.id})`);
   }
   
   async applyLayout(nodes: (Node | Group)[], edges: Edge[], options?: LayoutOptions): Promise<LayoutResult> {

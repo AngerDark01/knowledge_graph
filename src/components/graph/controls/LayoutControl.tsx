@@ -152,16 +152,17 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
       console.log(`📐 开始对群组 ${selectedNodeId} 内的 ${childrenCount} 个子节点进行布局`);
 
-      // 初始化布局管理器（使用 ELK 布局策略）
+      // 初始化布局管理器
       const layoutManager = new LayoutManager();
 
-      // 应用ELK布局算法（ELK会自动处理所有嵌套层级）
+      // 应用ELK群组内部布局算法（仅对选中群组的子节点进行布局）
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
         {
           animate: true,
-          strategy: 'elk-layout'
+          strategy: 'elk-group-layout', // 使用新的群组布局策略
+          groupId: selectedNodeId       // 传递目标群组ID
         }
       );
 
@@ -169,11 +170,11 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 启用布局模式以防止约束逻辑干扰
         useGraphStore.getState().setIsLayoutMode(true);
 
-        // ⭐ 修复：更新所有节点的位置和尺寸（包括目标群组）
+        // ⭐ 修复：更新群组内节点的位置（不包括目标群组本身）
         for (const [nodeId, positionData] of layoutResult.nodes) {
           const updateData: any = { position: { x: positionData.x, y: positionData.y } };
 
-          // ✅ 移除条件判断，让所有节点（包括目标群组）都能更新尺寸
+          // ✅ 如果布局结果包含尺寸信息（群组节点），也一并更新
           if ((positionData as any).width !== undefined) {
             updateData.width = (positionData as any).width;
           }
@@ -183,7 +184,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           if ((positionData as any).boundary !== undefined) {
             updateData.boundary = (positionData as any).boundary;
           }
-          
+
           // ⭐ 同时更新 style，确保 ReactFlow 渲染正确的尺寸
           if ((positionData as any).width !== undefined || (positionData as any).height !== undefined) {
             updateData.style = {
@@ -196,7 +197,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           updateNode(nodeId, updateData);
         }
 
-        // 更新边的连接点
+        // 更新边的连接点 - 这里暂时保留但可能不适用
         layoutResult.edges.forEach((edgeData, edgeId) => {
           updateEdge(edgeId, {
             sourceHandle: edgeData.sourceHandle,
@@ -204,26 +205,36 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           });
         });
 
-        console.log(`✅ 群组布局完成，更新了 ${layoutResult.nodes.size} 个节点`);
+        console.log(`✅ 群组布局完成，更新了 ${layoutResult.nodes.size} 个群组内节点`);
 
-        // 🔧 触发群组边界更新以确保父群组大小及时调整（用于嵌套群组场景）
-        console.log(`🔧 触发群组边界更新: ${selectedNodeId}`);
-        updateGroupBoundary(selectedNodeId);
+        // 🔧 不再直接触发边界更新，因为布局结果已包含正确的尺寸信息
+        // 系统会根据节点约束自动调整，避免连锁反应
 
-        // 额外的边优化
-        const finalNodes = useGraphStore.getState().getNodes();
-        const finalEdges = useGraphStore.getState().getEdges();
+        // 额外的边优化 - 仅优化群组内的边
+        const currentNodes = useGraphStore.getState().getNodes();
+        const currentEdges = useGraphStore.getState().getEdges();
+
+        // 只获取群组内的节点用于边优化
+        const groupNodes = currentNodes.filter(
+          n => 'groupId' in n && (n as any).groupId === selectedNodeId
+        );
 
         import('@/services/layout/algorithms/EdgeOptimizer')
           .then(({ EdgeOptimizer }) => {
             const edgeOptimizer = new EdgeOptimizer();
-            const optimizedEdges = edgeOptimizer.optimizeEdgeHandles(finalNodes, finalEdges);
+            const optimizedEdges = edgeOptimizer.optimizeEdgeHandles(groupNodes, currentEdges);
 
             optimizedEdges.forEach((edgeData) => {
-              updateEdge(edgeData.id, {
-                sourceHandle: edgeData.sourceHandle,
-                targetHandle: edgeData.targetHandle
-              });
+              // 只更新群组内部的边
+              if (
+                groupNodes.some(n => n.id === edgeData.source) ||
+                groupNodes.some(n => n.id === edgeData.target)
+              ) {
+                updateEdge(edgeData.id, {
+                  sourceHandle: edgeData.sourceHandle,
+                  targetHandle: edgeData.targetHandle
+                });
+              }
             });
 
             console.log(`🔄 群组布局后优化了 ${optimizedEdges.length} 条边的连接点`);
@@ -240,116 +251,11 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
       }
     } catch (error) {
       console.error("Group layout error:", error);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [nodes, edges, isProcessing, selectedNodeId, isGroupSelected, childrenCount, updateNode, updateEdge, updateGroupBoundary]);
-
-  // 🌳 递归布局处理函数 - 从最深层到顶层逐层布局所有嵌套结构
-  const handleRecursiveLayout = useCallback(async () => {
-    if (isProcessing) {
-      console.log("Layout already in progress");
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-
-      console.log(`🌳 开始递归布局，处理所有 ${nodes.length} 个节点`);
-
-      // 初始化布局管理器（使用 ELK 布局策略）
-      const layoutManager = new LayoutManager();
-
-      // 应用ELK递归布局算法（ELK默认就递归处理所有嵌套层级）
-      const layoutResult = await layoutManager.applyLayout(
-        nodes,
-        edges,
-        {
-          animate: true,
-          strategy: 'elk-layout'
-        }
-      );
-
-      if (layoutResult.success) {
-        // 启用布局模式以防止约束逻辑干扰
-        useGraphStore.getState().setIsLayoutMode(true);
-
-        // 更新节点位置和大小
-        for (const [nodeId, positionData] of layoutResult.nodes) {
-          const updateData: any = { position: { x: positionData.x, y: positionData.y } };
-
-          // 如果布局结果包含尺寸信息（群组节点），也一并更新
-          if ((positionData as any).width !== undefined) {
-            updateData.width = (positionData as any).width;
-          }
-          if ((positionData as any).height !== undefined) {
-            updateData.height = (positionData as any).height;
-          }
-          // 🔧 如果包含边界信息，也一并更新（确保群组边界及时同步）
-          if ((positionData as any).boundary !== undefined) {
-            updateData.boundary = (positionData as any).boundary;
-          }
-          
-          // ⭐ 同时更新 style，确保 ReactFlow 渲染正确的尺寸
-          if ((positionData as any).width !== undefined || (positionData as any).height !== undefined) {
-            updateData.style = {
-              width: (positionData as any).width,
-              height: (positionData as any).height
-            };
-          }
-
-          updateNode(nodeId, updateData);
-        }
-
-        // 更新边连接点
-        layoutResult.edges.forEach((edgeData, edgeId) => {
-          updateEdge(edgeId, {
-            sourceHandle: edgeData.sourceHandle,
-            targetHandle: edgeData.targetHandle
-          });
-        });
-
-        console.log(`✅ 递归布局完成，更新了 ${layoutResult.nodes.size} 个节点`);
-        console.log(`📊 统计: 耗时 ${layoutResult.stats.duration.toFixed(0)}ms, 迭代 ${layoutResult.stats.iterations} 次`);
-
-        // 🔧 触发所有群组节点的边界更新，确保父节点大小及时调整
-        // 收集所有更新了大小的群组节点
-        const updatedGroupIds: string[] = [];
-        for (const [nodeId, positionData] of layoutResult.nodes) {
-          if ((positionData as any).width !== undefined || (positionData as any).height !== undefined) {
-            // 检查这个节点是否是群组
-            const node = nodes.find(n => n.id === nodeId);
-            if (node && node.type === 'group') {
-              updatedGroupIds.push(nodeId);
-            }
-          }
-        }
-
-        // 对每个更新的群组触发边界更新（延迟触发以确保 store 已完全更新）
-        if (updatedGroupIds.length > 0) {
-          console.log(`🔧 触发 ${updatedGroupIds.length} 个群组的边界更新:`, updatedGroupIds);
-          setTimeout(() => {
-            updatedGroupIds.forEach(groupId => {
-              updateGroupBoundary(groupId);
-            });
-          }, 100); // 延迟 100ms 确保所有 updateNode 调用都已完成
-        }
-
-        // 清除选中状态
-        setSelectedNodeId(null);
-
-        useGraphStore.getState().setIsLayoutMode(false);
-      } else {
-        console.error("Recursive layout failed:", layoutResult.errors);
-        useGraphStore.getState().setIsLayoutMode(false);
-      }
-    } catch (error) {
-      console.error("Recursive layout error:", error);
       useGraphStore.getState().setIsLayoutMode(false);
     } finally {
       setIsProcessing(false);
     }
-  }, [nodes, edges, isProcessing, updateNode, updateEdge, setSelectedNodeId, updateGroupBoundary]);
+  }, [nodes, edges, isProcessing, selectedNodeId, isGroupSelected, childrenCount, updateNode, updateEdge, updateGroupBoundary]);
 
   return (
     <div className={`flex flex-col gap-2 w-full ${className}`}>
@@ -427,46 +333,6 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           )}
         </Button>
       )}
-
-      {/* 🌳 递归布局按钮 */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleRecursiveLayout}
-        disabled={isProcessing}
-        className="w-full flex items-center justify-center gap-2 border-green-300 text-green-600 hover:bg-green-50"
-        title="递归布局所有嵌套群组（从最深层开始）"
-      >
-        {isProcessing ? (
-          <>
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            递归布局中...
-          </>
-        ) : (
-          <>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            递归布局全部
-          </>
-        )}
-      </Button>
 
       {/* 配置按钮 - 暂时未实现功能 */}
       <Button

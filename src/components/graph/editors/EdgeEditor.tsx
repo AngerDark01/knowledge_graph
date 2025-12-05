@@ -10,19 +10,20 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
   const { getEdgeById, updateEdge } = useGraphStore();
   const [edge, setEdge] = useState<Edge | null>(null);
   const [formData, setFormData] = useState<any>({});
-  
+
   useEffect(() => {
     const currentEdge = getEdgeById(edgeId);
     if (currentEdge) {
       setEdge(currentEdge);
       setFormData({
-        label: currentEdge.label || '',
+        label: currentEdge.label || currentEdge.data?.customProperties?.relationship || '',
         color: currentEdge.data?.color || '#000000',
         strokeWidth: currentEdge.data?.strokeWidth || 1,
         strokeDasharray: currentEdge.data?.strokeDasharray || '',
         weight: currentEdge.data?.weight || 1,
         strength: currentEdge.data?.strength || 1,
         direction: currentEdge.data?.direction || 'unidirectional',
+        customProperties: currentEdge.data?.customProperties || {}
       });
     }
   }, [edgeId, getEdgeById]);
@@ -41,6 +42,11 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
           weight: formData.weight,
           strength: formData.strength,
           direction: formData.direction,
+          customProperties: {
+            ...edge.data?.customProperties,
+            relationship: formData.label, // 将关系标签保存到customProperties中
+            ...formData.customProperties
+          }
         },
       });
     }
@@ -89,15 +95,15 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">边编辑器</h3>
-      
+
       <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium mb-1">标签</label>
+          <label className="block text-sm font-medium mb-1">关系标签</label>
           <textarea
             value={formData.label}
             onChange={(e) => handleInputChange('label', e.target.value)}
             className="w-full p-2 border border-gray-300 rounded"
-            placeholder="关系标签"
+            placeholder="输入关系标签，如: 是...的...、包含、属于等"
             rows={2}
           />
         </div>
@@ -195,7 +201,7 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
             ))}
           </div>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium mb-1">自定义属性</label>
           <textarea

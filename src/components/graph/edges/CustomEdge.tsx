@@ -42,12 +42,12 @@ const CustomEdge = ({
   // 根据权重和强度调整边的样式
   const weight = data?.weight ?? 1;
   const strength = data?.strength ?? 1;
-  
+
   // 基础线宽，跨群关系默认为2px，群内关系默认为1px
   const baseStrokeWidth = isCrossGroup ? 2 : 1;
   // 根据权重调整线宽，权重越大线越宽
   const calculatedStrokeWidth = baseStrokeWidth * (1 + (weight - 1) * 0.2);
-  
+
   // 根据强度调整颜色透明度，强度越高越不透明
   const baseColor = data?.color || (isCrossGroup ? '#FFA500' : '#000');
   let strokeColor = baseColor;
@@ -71,7 +71,7 @@ const CustomEdge = ({
   // ✅ 修复：如果direction未定义，默认为unidirectional（单向）
   const direction = data?.direction || 'unidirectional';
 
-  let edgeMarkerEnd: string | { type: MarkerType; color: string; width: number; height: number } | undefined = markerEnd;
+  let edgeMarkerEnd: { type: MarkerType; color: string; width: number; height: number } | undefined;
   let edgeMarkerStart: { type: MarkerType; color: string; width: number; height: number } | undefined;
 
   if (direction === 'bidirectional') {
@@ -113,31 +113,77 @@ const CustomEdge = ({
   // 确定标签背景色
   const labelBackground = isCrossGroup ? 'white' : 'rgba(255, 255, 255, 0.8)';
 
+  // 确定标签文本
+  const labelText = data?.label || (data?.customProperties?.relationship || '');
+
   return (
     <>
       <BaseEdge
         path={edgePath}
-        markerEnd={edgeMarkerEnd as any}
-        markerStart={edgeMarkerStart as any}
+        markerEnd={edgeMarkerEnd ? `url(#${id}-marker-end)` : undefined}
+        markerStart={edgeMarkerStart ? `url(#${id}-marker-start)` : undefined}
         style={edgeStyle}
       />
-      {data?.label && (
+      {/* 为边添加标记定义 */}
+      <defs>
+        {edgeMarkerEnd && (
+          <marker
+            id={`${id}-marker-end`}
+            key={`${id}-marker-end`}
+            markerWidth={edgeMarkerEnd.width}
+            markerHeight={edgeMarkerEnd.height}
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="3"
+            orient="auto"
+            markerUnits="strokeWidth"
+          >
+            <path
+              d="M0,0 L0,6 L9,3 z"
+              fill={edgeMarkerEnd.color}
+              stroke={edgeMarkerEnd.color}
+            />
+          </marker>
+        )}
+        {edgeMarkerStart && (
+          <marker
+            id={`${id}-marker-start`}
+            key={`${id}-marker-start`}
+            markerWidth={edgeMarkerStart.width}
+            markerHeight={edgeMarkerStart.height}
+            viewBox="0 0 10 10"
+            refX="1"
+            refY="3"
+            orient="auto"
+            markerUnits="strokeWidth"
+          >
+            <path
+              d="M0,3 L9,0 L9,6 z"
+              fill={edgeMarkerStart.color}
+              stroke={edgeMarkerStart.color}
+            />
+          </marker>
+        )}
+      </defs>
+      {labelText && (
         <EdgeLabelRenderer>
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
               fontSize: '12px',
-              padding: '2px 4px',
+              padding: '4px 6px',
               background: labelBackground,
               border: '1px solid #ddd',
-              borderRadius: '3px',
+              borderRadius: '6px',
               pointerEvents: 'all',
               zIndex: 3, // 确保标签在边之上，但低于节点
+              fontWeight: 'normal',
+              color: '#333',
             }}
             className="nodrag nopan"
           >
-            {data.label}
+            {labelText}
           </div>
         </EdgeLabelRenderer>
       )}
