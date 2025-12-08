@@ -3,6 +3,7 @@ import { Node, Group, Edge } from '../../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTypes';
 import { ELKGraphConverter, ElkNode } from '../utils/ELKGraphConverter';
 import { ELKConfigBuilder } from '../utils/ELKConfigBuilder';
+import { LAYOUT_CONFIG, PADDING_CONFIG } from '../../../config/layout';
 
 let ELK: any;
 
@@ -178,7 +179,7 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
       ...baseLayoutConfig,
       // 设置群组的padding（围绕内容的边距）
       // 使用与系统配置一致的值，确保与UI组件设计对齐
-      'elk.padding': '[top=70,left=20,bottom=20,right=20]', // 与PADDING_CONFIG.GROUP_PADDING.top保持一致
+      'elk.padding': `[top=${PADDING_CONFIG.GROUP_PADDING.top},left=${PADDING_CONFIG.GROUP_PADDING.left},bottom=${PADDING_CONFIG.GROUP_PADDING.bottom},right=${PADDING_CONFIG.GROUP_PADDING.right}]`,
       // 确保处理嵌套结构
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
     };
@@ -214,7 +215,7 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
           const baseLayoutConfig = ELKConfigBuilder.getLayeredConfig('DOWN');
           elkNode.layoutOptions = {
             ...baseLayoutConfig,
-            'elk.padding': '[top=70,left=20,bottom=20,right=20]', // 为嵌套群组的标题栏和其他边距预留空间
+            'elk.padding': `[top=${PADDING_CONFIG.GROUP_PADDING.top},left=${PADDING_CONFIG.GROUP_PADDING.left},bottom=${PADDING_CONFIG.GROUP_PADDING.bottom},right=${PADDING_CONFIG.GROUP_PADDING.right}]`, // 为嵌套群组的标题栏和其他边距预留空间
             'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
           };
           elkNode.children = this.convertNodesRecursive(groupChildren, allSubgraphNodes);

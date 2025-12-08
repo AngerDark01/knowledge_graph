@@ -1,16 +1,11 @@
 import { useCallback } from 'react';
 import { useReactFlow } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
-import { NODE_SIZES } from '@/config/graph.config';
+import { NODE_SIZES, PADDING_CONFIG } from '@/config/graph.config';
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 
-// 群组内边距常量 - 标题高度约40px，所以顶部需要更多空间
-const GROUP_PADDING = { 
-  top: 70,    // 增加顶部边距，避免与标题重叠
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
+// 从配置中获取群组内边距常量，确保与ELK布局和UI组件一致
+const GROUP_PADDING = PADDING_CONFIG.GROUP_PADDING;
 
 // 安全的数值验证和默认值函数
 const safeNumber = (value: any, defaultValue: number = 0): number => {

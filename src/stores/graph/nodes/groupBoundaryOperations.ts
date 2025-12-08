@@ -1,5 +1,6 @@
 import { Node, Group, BlockEnum } from '@/types/graph/models';
 import { GroupBoundaryOperationsSlice, GROUP_PADDING, NODE_VISUAL_PADDING, safePosition, safeNumber } from './types';
+import { LAYOUT_CONFIG } from '@/config/layout';
 
 // ⚡ 优化：边界计算缓存（避免重复计算相同的边界）
 interface BoundaryCache {

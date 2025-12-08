@@ -1,8 +1,9 @@
 // src/services/layout/utils/ELKGraphConverter.ts
 import { Node, Group, Edge, BlockEnum } from '../../../types/graph/models';
 import { LayoutOptions } from '../types/layoutTypes';
-import { LAYOUT_CONFIG } from '../../../config/graph.config';
+import { LAYOUT_CONFIG } from '../../../config/layout';
 import { ELKConfigBuilder } from './ELKConfigBuilder';
+import { PADDING_CONFIG } from '../../../config/layout';
 
 /**
  * ELK节点格式
@@ -243,9 +244,9 @@ export class ELKGraphConverter {
    * 获取群组的padding配置
    */
   private static getGroupPadding(): string {
-    // 使用LAYOUT_CONFIG中定义的标题高度，确保与UI中的标题栏高度一致
-    const padding = LAYOUT_CONFIG.group;
-    return `[top=${padding.titleHeight},left=${padding.paddingLeft},bottom=${padding.paddingBottom},right=${padding.paddingRight}]`;
+    // 使用PADDING_CONFIG中的配置，确保与UI中的标题栏高度一致
+    const padding = PADDING_CONFIG.GROUP_PADDING;
+    return `[top=${padding.top},left=${padding.left},bottom=${padding.bottom},right=${padding.right}]`;
   }
 
   /**

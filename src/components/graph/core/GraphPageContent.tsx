@@ -34,13 +34,13 @@ import { ZoomIndicator } from '../controls/ZoomIndicator';
 import { Toolbar } from '../controls/Toolbar';
 import { syncStoreToReactFlowNodes } from './nodeSyncUtils';
 import { EdgeOptimizer } from '@/services/layout/algorithms/EdgeOptimizer';
-import { EDGE_OPTIMIZATION_CONFIG } from '@/config/graph.config';
+import { EDGE_OPTIMIZATION_CONFIG, UI_DIMENSIONS } from '@/config/graph.config';
 
 interface GraphPageProps {
   className?: string;
 }
 
-const NODE_VISUAL_PADDING = 4;
+const NODE_VISUAL_PADDING = UI_DIMENSIONS.NODE_VISUAL_PADDING;
 
 const GraphPageContent = ({ className }: GraphPageProps) => {
   const nodeTypes = useMemo(() => ({

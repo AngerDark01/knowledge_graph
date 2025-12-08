@@ -1,15 +1,12 @@
 import { Node, Group, Edge, BlockEnum } from '@/types/graph/models';
+import { UI_DIMENSIONS } from '@/config/constants';
+import { PADDING_CONFIG } from '@/config/layout';
 
-// 群组内边距常量
-export const GROUP_PADDING = { 
-  top: 70,    // 标题栏高度 + 额外间距
-  left: 20, 
-  right: 20, 
-  bottom: 20 
-};
+// 群组内边距常量 - 从配置中导入以保证一致性
+export const GROUP_PADDING = PADDING_CONFIG.GROUP_PADDING;
 
-// 节点外框的额外空间（阴影、边框等视觉效果）
-export const NODE_VISUAL_PADDING = 4;
+// 节点外框的额外空间（阴影、边框等视觉效果） - 从配置中导入以保证一致性
+export const NODE_VISUAL_PADDING = UI_DIMENSIONS.NODE_VISUAL_PADDING;
 
 // 安全的数值验证函数
 export const safeNumber = (value: any, defaultValue: number = 0): number => {

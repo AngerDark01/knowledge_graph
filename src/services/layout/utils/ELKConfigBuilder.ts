@@ -1,9 +1,9 @@
-// src/services/layout/utils/ELKConfigBuilder.ts
-
 /**
  * ELK配置构建器
  * 职责：为不同的布局场景生成ELK配置选项
  */
+import { ELK_ALGORITHM_CONFIG } from '../../../config/elk-algorithm';
+
 export class ELKConfigBuilder {
   /**
    * 获取层次布局配置（推荐用于有向图）
@@ -15,33 +15,33 @@ export class ELKConfigBuilder {
    */
   static getLayeredConfig(direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' = 'DOWN'): Record<string, any> {
     return {
-      'elk.algorithm': 'layered',
+      'elk.algorithm': ELK_ALGORITHM_CONFIG.common.algorithm,
       'elk.direction': direction,
 
       // 间距配置
-      'elk.spacing.nodeNode': 80,  // 同层节点间距
-      'elk.layered.spacing.nodeNodeBetweenLayers': 100,  // 层间距
-      'elk.spacing.edgeNode': 40,  // 边与节点的间距
-      'elk.spacing.edgeEdge': 20,  // 边与边的间距
+      'elk.spacing.nodeNode': ELK_ALGORITHM_CONFIG.layered.spacing.nodeNode,
+      'elk.layered.spacing.nodeNodeBetweenLayers': ELK_ALGORITHM_CONFIG.layered.spacing.nodeNodeBetweenLayers,
+      'elk.spacing.edgeNode': ELK_ALGORITHM_CONFIG.layered.spacing.edgeNode,
+      'elk.spacing.edgeEdge': ELK_ALGORITHM_CONFIG.layered.spacing.edgeEdge,
 
       // 层次处理
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',  // 一次性处理所有嵌套层级
+      'elk.hierarchyHandling': ELK_ALGORITHM_CONFIG.common.hierarchyHandling,
 
       // 节点放置策略
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',  // 最优化节点位置
+      'elk.layered.nodePlacement.strategy': ELK_ALGORITHM_CONFIG.layered.nodePlacement.strategy,
 
       // 交叉最小化
-      'elk.layered.crossingMinimization.semiInteractive': true,  // 改善深层嵌套的边
-      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.layered.crossingMinimization.semiInteractive': ELK_ALGORITHM_CONFIG.layered.crossingMinimization.semiInteractive,
+      'elk.layered.crossingMinimization.strategy': ELK_ALGORITHM_CONFIG.layered.crossingMinimization.strategy,
 
       // 边路由（可选）
-      // 'elk.edgeRouting': 'ORTHOGONAL',  // 正交路由（直角转弯）
+      // 'elk.edgeRouting': ELK_ALGORITHM_CONFIG.common.edgeRouting,
 
       // 分层策略
-      'elk.layered.layering.strategy': 'NETWORK_SIMPLEX',  // 最优分层
+      'elk.layered.layering.strategy': ELK_ALGORITHM_CONFIG.layered.layering.strategy,
 
       // 周期打破（处理循环引用）
-      'elk.layered.cycleBreaking.strategy': 'GREEDY'
+      'elk.layered.cycleBreaking.strategy': ELK_ALGORITHM_CONFIG.layered.cycleBreaking.strategy
     };
   }
 
@@ -58,15 +58,15 @@ export class ELKConfigBuilder {
       'elk.algorithm': 'force',
 
       // 力导向参数
-      'elk.force.repulsion': 100,  // 排斥力
-      'elk.force.temperature': 0.5,  // 温度（影响收敛速度）
-      'elk.force.iterations': 300,  // 迭代次数
+      'elk.force.repulsion': ELK_ALGORITHM_CONFIG.force.repulsion,
+      'elk.force.temperature': ELK_ALGORITHM_CONFIG.force.temperature,
+      'elk.force.iterations': ELK_ALGORITHM_CONFIG.force.iterations,
 
       // 间距
-      'elk.spacing.nodeNode': 80,
+      'elk.spacing.nodeNode': ELK_ALGORITHM_CONFIG.force.spacing.nodeNode,
 
       // 层次处理
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+      'elk.hierarchyHandling': ELK_ALGORITHM_CONFIG.common.hierarchyHandling
     };
   }
 
@@ -83,14 +83,14 @@ export class ELKConfigBuilder {
       'elk.algorithm': 'stress',
 
       // 压力参数
-      'elk.stress.desiredEdgeLength': 100,  // 期望的边长度
-      'elk.stress.epsilon': 0.0001,  // 收敛阈值
+      'elk.stress.desiredEdgeLength': ELK_ALGORITHM_CONFIG.stress.desiredEdgeLength,
+      'elk.stress.epsilon': ELK_ALGORITHM_CONFIG.stress.epsilon,
 
       // 间距
-      'elk.spacing.nodeNode': 80,
+      'elk.spacing.nodeNode': ELK_ALGORITHM_CONFIG.stress.spacing.nodeNode,
 
       // 层次处理
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+      'elk.hierarchyHandling': ELK_ALGORITHM_CONFIG.common.hierarchyHandling
     };
   }
 
@@ -109,11 +109,11 @@ export class ELKConfigBuilder {
       'elk.direction': direction,
 
       // 间距
-      'elk.spacing.nodeNode': 60,
-      'elk.mrtree.searchOrder': 'DFS',  // 深度优先搜索
+      'elk.spacing.nodeNode': ELK_ALGORITHM_CONFIG.tree.spacing.nodeNode,
+      'elk.mrtree.searchOrder': ELK_ALGORITHM_CONFIG.tree.searchOrder,
 
       // 层次处理
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+      'elk.hierarchyHandling': ELK_ALGORITHM_CONFIG.common.hierarchyHandling
     };
   }
 
@@ -130,13 +130,13 @@ export class ELKConfigBuilder {
       'elk.algorithm': 'radial',
 
       // 径向参数
-      'elk.radial.radius': 200,  // 半径
+      'elk.radial.radius': ELK_ALGORITHM_CONFIG.radial.radius,
 
       // 间距
-      'elk.spacing.nodeNode': 80,
+      'elk.spacing.nodeNode': ELK_ALGORITHM_CONFIG.radial.spacing.nodeNode,
 
       // 层次处理
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+      'elk.hierarchyHandling': ELK_ALGORITHM_CONFIG.common.hierarchyHandling
     };
   }
 
@@ -145,20 +145,20 @@ export class ELKConfigBuilder {
    */
   static getCompactConfig(): Record<string, any> {
     return {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'DOWN',
+      'elk.algorithm': ELK_ALGORITHM_CONFIG.common.algorithm,
+      'elk.direction': ELK_ALGORITHM_CONFIG.common.direction,
 
       // 紧凑间距
-      'elk.spacing.nodeNode': 40,  // 减小间距
-      'elk.layered.spacing.nodeNodeBetweenLayers': 60,
-      'elk.spacing.edgeNode': 20,
+      'elk.spacing.nodeNode': ELK_ALGORITHM_CONFIG.compact.spacing.nodeNode,
+      'elk.layered.spacing.nodeNodeBetweenLayers': ELK_ALGORITHM_CONFIG.compact.spacing.nodeNodeBetweenLayers,
+      'elk.spacing.edgeNode': ELK_ALGORITHM_CONFIG.compact.spacing.edgeNode,
 
       // 紧凑模式
-      'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-      'elk.layered.compaction.connectedComponents': true,
+      'elk.layered.compaction.postCompaction.strategy': ELK_ALGORITHM_CONFIG.common.compaction.postCompactionStrategy,
+      'elk.layered.compaction.connectedComponents': ELK_ALGORITHM_CONFIG.common.compaction.connectedComponents,
 
       // 层次处理
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+      'elk.hierarchyHandling': ELK_ALGORITHM_CONFIG.common.hierarchyHandling,
 
       // 节点放置
       'elk.layered.nodePlacement.strategy': 'SIMPLE'
@@ -170,17 +170,17 @@ export class ELKConfigBuilder {
    */
   static getSpacingConfig(): Record<string, any> {
     return {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'DOWN',
+      'elk.algorithm': ELK_ALGORITHM_CONFIG.common.algorithm,
+      'elk.direction': ELK_ALGORITHM_CONFIG.common.direction,
 
       // 增大间距
-      'elk.spacing.nodeNode': 120,
-      'elk.layered.spacing.nodeNodeBetweenLayers': 150,
-      'elk.spacing.edgeNode': 60,
-      'elk.spacing.edgeEdge': 30,
+      'elk.spacing.nodeNode': ELK_ALGORITHM_CONFIG.spacious.spacing.nodeNode,
+      'elk.layered.spacing.nodeNodeBetweenLayers': ELK_ALGORITHM_CONFIG.spacious.spacing.nodeNodeBetweenLayers,
+      'elk.spacing.edgeNode': ELK_ALGORITHM_CONFIG.spacious.spacing.edgeNode,
+      'elk.spacing.edgeEdge': ELK_ALGORITHM_CONFIG.spacious.spacing.edgeEdge,
 
       // 层次处理
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+      'elk.hierarchyHandling': ELK_ALGORITHM_CONFIG.common.hierarchyHandling,
 
       // 节点放置
       'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX'
