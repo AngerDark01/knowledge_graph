@@ -101,11 +101,25 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
       // ✅ 正确的坐标转换
       const nodePositions = this.extractLayoutResults(elkLayout, targetGroup);
 
+      // 🔧 修复：如果ELK返回了目标群组自身的尺寸信息（在某些ELK算法中），也应包含在结果中
+      // 查找布局结果中是否有目标群组自身的尺寸信息
+      const targetGroupLayoutResult = this.findTargetGroupLayoutResult(elkLayout, targetGroupId);
+
+      // 将目标群组的尺寸更新也包含在返回结果中
+      if (targetGroupLayoutResult) {
+        nodePositions.set(targetGroupId, {
+          x: targetGroup.position.x,
+          y: targetGroup.position.y,
+          width: targetGroupLayoutResult.width,
+          height: targetGroupLayoutResult.height
+        });
+      }
+
       const endTime = performance.now();
       const totalDuration = endTime - startTime;
 
       console.log(`✅ ELK 群组内部布局完成！`);
-      console.log(`   • 更新了 ${nodePositions.size} 个节点位置`);
+      console.log(`   • 更新了 ${nodePositions.size} 个节点位置（含自身边界）`);
       console.log(`   • 总耗时: ${totalDuration.toFixed(0)}ms`);
 
       return {
@@ -173,15 +187,15 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
       (node as any).groupId === targetGroup.id
     );
 
-    // 配置布局选项，包含群组的padding设置
+    // 使用ELKConfigBuilder获取基础配置，确保与ELKLayoutStrategy一致
     const baseLayoutConfig = ELKConfigBuilder.getLayeredConfig('DOWN');
     const layoutOptions = {
       ...baseLayoutConfig,
-      // 设置群组的padding（围绕内容的边距）
-      // 使用与系统配置一致的值，确保与UI组件设计对齐
-      'elk.padding': `[top=${PADDING_CONFIG.GROUP_PADDING.top},left=${PADDING_CONFIG.GROUP_PADDING.left},bottom=${PADDING_CONFIG.GROUP_PADDING.bottom},right=${PADDING_CONFIG.GROUP_PADDING.right}]`,
       // 确保处理嵌套结构
-      'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+      // 应用群组的padding设置，与系统配置一致
+      'elk.padding': `[top=${PADDING_CONFIG.GROUP_PADDING.top},left=${PADDING_CONFIG.GROUP_PADDING.left},bottom=${PADDING_CONFIG.GROUP_PADDING.bottom},right=${PADDING_CONFIG.GROUP_PADDING.right}]`,
+      ...options?.elkOptions  // 合并用户选项
     };
 
     return {
@@ -326,6 +340,45 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
   private getDefaultWidth(node: Node | Group): number {
     if (node.width && node.width > 0) return node.width;
     return node.type === 'group' ? 180 : 120;
+  }
+
+  /**
+   * 查找目标群组在ELK布局结果中的尺寸信息
+   * @param elkLayout ELK 布局结果
+   * @param targetGroupId 目标群组ID
+   * @returns 如果找到，返回包含尺寸信息的对象；否则返回 null
+   */
+  private findTargetGroupLayoutResult(elkLayout: ElkNode, targetGroupId: string): { width?: number; height?: number } | null {
+    // 检查根节点是否是我们寻找的目标群组
+    if (elkLayout.id === targetGroupId) {
+      return {
+        width: elkLayout.width,
+        height: elkLayout.height
+      };
+    }
+
+    // 递归检查子节点
+    const findInChildren = (node: ElkNode): { width?: number; height?: number } | null => {
+      if (node.id === targetGroupId) {
+        return {
+          width: node.width,
+          height: node.height
+        };
+      }
+
+      if (node.children) {
+        for (const child of node.children) {
+          const result = findInChildren(child);
+          if (result) {
+            return result;
+          }
+        }
+      }
+
+      return null;
+    };
+
+    return findInChildren(elkLayout);
   }
 
   private getDefaultHeight(node: Node | Group): number {

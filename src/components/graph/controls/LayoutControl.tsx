@@ -172,7 +172,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 启用布局模式以防止约束逻辑干扰
         useGraphStore.getState().setIsLayoutMode(true);
 
-        // ⭐ 修复：更新群组内节点的位置（不包括目标群组本身）
+        // ⭐ 修复：更新群组内节点的位置（包括目标群组自身）
         for (const [nodeId, positionData] of layoutResult.nodes) {
           const updateData: any = { position: { x: positionData.x, y: positionData.y } };
 
@@ -197,6 +197,11 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
           console.log(`🔧 更新节点 ${nodeId}:`, updateData);
           updateNode(nodeId, updateData);
+
+          // 🔧 如果更新的是目标群组自身，需要在后面更新其边界
+          if (nodeId === selectedNodeId) {
+            console.log(`🔧 目标群组尺寸已更新，准备更新其边界: ${nodeId}`);
+          }
         }
 
         // 更新边的连接点 - 这里暂时保留但可能不适用
@@ -209,8 +214,10 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
         console.log(`✅ 群组布局完成，更新了 ${layoutResult.nodes.size} 个群组内节点`);
 
-        // 🔧 不再直接触发边界更新，因为布局结果已包含正确的尺寸信息
-        // 系统会根据节点约束自动调整，避免连锁反应
+        // 🔧 群组内部布局完成后，需要正确处理所选群组的边界
+        console.log(`🔧 更新目标群组边界: ${selectedNodeId}`);
+        // 确保选中的群组（目标群组）的边界被更新
+        updateGroupBoundary(selectedNodeId);
 
         // 额外的边优化 - 仅优化群组内的边
         const currentNodes = useGraphStore.getState().getNodes();
