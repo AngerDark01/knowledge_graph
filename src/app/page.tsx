@@ -29,8 +29,51 @@ export default function Home() {
   const setUser = useWorkspaceStore((state) => state.setUser);
 
   useEffect(() => {
-    // 初始化工作空间（使用默认数据）
-    // TODO: 在阶段7将从文件加载数据
+    // 初始化工作空间
+    const initWorkspace = async () => {
+      try {
+        console.log('🔧 正在加载工作空间...');
+
+        // 尝试从文件加载工作空间数据
+        const response = await fetch('/api/workspace/load');
+
+        if (response.ok) {
+          const data = await response.json();
+          const { workspace } = data;
+
+          console.log('📂 从文件加载工作空间:', workspace);
+
+          // 设置用户
+          setUser({
+            id: workspace.userId,
+            name: '默认用户',
+            createdAt: new Date(),
+          });
+
+          // 初始化工作空间
+          initializeWorkspace(
+            workspace.canvases,
+            workspace.canvasTree,
+            workspace.currentCanvasId
+          );
+
+          // 加载当前画布数据到 graphStore
+          const { loadCanvasData } = await import('@/utils/workspace/canvasSync');
+          loadCanvasData(workspace.currentCanvasId);
+
+          console.log('✅ 工作空间加载成功');
+        } else {
+          // 文件不存在或加载失败，使用默认数据
+          console.log('📝 使用默认工作空间');
+          initDefaultWorkspace();
+        }
+      } catch (error) {
+        console.error('❌ 加载工作空间失败，使用默认数据:', error);
+        initDefaultWorkspace();
+      }
+    };
+
+    // 初始化默认工作空间（降级方案）
     const initDefaultWorkspace = () => {
       try {
         console.log('🔧 初始化默认工作空间...');
@@ -52,13 +95,13 @@ export default function Home() {
           DEFAULT_CANVAS.id
         );
 
-        console.log('✅ 工作空间初始化完成');
+        console.log('✅ 默认工作空间初始化完成');
       } catch (error) {
         console.error('❌ 工作空间初始化失败:', error);
       }
     };
 
-    initDefaultWorkspace();
+    initWorkspace();
   }, [initializeWorkspace, setUser]);
 
   // 根据功能开关返回不同的布局

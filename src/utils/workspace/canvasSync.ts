@@ -84,7 +84,7 @@ export const loadCanvasData = (canvasId: string) => {
 /**
  * 切换画布
  */
-export const switchToCanvas = (targetCanvasId: string) => {
+export const switchToCanvas = async (targetCanvasId: string) => {
   const workspaceStore = useWorkspaceStore.getState();
   const currentCanvasId = workspaceStore.currentCanvasId;
 
@@ -104,6 +104,26 @@ export const switchToCanvas = (targetCanvasId: string) => {
 
   // 3. 加载目标画布数据
   loadCanvasData(targetCanvasId);
+
+  // 4. 持久化到文件
+  try {
+    const workspace = useWorkspaceStore.getState();
+    await fetch('/api/workspace/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: workspace.user?.id || 'user_0',
+        currentCanvasId: workspace.currentCanvasId,
+        canvases: workspace.canvases,
+        canvasTree: workspace.canvasTree,
+      }),
+    });
+    console.log('💾 画布切换已保存');
+  } catch (error) {
+    console.error('❌ 保存画布切换失败:', error);
+  }
 
   console.log('✅ 画布切换完成');
 };

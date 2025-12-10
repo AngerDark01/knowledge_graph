@@ -85,6 +85,11 @@ export const DeleteCanvasDialog: React.FC<DeleteCanvasDialogProps> = ({
           : `已删除"${canvasInfo?.name}"`
       );
 
+      // 持久化到文件
+      import('@/utils/workspace/persistence').then(({ persistWorkspace }) => {
+        persistWorkspace();
+      });
+
       onOpenChange(false);
     } catch (error) {
       toast.error('删除画布失败');

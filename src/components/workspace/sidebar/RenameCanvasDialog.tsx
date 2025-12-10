@@ -56,6 +56,12 @@ export const RenameCanvasDialog: React.FC<RenameCanvasDialogProps> = ({
     try {
       renameCanvas(canvasId, name.trim());
       toast.success(`画布已重命名为"${name.trim()}"`);
+
+      // 持久化到文件
+      import('@/utils/workspace/persistence').then(({ persistWorkspace }) => {
+        persistWorkspace();
+      });
+
       onOpenChange(false);
     } catch (error) {
       toast.error('重命名画布失败');

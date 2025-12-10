@@ -40,6 +40,12 @@ export const CreateCanvasDialog: React.FC<CreateCanvasDialogProps> = ({
     try {
       const newCanvas = createCanvas(name.trim(), parentId ?? undefined);
       toast.success(`画布"${name.trim()}"创建成功`);
+
+      // 持久化到文件
+      import('@/utils/workspace/persistence').then(({ persistWorkspace }) => {
+        persistWorkspace();
+      });
+
       setName('');
       onOpenChange(false);
     } catch (error) {
