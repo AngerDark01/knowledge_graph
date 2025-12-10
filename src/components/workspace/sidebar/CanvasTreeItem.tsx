@@ -11,6 +11,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CanvasContextMenu } from './CanvasContextMenu';
 
 interface CanvasTreeItemProps {
   node: CanvasTreeNode;
@@ -40,44 +41,46 @@ export const CanvasTreeItem: React.FC<CanvasTreeItemProps> = ({ node, level }) =
 
   return (
     <div>
-      <div
-        className={cn(
-          'group flex items-center px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent transition-colors',
-          isActive && 'bg-accent font-medium'
-        )}
-        style={{ paddingLeft: `${level * 16 + 8}px` }}
-        onClick={handleClick}
-      >
-        {/* 折叠按钮 */}
-        {hasChildren ? (
-          <button
-            className="mr-1 p-0.5 hover:bg-accent-foreground/10 rounded"
-            onClick={handleToggleCollapse}
-          >
-            {node.isCollapsed ? (
-              <ChevronRight className="w-3 h-3" />
-            ) : (
-              <ChevronDown className="w-3 h-3" />
-            )}
-          </button>
-        ) : (
-          <span className="w-4 mr-1" />
-        )}
-
-        {/* 图标 */}
-        {hasChildren ? (
-          node.isCollapsed ? (
-            <FolderClosed className="w-4 h-4 mr-2 text-muted-foreground" />
+      <CanvasContextMenu canvasId={node.id}>
+        <div
+          className={cn(
+            'group flex items-center px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent transition-colors',
+            isActive && 'bg-accent font-medium'
+          )}
+          style={{ paddingLeft: `${level * 16 + 8}px` }}
+          onClick={handleClick}
+        >
+          {/* 折叠按钮 */}
+          {hasChildren ? (
+            <button
+              className="mr-1 p-0.5 hover:bg-accent-foreground/10 rounded"
+              onClick={handleToggleCollapse}
+            >
+              {node.isCollapsed ? (
+                <ChevronRight className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </button>
           ) : (
-            <FolderOpen className="w-4 h-4 mr-2 text-muted-foreground" />
-          )
-        ) : (
-          <FileText className="w-4 h-4 mr-2 text-muted-foreground" />
-        )}
+            <span className="w-4 mr-1" />
+          )}
 
-        {/* 画布名称 */}
-        <span className="flex-1 truncate text-sm">{node.name}</span>
-      </div>
+          {/* 图标 */}
+          {hasChildren ? (
+            node.isCollapsed ? (
+              <FolderClosed className="w-4 h-4 mr-2 text-muted-foreground" />
+            ) : (
+              <FolderOpen className="w-4 h-4 mr-2 text-muted-foreground" />
+            )
+          ) : (
+            <FileText className="w-4 h-4 mr-2 text-muted-foreground" />
+          )}
+
+          {/* 画布名称 */}
+          <span className="flex-1 truncate text-sm">{node.name}</span>
+        </div>
+      </CanvasContextMenu>
 
       {/* 子画布 */}
       {hasChildren && !node.isCollapsed && (
