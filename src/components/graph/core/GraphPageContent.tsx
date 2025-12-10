@@ -346,32 +346,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   return (
     <div className={`flex w-full h-full ${className || ''}`}>
-      <div className="w-80 p-4 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">Knowledge Graph Editor</h2>
-        
-        <EdgeFilterControl />
-        
-        {selectedNodeId ? (
-          <NodeEditor nodeId={selectedNodeId} />
-        ) : selectedEdgeId ? (
-          <EdgeEditor edgeId={selectedEdgeId} />
-        ) : (
-          <div className="text-gray-500 text-center py-10">
-            Select a node or edge to edit its properties
-          </div>
-        )}
-        
-        <div className="space-y-4">
-          <HistoryControl />
-          <Toolbar 
-            onNodeAdd={onNodeAdd} 
-            onGroupAdd={onGroupAdd} 
-            onRecenter={onRecenter} 
-            onClear={onClear} 
-          />
-        </div>
-      </div>
-      
       <div className="flex-1 relative">
         <ReactFlow
           nodes={reactFlowNodes}
@@ -465,7 +439,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         >
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           <Controls showInteractive={false} />
-          <MiniMap 
+          <MiniMap
             nodeColor={nodeColor}
             maskColor="rgb(240, 240, 240, 0.6)"
             pannable

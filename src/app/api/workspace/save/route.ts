@@ -7,10 +7,39 @@ import { getProjectRoot } from '@/lib/utils';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const key = body.key || 'kg-editor:workspace.json';
+    console.log('接收到的请求体:', JSON.stringify(body, null, 2)); // 调试日志
 
-    // 验证数据格式
-    const validatedData = StorageDataSchema.parse(body.data);
+    // 检查 body.data 是否存在
+    if (!body || body.data === undefined || body.data === null) {
+      console.error('错误：body.data 不存在或为 undefined/null');
+      console.error('完整请求体:', body);
+      return NextResponse.json(
+        { error: '保存失败', details: '请求体中缺少 data 字段' },
+        { status: 400 }
+      );
+    }
+
+    const key = body.key || 'kg-editor:workspace.json';
+    console.log('提取的key:', key); // 调试日志
+
+    console.log('要验证的数据:', JSON.stringify(body.data, null, 2)); // 调试日志
+
+    // 验证数据格式 - 首先解析为 unknown，再逐步验证
+    const parseResult = StorageDataSchema.safeParse(body.data);
+
+    if (!parseResult.success) {
+      console.error('数据验证失败:', parseResult.error);
+      console.error('验证错误详情:', JSON.stringify(parseResult.error.format(), null, 2));
+      return NextResponse.json(
+        {
+          error: '保存失败',
+          details: JSON.stringify(parseResult.error.format(), null, 2)
+        },
+        { status: 400 }
+      );
+    }
+
+    const validatedData = parseResult.data;
 
     // 确保目录存在
     const dirPath = path.join(getProjectRoot(), 'public', 'workspace');

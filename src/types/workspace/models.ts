@@ -13,7 +13,17 @@ export const UserSchema = z.object({
   id: z.string(),
   name: z.string(),
   avatar: z.string().optional(),
-  createdAt: z.coerce.date(),
+  createdAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
 });
 
 // ========== 画布模型 ==========
@@ -50,8 +60,28 @@ const GroupSchemaForCanvas = z.object({
     maxX: z.number(),
     maxY: z.number(),
   }),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
+  updatedAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
 }).passthrough(); // 允许额外字段
 
 // Node Schema (简化版，用于嵌套验证)
@@ -60,8 +90,28 @@ const NodeSchemaForCanvas = z.object({
   type: z.literal('node'),
   position: z.object({ x: z.number(), y: z.number() }),
   title: z.string(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
+  updatedAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
 }).passthrough(); // 允许额外字段
 
 // Edge Schema (简化版)
@@ -69,8 +119,28 @@ const EdgeSchemaForCanvas = z.object({
   id: z.string(),
   source: z.string(),
   target: z.string(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
+  updatedAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
 }).passthrough();
 
 export const CanvasSchema = z.object({
@@ -88,8 +158,28 @@ export const CanvasSchema = z.object({
     zoom: z.number(),
   }),
   isCollapsed: z.boolean(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
+  updatedAt: z.union([z.coerce.date(), z.string()])
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
 });
 
 // ========== 画布树节点 ==========

@@ -3,31 +3,60 @@
 import React from 'react';
 import { ResizablePanel } from './ResizablePanel';
 import { useGraphStore } from '@/stores/graph';
+import NodeEditor from '@/components/graph/editors/NodeEditor';
+import EdgeEditor from '@/components/graph/editors/EdgeEditor';
+import EdgeFilterControl from '@/components/graph/controls/EdgeFilterControl';
+import HistoryControl from '@/components/graph/controls/HistoryControl';
+import { Toolbar } from '@/components/graph/controls/Toolbar';
+import { useNodeHandling } from '@/components/graph/core/hooks/useNodeHandling';
+import { useViewportControls } from '@/components/graph/core/hooks/useViewportControls';
 
 export const RightSidebar: React.FC = () => {
-  // 使用 optional chaining 安全访问 nodes
-  const nodes = useGraphStore((state) => state.nodes || []);
-  const selectedNodeIds = nodes.filter(n => n.selected).map(n => n.id);
+  const { onNodeAdd, onGroupAdd } = useNodeHandling();
+  const { onRecenter, onClear } = useViewportControls();
+  const selectedNodeId = useGraphStore((state) => state.selectedNodeId);
+  const selectedEdgeId = useGraphStore((state) => state.selectedEdgeId);
 
   return (
     <ResizablePanel side="right" initialWidth={320} minWidth={250} maxWidth={600}>
       <div className="flex flex-col h-full p-4 space-y-4 overflow-y-auto">
-        <div className="text-sm text-muted-foreground">
-          <h3 className="font-semibold mb-2">属性面板</h3>
-          {selectedNodeIds.length > 0 ? (
-            <div>
-              <p className="mb-2">已选中 {selectedNodeIds.length} 个节点</p>
-              <p className="text-xs">节点编辑器将在后续阶段集成</p>
-            </div>
+        {/* 标题 */}
+        <div className="text-lg font-semibold">Knowledge Graph Editor</div>
+
+        {/* 边过滤控制 */}
+        <div className="pt-2">
+          <EdgeFilterControl />
+        </div>
+
+        {/* 属性编辑器 */}
+        <div className="pt-2">
+          <h3 className="text-sm font-semibold mb-2">属性面板</h3>
+          {selectedNodeId ? (
+            <NodeEditor nodeId={selectedNodeId} />
+          ) : selectedEdgeId ? (
+            <EdgeEditor edgeId={selectedEdgeId} />
           ) : (
-            <p>请选择节点或边来编辑属性</p>
+            <div className="text-gray-500 text-center py-10">
+              Select a node or edge to edit its properties
+            </div>
           )}
         </div>
 
-        {/* 布局控制占位 */}
+        {/* 历史记录控制 */}
         <div className="pt-4 border-t border-border">
-          <h3 className="text-sm font-semibold mb-2">布局控制</h3>
-          <p className="text-xs text-muted-foreground">布局控制将在后续阶段迁移</p>
+          <h3 className="text-sm font-semibold mb-2">历史记录</h3>
+          <HistoryControl />
+        </div>
+
+        {/* 工具栏 */}
+        <div className="pt-4 border-t border-border">
+          <h3 className="text-sm font-semibold mb-2">工具栏</h3>
+          <Toolbar
+            onNodeAdd={onNodeAdd}
+            onGroupAdd={onGroupAdd}
+            onRecenter={onRecenter}
+            onClear={onClear}
+          />
         </div>
       </div>
     </ResizablePanel>

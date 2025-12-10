@@ -38,10 +38,16 @@ const persistenceMiddlewareImpl: PersistenceMiddlewareImpl = (f, options) => (se
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: workspace.user?.id || 'user_0',
-          currentCanvasId: workspace.currentCanvasId,
-          canvases: workspace.canvases,
-          canvasTree: workspace.canvasTree,
+          data: {
+            version: '1.0.0',
+            workspace: {
+              userId: workspace.user?.id || 'user_0',
+              currentCanvasId: workspace.currentCanvasId,
+              canvases: workspace.canvases,
+              canvasTree: workspace.canvasTree,
+            },
+            timestamp: new Date(),
+          },
         }),
       });
 

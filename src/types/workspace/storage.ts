@@ -20,7 +20,18 @@ export interface StorageData {
 export const StorageDataSchema = z.object({
   version: z.string(),
   workspace: WorkspaceSchema,
-  timestamp: z.coerce.date(),
+  timestamp: z.union([z.coerce.date(), z.string()]) // 支持日期和字符串格式
+    .transform((value) => {
+      if (value instanceof Date) {
+        return value;
+      }
+      // 如果是字符串，则尝试解析
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date string');
+      }
+      return date;
+    }),
 });
 
 // ========== 存储适配器接口 ==========

@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "workspace": {
     "userId": "user_0",
-    "currentCanvasId": "canvas_default",
+    "currentCanvasId": "canvas_phgOqmbD8tqcshuR9D71d",
     "canvases": [
       {
         "id": "canvas_default",
@@ -20,7 +20,532 @@
         },
         "isCollapsed": false,
         "createdAt": "2025-12-10T00:00:00.000Z",
-        "updatedAt": "2025-12-10T00:00:00.000Z"
+        "updatedAt": "2025-12-10T07:33:21.994Z"
+      },
+      {
+        "id": "canvas_cmPufElHwliyM5Ysw8yru",
+        "name": "三端",
+        "parentId": null,
+        "children": [
+          "canvas_phgOqmbD8tqcshuR9D71d"
+        ],
+        "graphData": {
+          "nodes": [
+            {
+              "id": "node_1765349707569_a53sh94u2",
+              "type": "group",
+              "position": {
+                "x": 533.6341312150537,
+                "y": 81.73718331752056
+              },
+              "title": "Node 1",
+              "collapsed": false,
+              "nodeIds": [],
+              "boundary": {
+                "minX": 533.6341312150537,
+                "minY": 81.73718331752056,
+                "maxX": 1107.6341312150537,
+                "maxY": 902.7371833175206
+              },
+              "createdAt": "2025-12-10T06:55:07.569Z",
+              "updatedAt": "2025-12-10T07:33:37.305Z",
+              "data": {
+                "title": "Node 1",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "Double click to edit",
+              "width": 574,
+              "height": 821,
+              "style": {
+                "width": 574,
+                "height": 821
+              },
+              "convertedFrom": "node",
+              "isConverted": true
+            },
+            {
+              "id": "node_1765349755824_l31jv99g8",
+              "type": "node",
+              "position": {
+                "x": 12,
+                "y": 392
+              },
+              "title": "Node 2",
+              "createdAt": "2025-12-10T06:55:55.824Z",
+              "updatedAt": "2025-12-10T07:33:27.513Z",
+              "data": {
+                "title": "Node 2",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "Double click to edit",
+              "width": 350,
+              "height": 280,
+              "style": {
+                "width": 350,
+                "height": 280
+              }
+            }
+          ],
+          "edges": [
+            {
+              "id": "edge_1765349769842",
+              "source": "node_1765349707569_a53sh94u2",
+              "target": "node_1765349755824_l31jv99g8",
+              "createdAt": "2025-12-10T06:56:09.842Z",
+              "updatedAt": "2025-12-10T07:33:34.945Z",
+              "sourceHandle": "left",
+              "targetHandle": "right",
+              "data": {
+                "isCrossGroup": false,
+                "strokeWidth": 1,
+                "direction": "unidirectional"
+              }
+            }
+          ]
+        },
+        "viewportState": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "isCollapsed": false,
+        "createdAt": "2025-12-10T06:55:01.064Z",
+        "updatedAt": "2025-12-10T07:33:37.370Z"
+      },
+      {
+        "id": "canvas_phgOqmbD8tqcshuR9D71d",
+        "name": "heihei",
+        "parentId": "canvas_cmPufElHwliyM5Ysw8yru",
+        "children": [],
+        "graphData": {
+          "nodes": [
+            {
+              "id": "group_1765351637258_0y8ycmy65",
+              "type": "group",
+              "position": {
+                "x": 187,
+                "y": 12
+              },
+              "title": "Group 1",
+              "collapsed": false,
+              "nodeIds": [
+                "group_1765351649871_t31ztt6up",
+                "node_1765351675341_uygsmxbkw"
+              ],
+              "boundary": {
+                "minX": 187,
+                "minY": 12,
+                "maxX": 987,
+                "maxY": 472
+              },
+              "createdAt": "2025-12-10T07:27:17.258Z",
+              "updatedAt": "2025-12-10T07:37:08.634Z",
+              "data": {
+                "title": "Group 1",
+                "content": "Select this group and click \"Add Node/Group\" to add inside"
+              },
+              "content": "Select this group and click \"Add Node/Group\" to add inside",
+              "width": 800,
+              "height": 460,
+              "style": {
+                "width": 800,
+                "height": 460
+              }
+            },
+            {
+              "id": "group_1765351649871_t31ztt6up",
+              "type": "group",
+              "position": {
+                "x": 207,
+                "y": 82
+              },
+              "title": "Group 2",
+              "collapsed": false,
+              "nodeIds": [
+                "node_1765351651562_8e2bq5yjn"
+              ],
+              "boundary": {
+                "minX": 207,
+                "minY": 82,
+                "maxX": 597,
+                "maxY": 452
+              },
+              "createdAt": "2025-12-10T07:27:29.871Z",
+              "updatedAt": "2025-12-10T07:37:08.634Z",
+              "data": {
+                "title": "Group 2",
+                "content": "Nested group - add nodes or groups inside"
+              },
+              "content": "Nested group - add nodes or groups inside",
+              "width": 390,
+              "height": 370,
+              "groupId": "group_1765351637258_0y8ycmy65",
+              "style": {
+                "width": 390,
+                "height": 370
+              }
+            },
+            {
+              "id": "node_1765351651562_8e2bq5yjn",
+              "type": "node",
+              "position": {
+                "x": 227,
+                "y": 152
+              },
+              "title": "Node 1",
+              "createdAt": "2025-12-10T07:27:31.562Z",
+              "updatedAt": "2025-12-10T07:37:08.562Z",
+              "data": {
+                "title": "Node 1",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "Double click to edit",
+              "width": 350,
+              "height": 280,
+              "groupId": "group_1765351649871_t31ztt6up",
+              "style": {
+                "width": 350,
+                "height": 280
+              }
+            },
+            {
+              "id": "group_1765351654166_yxlgvhdg7",
+              "type": "group",
+              "position": {
+                "x": -502.030690130614,
+                "y": 521.2610014332699
+              },
+              "title": "Group 3",
+              "collapsed": false,
+              "nodeIds": [
+                "node_1765351655392_nqtllnnt0"
+              ],
+              "boundary": {
+                "minX": 392,
+                "minY": 962,
+                "maxX": 782,
+                "maxY": 1332
+              },
+              "createdAt": "2025-12-10T07:27:34.166Z",
+              "updatedAt": "2025-12-10T07:37:38.237Z",
+              "data": {
+                "title": "Group 3",
+                "content": "Select this group and click \"Add Node/Group\" to add inside"
+              },
+              "content": "Select this group and click \"Add Node/Group\" to add inside",
+              "width": 390,
+              "height": 370,
+              "style": {
+                "width": 390,
+                "height": 370
+              }
+            },
+            {
+              "id": "node_1765351655392_nqtllnnt0",
+              "type": "node",
+              "position": {
+                "x": -482.030690130614,
+                "y": 591.2610014332699
+              },
+              "title": "Node 2",
+              "createdAt": "2025-12-10T07:27:35.392Z",
+              "updatedAt": "2025-12-10T07:37:38.237Z",
+              "data": {
+                "title": "Node 2",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "Double click to edit",
+              "width": 350,
+              "height": 280,
+              "groupId": "group_1765351654166_yxlgvhdg7",
+              "style": {
+                "width": 350,
+                "height": 280
+              }
+            },
+            {
+              "id": "group_1765351656736_ix1whc73r",
+              "type": "group",
+              "position": {
+                "x": 417,
+                "y": 572
+              },
+              "title": "Group 4",
+              "collapsed": false,
+              "nodeIds": [
+                "group_1765351690361_z2aui7m6s"
+              ],
+              "boundary": {
+                "minX": 417,
+                "minY": 572,
+                "maxX": 757,
+                "maxY": 862
+              },
+              "createdAt": "2025-12-10T07:27:36.736Z",
+              "updatedAt": "2025-12-10T07:37:49.045Z",
+              "data": {
+                "title": "Group 4",
+                "content": "Select this group and click \"Add Node/Group\" to add inside"
+              },
+              "content": "Select this group and click \"Add Node/Group\" to add inside",
+              "width": 340,
+              "height": 290,
+              "style": {
+                "width": 340,
+                "height": 290
+              }
+            },
+            {
+              "id": "node_1765351675341_uygsmxbkw",
+              "type": "node",
+              "position": {
+                "x": 617,
+                "y": 127
+              },
+              "title": "Node 3",
+              "createdAt": "2025-12-10T07:27:55.341Z",
+              "updatedAt": "2025-12-10T07:37:08.562Z",
+              "data": {
+                "title": "Node 3",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "Double click to edit",
+              "width": 350,
+              "height": 280,
+              "groupId": "group_1765351637258_0y8ycmy65",
+              "style": {
+                "width": 350,
+                "height": 280
+              }
+            },
+            {
+              "id": "group_1765351679425_ysbj363ts",
+              "type": "group",
+              "position": {
+                "x": 862,
+                "y": 962
+              },
+              "title": "Group 5",
+              "collapsed": false,
+              "nodeIds": [],
+              "boundary": {
+                "minX": 862,
+                "minY": 962,
+                "maxX": 1162,
+                "maxY": 1162
+              },
+              "createdAt": "2025-12-10T07:27:59.425Z",
+              "updatedAt": "2025-12-10T07:37:08.563Z",
+              "data": {
+                "title": "Group 5",
+                "content": "Select this group and click \"Add Node/Group\" to add inside"
+              },
+              "content": "Select this group and click \"Add Node/Group\" to add inside",
+              "width": 300,
+              "height": 200,
+              "style": {
+                "width": 300,
+                "height": 200
+              }
+            },
+            {
+              "id": "group_1765351690361_z2aui7m6s",
+              "type": "group",
+              "position": {
+                "x": 437,
+                "y": 642
+              },
+              "title": "Group 6",
+              "collapsed": false,
+              "nodeIds": [],
+              "boundary": {
+                "minX": 437,
+                "minY": 642,
+                "maxX": 737,
+                "maxY": 842
+              },
+              "createdAt": "2025-12-10T07:28:10.361Z",
+              "updatedAt": "2025-12-10T07:37:49.045Z",
+              "data": {
+                "title": "Group 6",
+                "content": "Nested group - add nodes or groups inside"
+              },
+              "content": "Nested group - add nodes or groups inside",
+              "width": 300,
+              "height": 200,
+              "groupId": "group_1765351656736_ix1whc73r",
+              "style": {
+                "width": 300,
+                "height": 200
+              }
+            },
+            {
+              "id": "group_1765351692231_y3otquwo8",
+              "type": "group",
+              "position": {
+                "x": -464.03560798065917,
+                "y": 1076.6438696036464
+              },
+              "title": "Group 7",
+              "collapsed": false,
+              "nodeIds": [],
+              "boundary": {
+                "minX": 12,
+                "minY": 962,
+                "maxX": 312,
+                "maxY": 1162
+              },
+              "createdAt": "2025-12-10T07:28:12.231Z",
+              "updatedAt": "2025-12-10T07:37:44.229Z",
+              "data": {
+                "title": "Group 7",
+                "content": "Select this group and click \"Add Node/Group\" to add inside"
+              },
+              "content": "Select this group and click \"Add Node/Group\" to add inside",
+              "width": 300,
+              "height": 200,
+              "style": {
+                "width": 300,
+                "height": 200
+              },
+              "convertedFrom": "group",
+              "isConverted": true,
+              "savedChildren": [],
+              "savedEdges": [
+                {
+                  "id": "edge_1765351697672",
+                  "source": "group_1765351656736_ix1whc73r",
+                  "target": "group_1765351692231_y3otquwo8",
+                  "sourceHandle": "left",
+                  "targetHandle": "right",
+                  "createdAt": "2025-12-10T07:28:17.672Z",
+                  "updatedAt": "2025-12-10T07:28:20.190Z",
+                  "data": {
+                    "isCrossGroup": false,
+                    "strokeWidth": 1,
+                    "direction": "unidirectional"
+                  }
+                }
+              ],
+              "originalPosition": {
+                "x": 12,
+                "y": 962
+              },
+              "originalSize": {
+                "width": 300,
+                "height": 200
+              }
+            },
+            {
+              "id": "node_1765352232688_8fl6suxwb",
+              "type": "node",
+              "position": {
+                "x": 274.6841260870615,
+                "y": 1357.49732116639
+              },
+              "title": "Node 4",
+              "createdAt": "2025-12-10T07:37:12.688Z",
+              "updatedAt": "2025-12-10T07:37:54.933Z",
+              "data": {
+                "title": "Node 4",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "Double click to edit",
+              "width": 350,
+              "height": 280,
+              "style": {
+                "width": 350,
+                "height": 280
+              }
+            }
+          ],
+          "edges": [
+            {
+              "id": "edge_1765351662481",
+              "source": "group_1765351637258_0y8ycmy65",
+              "target": "group_1765351656736_ix1whc73r",
+              "createdAt": "2025-12-10T07:27:42.481Z",
+              "updatedAt": "2025-12-10T07:37:49.145Z",
+              "sourceHandle": "bottom",
+              "targetHandle": "top",
+              "data": {
+                "isCrossGroup": false,
+                "strokeWidth": 1,
+                "direction": "unidirectional"
+              }
+            },
+            {
+              "id": "edge_1765351664704",
+              "source": "group_1765351656736_ix1whc73r",
+              "target": "group_1765351654166_yxlgvhdg7",
+              "createdAt": "2025-12-10T07:27:44.704Z",
+              "updatedAt": "2025-12-10T07:37:49.145Z",
+              "sourceHandle": "left",
+              "targetHandle": "right",
+              "data": {
+                "isCrossGroup": false,
+                "strokeWidth": 1,
+                "direction": "unidirectional"
+              }
+            },
+            {
+              "id": "edge_1765351688935",
+              "source": "group_1765351656736_ix1whc73r",
+              "target": "group_1765351679425_ysbj363ts",
+              "createdAt": "2025-12-10T07:28:08.935Z",
+              "updatedAt": "2025-12-10T07:37:49.145Z",
+              "sourceHandle": "right",
+              "targetHandle": "left",
+              "data": {
+                "isCrossGroup": false,
+                "strokeWidth": 1,
+                "direction": "unidirectional"
+              }
+            },
+            {
+              "id": "edge_1765351697672",
+              "source": "group_1765351656736_ix1whc73r",
+              "target": "group_1765351692231_y3otquwo8",
+              "createdAt": "2025-12-10T07:28:17.672Z",
+              "updatedAt": "2025-12-10T07:37:49.145Z",
+              "sourceHandle": "left",
+              "targetHandle": "right",
+              "data": {
+                "isCrossGroup": false,
+                "strokeWidth": 1,
+                "direction": "unidirectional"
+              }
+            },
+            {
+              "id": "edge_1765352273077",
+              "source": "group_1765351656736_ix1whc73r",
+              "target": "node_1765352232688_8fl6suxwb",
+              "createdAt": "2025-12-10T07:37:53.077Z",
+              "updatedAt": "2025-12-10T07:37:55.033Z",
+              "sourceHandle": "bottom",
+              "targetHandle": "top",
+              "data": {
+                "isCrossGroup": false,
+                "strokeWidth": 1,
+                "direction": "unidirectional"
+              }
+            }
+          ]
+        },
+        "viewportState": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "isCollapsed": false,
+        "createdAt": "2025-12-10T06:57:06.807Z",
+        "updatedAt": "2025-12-10T07:37:55.534Z"
       }
     ],
     "canvasTree": [
@@ -29,8 +554,21 @@
         "name": "测试画布",
         "isCollapsed": false,
         "children": []
+      },
+      {
+        "id": "canvas_cmPufElHwliyM5Ysw8yru",
+        "name": "三端",
+        "isCollapsed": false,
+        "children": [
+          {
+            "id": "canvas_phgOqmbD8tqcshuR9D71d",
+            "name": "heihei",
+            "isCollapsed": false,
+            "children": []
+          }
+        ]
       }
     ]
   },
-  "timestamp": "2025-12-10T00:00:00.000Z"
+  "timestamp": "2025-12-10T07:37:55.538Z"
 }
