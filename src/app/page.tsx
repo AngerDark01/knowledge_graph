@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { WorkspaceLayout } from '@/components/workspace/WorkspaceLayout';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { DEFAULT_USER, DEFAULT_CANVAS } from '@/types/workspace/models';
+import { LoadingOverlay } from '@/components/ui/loading-spinner';
 
 // 旧版本布局（用于回退）
 import GraphPage from '@/components/graph/core';
@@ -25,6 +26,7 @@ function LegacyLayout() {
 }
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
   const initializeWorkspace = useWorkspaceStore((state) => state.initializeWorkspace);
   const setUser = useWorkspaceStore((state) => state.setUser);
 
@@ -70,6 +72,8 @@ export default function Home() {
       } catch (error) {
         console.error('❌ 加载工作空间失败，使用默认数据:', error);
         initDefaultWorkspace();
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -103,6 +107,11 @@ export default function Home() {
 
     initWorkspace();
   }, [initializeWorkspace, setUser]);
+
+  // 显示加载状态
+  if (isLoading) {
+    return <LoadingOverlay message="正在加载工作空间..." />;
+  }
 
   // 根据功能开关返回不同的布局
   if (!USE_NEW_LAYOUT) {

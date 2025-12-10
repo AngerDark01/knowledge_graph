@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { CanvasTreeNode } from '@/types/workspace/models';
 import {
@@ -18,26 +18,26 @@ interface CanvasTreeItemProps {
   level: number;
 }
 
-export const CanvasTreeItem: React.FC<CanvasTreeItemProps> = ({ node, level }) => {
+const CanvasTreeItemComponent: React.FC<CanvasTreeItemProps> = ({ node, level }) => {
   const currentCanvasId = useWorkspaceStore((state) => state.currentCanvasId);
   const toggleCanvasCollapse = useWorkspaceStore((state) => state.toggleCanvasCollapse);
 
   const isActive = currentCanvasId === node.id;
   const hasChildren = node.children.length > 0;
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     // 动态导入以避免循环依赖
     import('@/utils/workspace/canvasSync').then(({ switchToCanvas }) => {
       switchToCanvas(node.id);
     });
-  };
+  }, [node.id]);
 
-  const handleToggleCollapse = (e: React.MouseEvent) => {
+  const handleToggleCollapse = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (hasChildren) {
       toggleCanvasCollapse(node.id);
     }
-  };
+  }, [hasChildren, node.id, toggleCanvasCollapse]);
 
   return (
     <div>
@@ -93,3 +93,6 @@ export const CanvasTreeItem: React.FC<CanvasTreeItemProps> = ({ node, level }) =
     </div>
   );
 };
+
+// Memoize component to prevent unnecessary re-renders
+export const CanvasTreeItem = React.memo(CanvasTreeItemComponent);
