@@ -25,8 +25,10 @@ export const CanvasTreeItem: React.FC<CanvasTreeItemProps> = ({ node, level }) =
   const hasChildren = node.children.length > 0;
 
   const handleClick = () => {
-    // 画布切换功能将在阶段5实现
-    console.log('画布切换功能将在阶段5实现:', node.id);
+    // 动态导入以避免循环依赖
+    import('@/utils/workspace/canvasSync').then(({ switchToCanvas }) => {
+      switchToCanvas(node.id);
+    });
   };
 
   const handleToggleCollapse = (e: React.MouseEvent) => {
