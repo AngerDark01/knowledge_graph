@@ -3,6 +3,7 @@
 import React from 'react';
 import { ResizablePanel } from './ResizablePanel';
 import { useWorkspaceStore } from '@/stores/workspace';
+import { CanvasTree } from './CanvasTree';
 
 export const LeftSidebar: React.FC = () => {
   const user = useWorkspaceStore((state) => state.user);
@@ -25,11 +26,9 @@ export const LeftSidebar: React.FC = () => {
           </div>
         </div>
 
-        {/* 画布树区（占位） */}
+        {/* 画布树区 */}
         <div className="flex-1 overflow-y-auto p-2">
-          <div className="text-sm text-muted-foreground text-center py-8">
-            画布树组件将在阶段4实现
-          </div>
+          <CanvasTree />
         </div>
       </div>
     </ResizablePanel>

@@ -1,0 +1,90 @@
+'use client';
+
+import React from 'react';
+import { useWorkspaceStore } from '@/stores/workspace';
+import { CanvasTreeNode } from '@/types/workspace/models';
+import {
+  ChevronRight,
+  ChevronDown,
+  FileText,
+  FolderClosed,
+  FolderOpen,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface CanvasTreeItemProps {
+  node: CanvasTreeNode;
+  level: number;
+}
+
+export const CanvasTreeItem: React.FC<CanvasTreeItemProps> = ({ node, level }) => {
+  const currentCanvasId = useWorkspaceStore((state) => state.currentCanvasId);
+  const toggleCanvasCollapse = useWorkspaceStore((state) => state.toggleCanvasCollapse);
+
+  const isActive = currentCanvasId === node.id;
+  const hasChildren = node.children.length > 0;
+
+  const handleClick = () => {
+    // 画布切换功能将在阶段5实现
+    console.log('画布切换功能将在阶段5实现:', node.id);
+  };
+
+  const handleToggleCollapse = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasChildren) {
+      toggleCanvasCollapse(node.id);
+    }
+  };
+
+  return (
+    <div>
+      <div
+        className={cn(
+          'group flex items-center px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent transition-colors',
+          isActive && 'bg-accent font-medium'
+        )}
+        style={{ paddingLeft: `${level * 16 + 8}px` }}
+        onClick={handleClick}
+      >
+        {/* 折叠按钮 */}
+        {hasChildren ? (
+          <button
+            className="mr-1 p-0.5 hover:bg-accent-foreground/10 rounded"
+            onClick={handleToggleCollapse}
+          >
+            {node.isCollapsed ? (
+              <ChevronRight className="w-3 h-3" />
+            ) : (
+              <ChevronDown className="w-3 h-3" />
+            )}
+          </button>
+        ) : (
+          <span className="w-4 mr-1" />
+        )}
+
+        {/* 图标 */}
+        {hasChildren ? (
+          node.isCollapsed ? (
+            <FolderClosed className="w-4 h-4 mr-2 text-muted-foreground" />
+          ) : (
+            <FolderOpen className="w-4 h-4 mr-2 text-muted-foreground" />
+          )
+        ) : (
+          <FileText className="w-4 h-4 mr-2 text-muted-foreground" />
+        )}
+
+        {/* 画布名称 */}
+        <span className="flex-1 truncate text-sm">{node.name}</span>
+      </div>
+
+      {/* 子画布 */}
+      {hasChildren && !node.isCollapsed && (
+        <div>
+          {node.children.map((child) => (
+            <CanvasTreeItem key={child.id} node={child} level={level + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
