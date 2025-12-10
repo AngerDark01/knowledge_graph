@@ -2,15 +2,14 @@ import { NextRequest } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import { StorageData, StorageDataSchema } from '@/types/workspace/storage'
-import { getProjectRoot } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const key = searchParams.get('key') || 'kg-editor:workspace.json'
 
-    // 构建文件路径
-    const filePath = path.join(getProjectRoot(), 'public', 'workspace', key)
+    // 构建文件路径 - 使用 process.cwd() 直接获取项目根目录
+    const filePath = path.join(process.cwd(), 'public', 'workspace', key)
 
     // 检查文件是否存在
     try {

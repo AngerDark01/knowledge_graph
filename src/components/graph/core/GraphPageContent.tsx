@@ -31,17 +31,6 @@ import { syncStoreToReactFlowNodes } from './nodeSyncUtils';
 import { EdgeOptimizer } from '@/services/layout/algorithms/EdgeOptimizer';
 import { EDGE_OPTIMIZATION_CONFIG, UI_DIMENSIONS } from '@/config/graph.config';
 
-// 添加初始化图数据的方法到 GraphStore 类型中
-declare module '@/stores/graph' {
-  interface GraphStore {
-    initializeGraphData: (
-      nodes: (Node | Group)[],
-      edges: any[],
-      viewport?: { x: number; y: number; zoom: number }
-    ) => void;
-  }
-}
-
 interface GraphPageProps {
   className?: string;
 }
@@ -198,12 +187,13 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   // 画布切换时更新视口
   useEffect(() => {
-    if (currentCanvasId) {
+    if (currentCanvasId && rfInstance) {
       // 这里可以从workspace store获取当前画布的视口设置并应用
       const workspaceState = useWorkspaceStore.getState();
       const currentCanvas = workspaceState.canvases.find(c => c.id === currentCanvasId);
-      if (currentCanvas && rfInstance) {
-        rfInstance.setTransform({
+      if (currentCanvas) {
+        // 使用 setViewport 来设置视口
+        rfInstance.setViewport({
           x: currentCanvas.viewportState.x,
           y: currentCanvas.viewportState.y,
           zoom: currentCanvas.viewportState.zoom
@@ -220,15 +210,15 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
     const onZoom = () => {
       if (rfInstance) {
-        const transform = rfInstance.getTransform();
-        setZoomValue(transform.zoom);
+        const viewport = rfInstance.getViewport();
+        setZoomValue(viewport.zoom);
 
         // 更新当前画布的视口状态
         if (currentCanvasId) {
           useWorkspaceStore.getState().updateCanvasViewport(currentCanvasId, {
-            x: transform.x,
-            y: transform.y,
-            zoom: transform.zoom
+            x: viewport.x,
+            y: viewport.y,
+            zoom: viewport.zoom
           });
         }
       }

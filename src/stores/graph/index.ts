@@ -19,7 +19,7 @@ export const useGraphStore = create<GraphStore>()(withPersistence((set, get, api
   ...createEdgesSlice(set, get),
   ...createCanvasViewSlice(set),
   ...createHistorySlice(set, get, api),
-  initializeGraphData: (nodes, edges, viewport) => {
+  initializeGraphData: (nodes: (Node | Group)[], edges: any[], viewport?: { x: number; y: number; zoom: number }) => {
     set({
       nodes,
       edges,

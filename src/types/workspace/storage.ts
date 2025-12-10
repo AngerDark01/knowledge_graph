@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { WorkspaceSchema } from './models'
+import { Workspace, WorkspaceSchema } from './models'
 
 // ========== 存储数据版本 ==========
 export const STORAGE_VERSION = '1.0.0'

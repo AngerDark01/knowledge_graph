@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import { StorageData, StorageDataSchema } from '@/types/workspace/storage'
-import { getProjectRoot } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +12,7 @@ export async function POST(request: NextRequest) {
     const validatedData = StorageDataSchema.parse(body.data)
 
     // 确保目录存在
-    const dirPath = path.join(getProjectRoot(), 'public', 'workspace')
+    const dirPath = path.join(process.cwd(), 'public', 'workspace')
     await fs.mkdir(dirPath, { recursive: true })
 
     // 构建文件路径
