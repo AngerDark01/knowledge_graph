@@ -20,21 +20,27 @@ import 'reactflow/dist/style.css';
 import { NoteNode, GroupNode } from '../nodes';
 import CustomEdge from '../edges/CustomEdge';
 import CrossGroupEdge from '../edges/CrossGroupEdge';
-import NodeEditor from '../editors/NodeEditor';
-import EdgeEditor from '../editors/EdgeEditor';
-import EdgeFilterControl from '../controls/EdgeFilterControl';
-import HistoryControl from '../controls/HistoryControl';
 import { useGraphStore } from '@/stores/graph';
+import { useWorkspaceStore } from '@/stores/workspace';
 
 import { useNodeHandling } from './hooks/useNodeHandling';
 import { useEdgeHandling } from './hooks/useEdgeHandling';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useViewportControls } from './hooks/useViewportControls';
-import { ZoomIndicator } from '../controls/ZoomIndicator';
-import { Toolbar } from '../controls/Toolbar';
 import { syncStoreToReactFlowNodes } from './nodeSyncUtils';
 import { EdgeOptimizer } from '@/services/layout/algorithms/EdgeOptimizer';
 import { EDGE_OPTIMIZATION_CONFIG, UI_DIMENSIONS } from '@/config/graph.config';
+
+// 添加初始化图数据的方法到 GraphStore 类型中
+declare module '@/stores/graph' {
+  interface GraphStore {
+    initializeGraphData: (
+      nodes: (Node | Group)[],
+      edges: any[],
+      viewport?: { x: number; y: number; zoom: number }
+    ) => void;
+  }
+}
 
 interface GraphPageProps {
   className?: string;
@@ -52,10 +58,14 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     default: CustomEdge,
     crossGroup: CrossGroupEdge,
   }), []);
-  
+
   const reactFlowInstance = useReactFlow();
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  
+
+  // 从 workspace store 获取当前画布信息
+  const { currentCanvasId } = useWorkspaceStore();
+
+  // 从 graph store 获取图数据
   const {
     nodes: storeNodes,
     edges,
@@ -70,8 +80,9 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     setSelectedEdgeId,
     handleGroupMove,
     updateGroupBoundary,
+    setViewport
   } = useGraphStore();
-  
+
   const [zoomValue, setZoomValue] = useState<number>(1);
   const [reactFlowNodes, setReactFlowNodes, onNodesChange] = useNodesState([]);
   const [reactFlowEdges, setReactFlowEdges, onEdgesChange] = useEdgesState([]);
@@ -159,22 +170,22 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         // 检查边的源节点和目标节点是否都在同一个群组内
         const sourceNode = storeNodes.find(n => n.id === edge.source);
         const targetNode = storeNodes.find(n => n.id === edge.target);
-        
+
         // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
-        const isInSameGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
+        const isInSameGroup = sourceNode && targetNode &&
+                             sourceNode.groupId &&
+                             targetNode.groupId &&
                              sourceNode.groupId === targetNode.groupId;
-        
+
         // 确定边的类型
-        const isCrossGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
+        const isCrossGroup = sourceNode && targetNode &&
+                             sourceNode.groupId &&
+                             targetNode.groupId &&
                              sourceNode.groupId !== targetNode.groupId;
-        
+
         // 设置边类型
         const edgeType = isCrossGroup ? 'crossGroup' : 'default';
-        
+
         return {
           ...edge,
           selected: edge.id === selectedEdgeId,
@@ -185,6 +196,22 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     setReactFlowEdges(processedEdges as ReactFlowEdge[]);
   }, [edges, selectedEdgeId, setReactFlowEdges, storeNodes, visibleEdgeIds]);
 
+  // 画布切换时更新视口
+  useEffect(() => {
+    if (currentCanvasId) {
+      // 这里可以从workspace store获取当前画布的视口设置并应用
+      const workspaceState = useWorkspaceStore.getState();
+      const currentCanvas = workspaceState.canvases.find(c => c.id === currentCanvasId);
+      if (currentCanvas && rfInstance) {
+        rfInstance.setTransform({
+          x: currentCanvas.viewportState.x,
+          y: currentCanvas.viewportState.y,
+          zoom: currentCanvas.viewportState.zoom
+        });
+      }
+    }
+  }, [currentCanvasId, rfInstance]);
+
   // 监听缩放
   useEffect(() => {
     if (!rfInstance) {
@@ -193,7 +220,17 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
     const onZoom = () => {
       if (rfInstance) {
-        setZoomValue(rfInstance.getZoom());
+        const transform = rfInstance.getTransform();
+        setZoomValue(transform.zoom);
+
+        // 更新当前画布的视口状态
+        if (currentCanvasId) {
+          useWorkspaceStore.getState().updateCanvasViewport(currentCanvasId, {
+            x: transform.x,
+            y: transform.y,
+            zoom: transform.zoom
+          });
+        }
       }
     };
 
@@ -205,7 +242,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         }
       };
     }
-  }, [rfInstance, setZoomValue]); // 添加 setZoomValue 依赖以确保一致性
+  }, [rfInstance, setZoomValue, currentCanvasId]); // 添加 currentCanvasId 依赖
 
   // 节点点击
   const onNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
@@ -346,32 +383,6 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   return (
     <div className={`flex w-full h-full ${className || ''}`}>
-      <div className="w-80 p-4 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">Knowledge Graph Editor</h2>
-        
-        <EdgeFilterControl />
-        
-        {selectedNodeId ? (
-          <NodeEditor nodeId={selectedNodeId} />
-        ) : selectedEdgeId ? (
-          <EdgeEditor edgeId={selectedEdgeId} />
-        ) : (
-          <div className="text-gray-500 text-center py-10">
-            Select a node or edge to edit its properties
-          </div>
-        )}
-        
-        <div className="space-y-4">
-          <HistoryControl />
-          <Toolbar 
-            onNodeAdd={onNodeAdd} 
-            onGroupAdd={onGroupAdd} 
-            onRecenter={onRecenter} 
-            onClear={onClear} 
-          />
-        </div>
-      </div>
-      
       <div className="flex-1 relative">
         <ReactFlow
           nodes={reactFlowNodes}
@@ -465,13 +476,12 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         >
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           <Controls showInteractive={false} />
-          <MiniMap 
+          <MiniMap
             nodeColor={nodeColor}
             maskColor="rgb(240, 240, 240, 0.6)"
             pannable
             zoomable
           />
-          <ZoomIndicator zoomValue={zoomValue} />
         </ReactFlow>
       </div>
     </div>
