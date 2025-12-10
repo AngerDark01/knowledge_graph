@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "workspace": {
+    "userId": "user_0",
+    "currentCanvasId": "canvas_default",
+    "canvases": [
+      {
+        "id": "canvas_default",
+        "name": "测试画布",
+        "parentId": null,
+        "children": [],
+        "graphData": {
+          "nodes": [],
+          "edges": []
+        },
+        "viewportState": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "isCollapsed": false,
+        "createdAt": "2025-12-10T00:00:00.000Z",
+        "updatedAt": "2025-12-10T00:00:00.000Z"
+      }
+    ],
+    "canvasTree": [
+      {
+        "id": "canvas_default",
+        "name": "测试画布",
+        "isCollapsed": false,
+        "children": []
+      }
+    ]
+  },
+  "timestamp": "2025-12-10T00:00:00.000Z"
+}
