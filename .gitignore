@@ -1,41 +1,66 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# 项目根目录 .gitignore
+node_modules/
+.next/
+dist/
+build/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.pyre/
 
-# testing
-/coverage
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# OS
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Coverage
+coverage/
+*.lcov
 
-# vercel
-.vercel
+# Next.js
+.next/
+out/
+.next/cache/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Backend
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.pyre/
+backend/.env
+backend/.venv
+backend/venv
+backend/env
