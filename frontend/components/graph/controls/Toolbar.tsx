@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import LayoutControl from './LayoutControl';
 import { useGraphStore } from '@/stores/graph';
 import { BlockEnum } from '@/types/graph/models';
+import { MermaidImportDialog } from '@/components/graph/import/MermaidImportDialog';
 
 interface ToolbarProps {
   onNodeAdd: () => void;
@@ -22,7 +23,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
   const isGroupSelected = selectedNode?.type === BlockEnum.GROUP;
 
+  // Mermaid导入对话框状态
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
   return (
+    <>
+      <MermaidImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
     <div className="mt-6 space-y-2">
       {/* 显示当前上下文提示 */}
       {isGroupSelected && (
@@ -37,6 +43,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       <Button className="w-full" variant="outline" onClick={onGroupAdd}>
         {isGroupSelected ? 'Add Nested Group' : 'Add Group'}
       </Button>
+
+      {/* Mermaid导入按钮 */}
+      <div className="pt-2 border-t border-gray-200">
+        <Button
+          className="w-full"
+          variant="outline"
+          onClick={() => setImportDialogOpen(true)}
+        >
+          📥 导入 Mermaid
+        </Button>
+      </div>
+
       <Button className="w-full" variant="outline" onClick={onRecenter}>
         Recenter View
       </Button>
@@ -49,5 +67,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <LayoutControl />
       </div>
     </div>
+    </>
   );
 };
