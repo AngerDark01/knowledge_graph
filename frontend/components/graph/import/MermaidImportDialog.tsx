@@ -24,6 +24,22 @@ interface MermaidImportDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * 清理Mermaid文本，移除代码块标记
+ */
+function cleanMermaidText(text: string): string {
+  // 移除```mermaid ... ```标记
+  const codeBlockRegex = /```mermaid\s*\n([\s\S]*?)\n```/i;
+  const match = text.match(codeBlockRegex);
+
+  if (match) {
+    return match[1].trim();
+  }
+
+  // 移除单独的```标记
+  return text.replace(/```/g, '').trim();
+}
+
 export const MermaidImportDialog: React.FC<MermaidImportDialogProps> = ({
   open,
   onOpenChange
@@ -38,8 +54,11 @@ export const MermaidImportDialog: React.FC<MermaidImportDialogProps> = ({
       return;
     }
 
+    // 清理可能包含的代码块标记
+    const cleanedText = cleanMermaidText(mermaidText);
+
     try {
-      const result = await importMermaid(mermaidText);
+      const result = await importMermaid(cleanedText);
 
       // 显示成功消息
       alert(`导入成功！\n\n节点: ${result.nodeCount}\n群组: ${result.groupCount}\n边: ${result.edgeCount}`);
