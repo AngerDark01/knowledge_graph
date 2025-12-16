@@ -1,0 +1,365 @@
+%% Mermaid Flowchart 测试示例集合
+%% 可以在 https://mermaid.live/ 中查看效果
+
+%% ========================================
+%% 示例 1: 基础节点形状展示
+%% ========================================
+flowchart LR
+    A[矩形节点]
+    B(圆角矩形)
+    C([体育场型])
+    D[[子程序]]
+    E[(数据库)]
+    F((圆形))
+    G>不对称]
+    H{菱形}
+    I{{六边形}}
+    J[/平行四边形/]
+    K[\反向平行四边形\]
+    L[/梯形\]
+    M[\反向梯形/]
+    N(((双圆)))
+
+%% ========================================
+%% 示例 2: 各种边类型
+%% ========================================
+flowchart TD
+    A1 --> B1
+    A2 --- B2
+    A3 -.-> B3
+    A4 ==> B4
+    A5 -->|带文本| B5
+    A6 -- 文本 --> B6
+    A7 o--o B7
+    A8 x--x B8
+    A9 <--> B9
+    A10 ----> B10
+
+%% ========================================
+%% 示例 3: 简单业务流程
+%% ========================================
+flowchart TD
+    Start([开始]) --> Input[/输入数据/]
+    Input --> Process[处理数据]
+    Process --> Decision{数据有效?}
+    Decision -->|是| Save[(保存)]
+    Decision -->|否| Error[显示错误]
+    Error --> Input
+    Save --> End([结束])
+
+%% ========================================
+%% 示例 4: 基础子图
+%% ========================================
+flowchart TB
+    External[外部系统] --> System
+
+    subgraph System [内部系统]
+        direction LR
+        A[模块A] --> B[模块B]
+        B --> C[模块C]
+    end
+
+    System --> Output[/输出/]
+
+%% ========================================
+%% 示例 5: 嵌套子图 - 电商系统
+%% ========================================
+flowchart TB
+    User([用户]) --> Frontend
+
+    subgraph ecommerce [电商平台]
+        direction TB
+
+        subgraph frontend [前端展示层]
+            direction LR
+            Web[Web端] --> Mobile[移动端]
+        end
+
+        subgraph services [服务层]
+            direction TB
+
+            subgraph user_service [用户服务]
+                Auth[认证] --> Profile[个人信息]
+            end
+
+            subgraph order_service [订单服务]
+                Cart[购物车] --> Checkout[结算]
+                Checkout --> Payment[支付]
+            end
+
+            subgraph product_service [商品服务]
+                Search[搜索] --> Detail[详情]
+                Detail --> Inventory[库存]
+            end
+        end
+
+        subgraph data [数据层]
+            direction LR
+            UserDB[(用户数据库)]
+            OrderDB[(订单数据库)]
+            ProductDB[(商品数据库)]
+        end
+
+        frontend --> services
+        services --> data
+    end
+
+    Frontend --> Payment
+    Payment --> PaymentGateway{支付网关}
+    PaymentGateway --> Success([成功])
+    PaymentGateway --> Fail([失败])
+
+%% ========================================
+%% 示例 6: 软件开发流程
+%% ========================================
+flowchart TD
+    Start([开始新功能]) --> Planning
+
+    subgraph dev_process [开发流程]
+        direction TB
+
+        Planning[需求分析] --> Design[设计方案]
+        Design --> Review1{设计评审}
+        Review1 -->|通过| Development
+        Review1 -->|不通过| Design
+
+        subgraph implementation [实现阶段]
+            direction LR
+            Development[编码] --> UnitTest[单元测试]
+            UnitTest --> CodeReview{代码评审}
+            CodeReview -->|需修改| Development
+            CodeReview -->|通过| Integration
+        end
+
+        Integration[集成] --> QA
+
+        subgraph testing [测试阶段]
+            direction TB
+            QA[QA测试] --> BugFound{发现Bug?}
+            BugFound -->|是| BugFix[修复Bug]
+            BugFix --> QA
+            BugFound -->|否| UAT[用户验收测试]
+        end
+
+        UAT --> Final{验收通过?}
+        Final -->|是| Deploy
+        Final -->|否| Development
+    end
+
+    Deploy[部署上线] --> Monitor[监控]
+    Monitor --> End([完成])
+
+%% ========================================
+%% 示例 7: 微服务架构
+%% ========================================
+flowchart TB
+    Client([客户端]) --> Gateway[API网关]
+
+    subgraph infrastructure [基础设施]
+        direction TB
+
+        Gateway --> LoadBalancer{负载均衡}
+
+        subgraph services [微服务集群]
+            direction LR
+
+            subgraph service_a [服务A集群]
+                A1[实例1] & A2[实例2] & A3[实例3]
+            end
+
+            subgraph service_b [服务B集群]
+                B1[实例1] & B2[实例2]
+            end
+
+            subgraph service_c [服务C集群]
+                C1[实例1] & C2[实例2]
+            end
+        end
+
+        LoadBalancer --> services
+
+        subgraph data_layer [数据层]
+            direction LR
+            Redis[(Redis缓存)]
+            MySQL[(MySQL)]
+            MongoDB[(MongoDB)]
+            Kafka[/消息队列/]
+        end
+
+        services --> data_layer
+
+        subgraph monitoring [监控系统]
+            Metrics[指标采集] --> Dashboard[监控面板]
+            Logs[日志收集] --> Dashboard
+        end
+
+        services -.-> monitoring
+    end
+
+%% ========================================
+%% 示例 8: 深度嵌套 (需要 elk 渲染器)
+%% ========================================
+%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
+flowchart TB
+    Root[根节点] --> L1
+
+    subgraph L1 [第1层]
+        direction TB
+        L1_Node[节点1] --> L2
+
+        subgraph L2 [第2层]
+            direction LR
+            L2_Node[节点2] --> L3
+
+            subgraph L3 [第3层]
+                direction TB
+                L3_Node[节点3] --> L4
+
+                subgraph L4 [第4层]
+                    direction LR
+                    L4_Node[节点4] --> Deep[深度节点]
+                end
+            end
+        end
+    end
+
+    Deep --> End([结束])
+
+%% ========================================
+%% 示例 9: 复杂决策树
+%% ========================================
+flowchart TD
+    Start([开始]) --> Q1{问题1}
+
+    Q1 -->|A| Q2A{问题2A}
+    Q1 -->|B| Q2B{问题2B}
+    Q1 -->|C| Result1[结果1]
+
+    Q2A -->|A1| Q3A1{问题3A1}
+    Q2A -->|A2| Result2[结果2]
+
+    Q2B -->|B1| Result3[结果3]
+    Q2B -->|B2| Q3B2{问题3B2}
+
+    Q3A1 -->|A1a| Result4[结果4]
+    Q3A1 -->|A1b| Result5[结果5]
+
+    Q3B2 -->|B2a| Result6[结果6]
+    Q3B2 -->|B2b| Result7[结果7]
+
+    Result1 & Result2 & Result3 & Result4 & Result5 & Result6 & Result7 --> End([结束])
+
+%% ========================================
+%% 示例 10: 数据处理流水线
+%% ========================================
+flowchart LR
+    subgraph input [数据输入]
+        direction TB
+        File[/文件/] --> Parser[解析器]
+        API[/API/] --> Parser
+        DB[(数据库)] --> Parser
+    end
+
+    Parser --> Validator
+
+    subgraph processing [数据处理]
+        direction TB
+        Validator{验证} -->|通过| Transform[转换]
+        Validator -->|失败| ErrorLog[/错误日志/]
+
+        Transform --> Enrich[数据增强]
+        Enrich --> Aggregate[聚合]
+
+        subgraph ml [机器学习]
+            Model[模型] --> Predict[预测]
+            Predict --> Score[评分]
+        end
+
+        Aggregate --> ml
+    end
+
+    subgraph output [数据输出]
+        direction TB
+        Score --> Cache[(缓存)]
+        Score --> Storage[(存储)]
+        Score --> Notify[/通知/]
+    end
+
+    ErrorLog -.-> Monitor((监控))
+    processing -.-> Monitor
+
+%% ========================================
+%% 示例 11: Git 工作流
+%% ========================================
+flowchart TD
+    Start([开始开发]) --> Clone[克隆仓库]
+    Clone --> Branch[创建分支]
+
+    Branch --> Dev{开发循环}
+    Dev -->|编写代码| Code[编码]
+    Code --> Test[本地测试]
+    Test --> Commit[提交]
+    Commit --> Dev
+    Dev -->|完成| Push[推送到远程]
+
+    Push --> PR[创建PR]
+
+    subgraph review [代码评审]
+        direction TB
+        PR --> Review{评审}
+        Review -->|需要修改| Changes[修改代码]
+        Changes --> PR
+        Review -->|通过| Approve[批准]
+    end
+
+    Approve --> Merge[合并到主分支]
+
+    subgraph ci_cd [CI/CD]
+        direction LR
+        Merge --> Build[构建]
+        Build --> AutoTest[自动化测试]
+        AutoTest --> Deploy{部署}
+        Deploy -->|测试环境| Staging[Staging]
+        Deploy -->|生产环境| Production[Production]
+    end
+
+    Production --> End([完成])
+
+%% ========================================
+%% 示例 12: 用户认证流程（带样式）
+%% ========================================
+flowchart TB
+    Start([用户访问]) --> CheckToken{检查Token}
+
+    CheckToken -->|无Token| Login[/登录页面/]
+    CheckToken -->|有Token| Validate{验证Token}
+
+    Login --> Credentials[/输入凭证/]
+    Credentials --> Auth{认证}
+
+    Auth -->|失败| LoginFail[显示错误]
+    LoginFail --> Login
+
+    Auth -->|成功| CreateToken[生成Token]
+    CreateToken --> SaveSession[(保存会话)]
+
+    Validate -->|无效| Refresh{尝试刷新?}
+    Refresh -->|是| RefreshToken[刷新Token]
+    Refresh -->|否| Login
+    RefreshToken -->|成功| SaveSession
+    RefreshToken -->|失败| Login
+
+    Validate -->|有效| CheckPermission{检查权限}
+    SaveSession --> CheckPermission
+
+    CheckPermission -->|有权限| Success([访问资源])
+    CheckPermission -->|无权限| Forbidden[403禁止]
+
+    Forbidden --> End([结束])
+    Success --> End
+
+    style Start fill:#90EE90
+    style Success fill:#90EE90
+    style LoginFail fill:#FFB6C1
+    style Forbidden fill:#FFB6C1
+    style End fill:#87CEEB

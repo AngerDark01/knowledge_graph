@@ -1,0 +1,32 @@
+{
+  "name": "mermaid-parser-examples",
+  "version": "1.0.0",
+  "description": "Mermaid Flowchart 解析器示例代码",
+  "type": "module",
+  "main": "basic-parser.js",
+  "scripts": {
+    "parse:basic": "node basic-parser.js",
+    "parse:class": "tsx mermaid-parser-class.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mermaid",
+    "parser",
+    "flowchart",
+    "diagram",
+    "ast"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "mermaid": "^11.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
