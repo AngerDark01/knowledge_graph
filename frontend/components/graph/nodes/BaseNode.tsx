@@ -4,6 +4,9 @@ import { useGraphStore } from '@/stores/graph';
 import { Node as NodeType } from '@/types/graph/models';
 import { validateNodeContent } from '@/utils/validation';
 
+// ⚡ 性能优化：将常量移到组件外部，避免每次渲染创建新对象
+const CONTAINER_STYLE = { width: '100%', height: '100%' } as const;
+
 interface BaseNodeData {
   title: string;
   content?: string;
@@ -157,10 +160,8 @@ const BaseNode: React.FC<BaseNodeProps> = ({
        box-border
        z-[2]`;
 
-  const containerStyle = { width: '100%', height: '100%' };
-
   return (
-    <div className={containerClass} style={containerStyle}>
+    <div className={containerClass} style={CONTAINER_STYLE}>
       <ConnectionHandles isGroup={isGroup} selected={selected} />
       
       {isGroup ? (
@@ -218,4 +219,37 @@ const BaseNode: React.FC<BaseNodeProps> = ({
   );
 };
 
-export default memo(BaseNode);
+// ⚡ 性能优化：自定义 memo 比较函数，仅在关键 props 变化时重渲染
+const arePropsEqual = (
+  prevProps: Readonly<BaseNodeProps>,
+  nextProps: Readonly<BaseNodeProps>
+): boolean => {
+  // 关键属性比较
+  if (prevProps.id !== nextProps.id) return false;
+  if (prevProps.selected !== nextProps.selected) return false;
+  if (prevProps.isGroup !== nextProps.isGroup) return false;
+  if (prevProps.isExpanded !== nextProps.isExpanded) return false;
+
+  // data 的关键属性比较
+  if (prevProps.data.title !== nextProps.data.title) return false;
+  if (prevProps.data.content !== nextProps.data.content) return false;
+  if (prevProps.data.validationError !== nextProps.data.validationError) return false;
+  if (prevProps.data.isExpanded !== nextProps.data.isExpanded) return false;
+
+  // node 对象比较（如果存在）
+  if (prevProps.node !== nextProps.node) {
+    // 如果 node 引用变化，检查关键属性
+    if (prevProps.node && nextProps.node) {
+      if (prevProps.node.title !== nextProps.node.title) return false;
+      if (prevProps.node.content !== nextProps.node.content) return false;
+      if (prevProps.node.width !== nextProps.node.width) return false;
+      if (prevProps.node.height !== nextProps.node.height) return false;
+    } else {
+      return false; // 一个有 node，一个没有
+    }
+  }
+
+  return true; // 所有关键属性都相同，不需要重渲染
+};
+
+export default memo(BaseNode, arePropsEqual);

@@ -82,11 +82,35 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
     setIsEditingTitle(false);
   }, [id, editTitle, updateNode]);
 
-  const truncateContent = (text: string, maxLength: number = 150) => {
+  // ⚡ 性能优化：使用 useCallback 优化事件处理器
+  const handleConvertToGroup = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    convertNodeToGroup(id);
+  }, [id, convertNodeToGroup]);
+
+  const handleEditClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleToggleEdit();
+  }, [handleToggleEdit]);
+
+  const handleToggleExpand = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleExpand();
+  }, [toggleExpand]);
+
+  const handleTitleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleTitleBlur();
+    if (e.key === 'Escape') {
+      setEditTitle(data.title);
+      setIsEditingTitle(false);
+    }
+  }, [handleTitleBlur, data.title]);
+
+  const truncateContent = useCallback((text: string, maxLength: number = 150) => {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
-  };
+  }, []);
 
   const renderNodeContent = useCallback(() => {
     // 定义尺寸常量 - 根据HTML实际渲染大小调整
@@ -104,13 +128,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 onBlur={handleTitleBlur}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleTitleBlur();
-                  if (e.key === 'Escape') {
-                    setEditTitle(data.title);
-                    setIsEditingTitle(false);
-                  }
-                }}
+                onKeyDown={handleTitleKeyDown}
                 className="w-full px-2 py-1 text-base font-semibold bg-transparent border-b border-blue-500 focus:outline-none text-gray-900 dark:text-gray-100"
                 autoFocus
               />
@@ -130,10 +148,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
             {/* 编辑按钮 */}
             {!isEditing && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleEdit();
-                }}
+                onClick={handleEditClick}
                 className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
                 title="Edit content"
               >
@@ -145,10 +160,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
 
             {/* 转换为群组按钮 */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                convertNodeToGroup(id);  // ✅ 现在使用从hook获取的方法
-              }}
+              onClick={handleConvertToGroup}
               className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
               title="转换为群组"
             >
@@ -159,22 +171,10 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
 
             {/* 展开/收缩按钮 */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleExpand();
-              }}
-              onMouseDown={(e) => {
-                // 防止拖拽开始事件
-                e.stopPropagation();
-              }}
-              onMouseUp={(e) => {
-                // 防止拖拽结束事件
-                e.stopPropagation();
-              }}
-              onMouseMove={(e) => {
-                // 防止拖拽移动事件
-                e.stopPropagation();
-              }}
+              onClick={handleToggleExpand}
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
+              onMouseMove={(e) => e.stopPropagation()}
               className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
               title={isExpanded ? 'Collapse' : 'Expand'}
             >
@@ -269,4 +269,22 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
   );
 };
 
-export default memo(NoteNode);
+// ⚡ 性能优化：自定义 memo 比较函数，仅在关键 props 变化时重渲染
+const arePropsEqual = (
+  prevProps: Readonly<NodeProps<NoteNodeData>>,
+  nextProps: Readonly<NodeProps<NoteNodeData>>
+): boolean => {
+  // 关键属性比较
+  if (prevProps.id !== nextProps.id) return false;
+  if (prevProps.selected !== nextProps.selected) return false;
+
+  // data 的关键属性比较
+  if (prevProps.data.title !== nextProps.data.title) return false;
+  if (prevProps.data.content !== nextProps.data.content) return false;
+  if (prevProps.data.validationError !== nextProps.data.validationError) return false;
+  if (prevProps.data.isExpanded !== nextProps.data.isExpanded) return false;
+
+  return true; // 所有关键属性都相同，不需要重渲染
+};
+
+export default memo(NoteNode, arePropsEqual);

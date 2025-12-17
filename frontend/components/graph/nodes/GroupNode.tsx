@@ -17,16 +17,18 @@ const GroupNode: React.FC<GroupNodeProps> = ({ id, data, selected, ...rest }) =>
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(groupNode?.title || data.title || 'Group');
 
-  // 添加渲染日志以查看渲染参数
-  try {
-    console.log(`🎨 渲染 GroupNode ${id}:`, {
-      width: groupNode?.width,
-      height: groupNode?.height,
-      position: groupNode?.position,
-      selected
-    });
-  } catch (error) {
-    console.error("GroupNode渲染日志错误:", error);
+  // ⚡ 性能优化：仅在开发模式下输出渲染日志
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      console.log(`🎨 渲染 GroupNode ${id}:`, {
+        width: groupNode?.width,
+        height: groupNode?.height,
+        position: groupNode?.position,
+        selected
+      });
+    } catch (error) {
+      console.error("GroupNode渲染日志错误:", error);
+    }
   }
 
   // 计算群组中节点的数量
@@ -55,6 +57,13 @@ const GroupNode: React.FC<GroupNodeProps> = ({ id, data, selected, ...rest }) =>
       setIsEditingTitle(false);
     }
   }, [id, titleValue, groupNode, data.title, updateNode]);
+
+  // ⚡ 性能优化：使用 useCallback 优化转换按钮点击处理器
+  const handleConvertClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { convertGroupToNode } = useGraphStore.getState();
+    convertGroupToNode(id);
+  }, [id]);
 
   return (
     <BaseNode
@@ -104,11 +113,7 @@ const GroupNode: React.FC<GroupNodeProps> = ({ id, data, selected, ...rest }) =>
 
         {/* 转换按钮 */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            const { convertGroupToNode } = useGraphStore.getState();
-            convertGroupToNode(id);
-          }}
+          onClick={handleConvertClick}
           className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
           title="转换为节点"
         >
@@ -138,4 +143,21 @@ const GroupNode: React.FC<GroupNodeProps> = ({ id, data, selected, ...rest }) =>
   );
 };
 
-export default memo(GroupNode);
+// ⚡ 性能优化：自定义 memo 比较函数，仅在关键 props 变化时重渲染
+const arePropsEqual = (
+  prevProps: Readonly<GroupNodeProps>,
+  nextProps: Readonly<GroupNodeProps>
+): boolean => {
+  // 关键属性比较
+  if (prevProps.id !== nextProps.id) return false;
+  if (prevProps.selected !== nextProps.selected) return false;
+
+  // data 的关键属性比较
+  if (prevProps.data.title !== nextProps.data.title) return false;
+  if (prevProps.data.content !== nextProps.data.content) return false;
+  if (prevProps.data.validationError !== nextProps.data.validationError) return false;
+
+  return true; // 所有关键属性都相同，不需要重渲染
+};
+
+export default memo(GroupNode, arePropsEqual);

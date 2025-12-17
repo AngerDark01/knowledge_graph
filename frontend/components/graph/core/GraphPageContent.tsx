@@ -88,6 +88,10 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const [fps, setFps] = useState<number>(60);
   const renderCountRef = useRef<number>(0);
 
+  // ⚡ 性能优化：节点变化检测（用于浅比较）
+  const prevNodesRef = useRef<(Node | Group)[]>([]);
+  const prevSelectedNodeIdRef = useRef<string | null>(null);
+
   const { onNodeAdd, onGroupAdd, onDragOver, onDrop } = useNodeHandling();
   const { onConnect } = useEdgeHandling();
   const { onRecenter, onClear } = useViewportControls();
@@ -136,7 +140,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     }, EDGE_OPTIMIZATION_CONFIG.DEBOUNCE_DELAY);
   }, []);
 
-  // 同步store到ReactFlow
+  // ⚡ 性能优化：智能节点同步（使用浅比较减少不必要的完整同步）
   useEffect(() => {
     // 如果正在拖拽，跳过同步以避免覆盖用户操作
     if (isDraggingRef.current) {
@@ -144,11 +148,50 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       return;
     }
 
-    const processedNodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
+    // 浅比较：检查节点数量和ID是否变化
+    const nodesChanged =
+      storeNodes.length !== prevNodesRef.current.length ||
+      storeNodes.some((node, idx) => {
+        const prevNode = prevNodesRef.current[idx];
+        return !prevNode ||
+               node.id !== prevNode.id ||
+               node.position.x !== prevNode.position.x ||
+               node.position.y !== prevNode.position.y ||
+               node.width !== prevNode.width ||
+               node.height !== prevNode.height ||
+               node.type !== prevNode.type;
+      });
 
-    console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
+    // 检查是否只是选中状态变化
+    const onlySelectionChanged = !nodesChanged && selectedNodeId !== prevSelectedNodeIdRef.current;
+
+    if (onlySelectionChanged) {
+      // ⚡ 优化：仅更新选中状态（避免完整同步）
+      console.log('🎯 仅更新选中状态:', selectedNodeId);
+      setReactFlowNodes(prev =>
+        prev.map(node => ({
+          ...node,
+          selected: node.id === selectedNodeId
+        }))
+      );
+      prevSelectedNodeIdRef.current = selectedNodeId;
+      return;
+    }
+
+    if (!nodesChanged && !onlySelectionChanged) {
+      // 没有任何变化，跳过
+      return;
+    }
+
+    // 节点真正变化时才完整同步
+    console.log('🔄 完整同步节点到ReactFlow:', storeNodes.length, nodesChanged ? '(节点变化)' : '');
+    const processedNodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
     setReactFlowNodes(processedNodes as ReactFlowNode[]);
-  }, [storeNodes, selectedNodeId, setReactFlowNodes, isDraggingRef.current]);
+
+    // 更新引用
+    prevNodesRef.current = storeNodes;
+    prevSelectedNodeIdRef.current = selectedNodeId;
+  }, [storeNodes, selectedNodeId, setReactFlowNodes]);
 
   // 同步边
   useEffect(() => {
