@@ -193,8 +193,11 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     prevSelectedNodeIdRef.current = selectedNodeId;
   }, [storeNodes, selectedNodeId, setReactFlowNodes]);
 
-  // 同步边
+  // ⚡ 性能优化：边同步（使用 Map 缓存节点查找）
   useEffect(() => {
+    // 创建节点 Map 缓存，避免重复 find 操作（O(1) vs O(n)）
+    const nodesMap = new Map(storeNodes.map(n => [n.id, n]));
+
     const processedEdges = edges
       .filter(edge => {
         // ✅ 过滤掉被转换隐藏的边
@@ -205,56 +208,62 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         return visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id);
       })
       .map(edge => {
-        // 检查边的源节点和目标节点是否都在同一个群组内
-        const sourceNode = storeNodes.find(n => n.id === edge.source);
-        const targetNode = storeNodes.find(n => n.id === edge.target);
-        
-        // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
-        const isInSameGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
-                             sourceNode.groupId === targetNode.groupId;
-        
+        // ⚡ 使用 Map 查找节点（O(1) 而不是 find 的 O(n)）
+        const sourceNode = nodesMap.get(edge.source);
+        const targetNode = nodesMap.get(edge.target);
+
         // 确定边的类型
-        const isCrossGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
+        const isCrossGroup = sourceNode && targetNode &&
+                             sourceNode.groupId &&
+                             targetNode.groupId &&
                              sourceNode.groupId !== targetNode.groupId;
-        
+
         // 设置边类型
         const edgeType = isCrossGroup ? 'crossGroup' : 'default';
-        
+
         return {
           ...edge,
           selected: edge.id === selectedEdgeId,
-          type: edgeType, // 设置边类型
-          zIndex: 1000, // 设置边的层级高于节点（默认节点zIndex为0，选中节点为1）
+          type: edgeType,
+          zIndex: 1000,
         };
       });
     setReactFlowEdges(processedEdges as ReactFlowEdge[]);
   }, [edges, selectedEdgeId, setReactFlowEdges, storeNodes, visibleEdgeIds]);
 
-  // 监听缩放
+  // ⚡ 性能优化：缩放事件节流（避免频繁更新状态）
   useEffect(() => {
     if (!rfInstance) {
       return;
     }
 
+    let zoomTimeout: NodeJS.Timeout | null = null;
+
     const onZoom = () => {
       if (rfInstance) {
-        setZoomValue(rfInstance.getZoom());
+        // 节流：延迟更新缩放值，避免每次缩放都触发重渲染
+        if (zoomTimeout) {
+          clearTimeout(zoomTimeout);
+        }
+
+        zoomTimeout = setTimeout(() => {
+          setZoomValue(rfInstance.getZoom());
+        }, 50); // 50ms 节流
       }
     };
 
     if ('on' in rfInstance && typeof rfInstance.on === 'function') {
       rfInstance.on('zoom', onZoom);
       return () => {
+        if (zoomTimeout) {
+          clearTimeout(zoomTimeout);
+        }
         if ('off' in rfInstance && typeof rfInstance.off === 'function') {
           rfInstance.off('zoom', onZoom);
         }
       };
     }
-  }, [rfInstance, setZoomValue]); // 添加 setZoomValue 依赖以确保一致性
+  }, [rfInstance, setZoomValue]);
 
   // ⚡ 性能监控：渲染时间追踪（仅开发模式）
   useEffect(() => {
@@ -539,12 +548,17 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         >
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           <Controls showInteractive={false} />
-          <MiniMap
-            nodeColor={nodeColor}
-            maskColor="rgb(240, 240, 240, 0.6)"
-            pannable
-            zoomable
-          />
+          {/* ⚡ 性能优化：节点数量 > 200 时禁用 MiniMap 以提升性能 */}
+          {reactFlowNodes.length <= 200 && (
+            <MiniMap
+              nodeColor={nodeColor}
+              maskColor="rgb(240, 240, 240, 0.6)"
+              pannable
+              zoomable
+              nodeStrokeWidth={3}
+              zoomStep={0.5}
+            />
+          )}
           <ZoomIndicator zoomValue={zoomValue} />
           {/* ⚡ 性能监控：FPS 指示器（仅开发模式） */}
           {process.env.NODE_ENV === 'development' && (
