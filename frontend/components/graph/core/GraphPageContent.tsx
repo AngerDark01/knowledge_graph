@@ -478,50 +478,49 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           onNodesChange={(changes) => {
             onNodesChange(changes);
 
-            // 使用批处理来确保状态更新的一致性
-            requestAnimationFrame(() => {
-              changes.forEach((change: NodeChange) => {
-                if (change.type === 'remove') {
-                  deleteNode(change.id);
-                  if (selectedNodeId === change.id) {
-                    setSelectedNodeId(null);
-                  }
+            // 🔧 修复：直接同步处理变化，移除 requestAnimationFrame 延迟
+            // 原因：requestAnimationFrame 会延迟一帧，导致 resize 时视觉卡顿
+            changes.forEach((change: NodeChange) => {
+              if (change.type === 'remove') {
+                deleteNode(change.id);
+                if (selectedNodeId === change.id) {
+                  setSelectedNodeId(null);
                 }
+              }
 
-                // 直接处理尺寸变化，移除防抖
-                if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
-                  const currentNode = reactFlowInstance?.getNode(change.id);
+              // 🔧 修复：在 resizing 过程中也立即更新，提供实时反馈
+              // 移除 !change.resizing 条件，确保调整大小过程中也有视觉更新
+              if (change.type === 'dimensions' && change.dimensions) {
+                const currentNode = reactFlowInstance?.getNode(change.id);
 
-                  if (currentNode) {
-                    const newWidth = Number(change.dimensions!.width);
-                    const newHeight = Number(change.dimensions!.height);
+                if (currentNode) {
+                  const newWidth = Number(change.dimensions!.width);
+                  const newHeight = Number(change.dimensions!.height);
 
-                    // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
-                    updateNode(change.id, {
+                  // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
+                  updateNode(change.id, {
+                    width: newWidth || 350,
+                    height: newHeight || 280,
+                    style: {
+                      ...(currentNode.style || {}),
                       width: newWidth || 350,
                       height: newHeight || 280,
-                      style: {
-                        ...(currentNode.style || {}),
-                        width: newWidth || 350,
-                        height: newHeight || 280,
-                      }
-                    });
+                    }
+                  });
 
-                    if (currentNode.type === 'group') {
-                      const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
+                  // 🔧 只在 resize 结束时更新群组边界，避免过度计算
+                  if (!change.resizing && currentNode.type === 'group') {
+                    const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
 
-                      // 直接更新边界（防抖已移除）
-                      updateGroupBoundary(change.id);
+                    updateGroupBoundary(change.id);
 
-                      // 直接更新父群组边界（防抖已移除）
-                      if (storeGroup?.groupId) {
-                        console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
-                        updateGroupBoundary(storeGroup.groupId!);
-                      }
+                    if (storeGroup?.groupId) {
+                      console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
+                      updateGroupBoundary(storeGroup.groupId!);
                     }
                   }
                 }
-              });
+              }
             });
           }}
           onInit={(instance) => {

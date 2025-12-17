@@ -112,159 +112,157 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
     return text.substring(0, maxLength) + '...';
   }, []);
 
-  const renderNodeContent = useCallback(() => {
-    // 定义尺寸常量 - 根据HTML实际渲染大小调整
-    const minWidth = 300;
-    const minHeight = 240;
-
-    return (
-      <div className="flex flex-col h-full w-full" style={{ minWidth, minHeight }}>
-        {/* 标题栏 - 包含展开/收缩按钮 */}
-        <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex-1 min-w-0 mr-2">
-            {isEditingTitle ? (
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                className="w-full px-2 py-1 text-base font-semibold bg-transparent border-b border-blue-500 focus:outline-none text-gray-900 dark:text-gray-100"
-                autoFocus
-              />
-            ) : (
-              <h3
-                className="text-base font-semibold text-gray-900 dark:text-gray-100 cursor-text truncate"
-                onDoubleClick={() => setIsEditingTitle(true)}
-                title={editTitle}
-              >
-                {editTitle || data.title}
-              </h3>
-            )}
-          </div>
-
-          {/* 右侧按钮组 */}
-          <div className="flex-shrink-0 flex items-center gap-1">
-            {/* 编辑按钮 */}
-            {!isEditing && (
-              <button
-                onClick={handleEditClick}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
-                title="Edit content"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-            )}
-
-            {/* 转换为群组按钮 */}
-            <button
-              onClick={handleConvertToGroup}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
-              title="转换为群组"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-
-            {/* 展开/收缩按钮 */}
-            <button
-              onClick={handleToggleExpand}
-              onMouseDown={(e) => e.stopPropagation()}
-              onMouseUp={(e) => e.stopPropagation()}
-              onMouseMove={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
-              title={isExpanded ? 'Collapse' : 'Expand'}
-            >
-              {isExpanded ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* 内容区域 - 使用flex-1自动占据剩余空间 */}
-        <div
-          className="flex-1 px-4 py-3 overflow-hidden nodrag"
-          style={{
-            minHeight: '100px', // 最小高度
-          }}
-        >
-          {isEditing ? (
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              onBlur={handleToggleEdit}
-              className="w-full h-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 text-sm resize-none"
-              placeholder="Enter markdown content..."
-              autoFocus
-              onKeyDown={(e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                  handleToggleEdit();
-                }
-              }}
-            />
-          ) : (
-            <div className="cursor-text overflow-y-auto h-full custom-scrollbar" onDoubleClick={handleToggleEdit}>
-              {editContent ? (
-                <MarkdownRenderer
-                  content={isExpanded ? editContent : truncateContent(editContent)}
-                />
-              ) : (
-                <p className="text-gray-400 dark:text-gray-500 text-sm italic">
-                  Double-click to add content...
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 底部信息栏 - 使用absolute定位固定在底部 */}
-        <div className="absolute bottom-0 left-0 right-0 flex-shrink-0 px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 rounded-b-xl">
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                <span className="font-medium">Note</span>
-              </div>
-
-              {editContent && (
-                <span className="text-xs">
-                  {editContent.length} chars
-                </span>
-              )}
-            </div>
-
-            <span className="text-xs">
-              {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  }, [isExpanded, isEditing, editContent, editTitle, isEditingTitle, data.title]);
+  // 🔧 修复：移除 renderNodeContent useCallback，直接在 JSX 中渲染
+  // 原因：useCallback 的依赖数组不包含事件处理函数，导致闭包捕获过时的函数引用
+  // 直接渲染可以确保始终使用最新的函数引用，解决双击无响应问题
+  const minWidth = 300;
+  const minHeight = 240;
 
   return (
-    <BaseNode 
-      id={id} 
-      data={data} 
-      isGroup={false} 
+    <BaseNode
+      id={id}
+      data={data}
+      isGroup={false}
       selected={selected}
       showResizeControl={true}
-      minWidth={300}
-      minHeight={240}
+      minWidth={minWidth}
+      minHeight={minHeight}
       isExpanded={isExpanded}
-      renderContent={renderNodeContent}
+      renderContent={() => (
+        <div className="flex flex-col h-full w-full" style={{ minWidth, minHeight }}>
+          {/* 标题栏 - 包含展开/收缩按钮 */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex-1 min-w-0 mr-2">
+              {isEditingTitle ? (
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onBlur={handleTitleBlur}
+                  onKeyDown={handleTitleKeyDown}
+                  className="w-full px-2 py-1 text-base font-semibold bg-transparent border-b border-blue-500 focus:outline-none text-gray-900 dark:text-gray-100"
+                  autoFocus
+                />
+              ) : (
+                <h3
+                  className="text-base font-semibold text-gray-900 dark:text-gray-100 cursor-text truncate"
+                  onDoubleClick={() => setIsEditingTitle(true)}
+                  title={editTitle}
+                >
+                  {editTitle || data.title}
+                </h3>
+              )}
+            </div>
+
+            {/* 右侧按钮组 */}
+            <div className="flex-shrink-0 flex items-center gap-1">
+              {/* 编辑按钮 */}
+              {!isEditing && (
+                <button
+                  onClick={handleEditClick}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
+                  title="Edit content"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              )}
+
+              {/* 转换为群组按钮 */}
+              <button
+                onClick={handleConvertToGroup}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
+                title="转换为群组"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+
+              {/* 展开/收缩按钮 */}
+              <button
+                onClick={handleToggleExpand}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onMouseMove={(e) => e.stopPropagation()}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors nodrag"
+                title={isExpanded ? 'Collapse' : 'Expand'}
+              >
+                {isExpanded ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* 内容区域 - 使用flex-1自动占据剩余空间 */}
+          <div
+            className="flex-1 px-4 py-3 overflow-hidden nodrag"
+            style={{
+              minHeight: '100px', // 最小高度
+            }}
+          >
+            {isEditing ? (
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onBlur={handleToggleEdit}
+                className="w-full h-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 text-sm resize-none"
+                placeholder="Enter markdown content..."
+                autoFocus
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    handleToggleEdit();
+                  }
+                }}
+              />
+            ) : (
+              <div className="cursor-text overflow-y-auto h-full custom-scrollbar" onDoubleClick={handleToggleEdit}>
+                {editContent ? (
+                  <MarkdownRenderer
+                    content={isExpanded ? editContent : truncateContent(editContent)}
+                  />
+                ) : (
+                  <p className="text-gray-400 dark:text-gray-500 text-sm italic">
+                    Double-click to add content...
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 底部信息栏 - 使用absolute定位固定在底部 */}
+          <div className="absolute bottom-0 left-0 right-0 flex-shrink-0 px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 rounded-b-xl">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <span className="font-medium">Note</span>
+                </div>
+
+                {editContent && (
+                  <span className="text-xs">
+                    {editContent.length} chars
+                  </span>
+                )}
+              </div>
+
+              <span className="text-xs">
+                {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     />
   );
 };
