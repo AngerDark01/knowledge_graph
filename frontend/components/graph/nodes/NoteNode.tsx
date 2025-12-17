@@ -192,7 +192,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
         </div>
 
         {/* 内容区域 - 使用flex-1自动占据剩余空间 */}
-        <div 
+        <div
           className="flex-1 px-4 py-3 overflow-hidden nodrag"
           style={{
             minHeight: '100px', // 最小高度
@@ -215,8 +215,8 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
           ) : (
             <div className="cursor-text overflow-y-auto h-full custom-scrollbar" onDoubleClick={handleToggleEdit}>
               {editContent ? (
-                <MarkdownRenderer 
-                  content={isExpanded ? editContent : truncateContent(editContent)} 
+                <MarkdownRenderer
+                  content={isExpanded ? editContent : truncateContent(editContent)}
                 />
               ) : (
                 <p className="text-gray-400 dark:text-gray-500 text-sm italic">
@@ -237,14 +237,14 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
                 </svg>
                 <span className="font-medium">Note</span>
               </div>
-              
+
               {editContent && (
                 <span className="text-xs">
                   {editContent.length} chars
                 </span>
               )}
             </div>
-            
+
             <span className="text-xs">
               {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}
             </span>
@@ -252,7 +252,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
         </div>
       </div>
     );
-  }, [isExpanded, isEditing, editContent, editTitle, isEditingTitle, data.title, handleToggleEdit, handleTitleBlur, toggleExpand, truncateContent]);
+  }, [isExpanded, isEditing, editContent, editTitle, isEditingTitle, data.title]);
 
   return (
     <BaseNode 
