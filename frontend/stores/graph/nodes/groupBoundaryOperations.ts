@@ -9,7 +9,7 @@ interface BoundaryCache {
   boundary: { minX: number; minY: number; maxX: number; maxY: number };
 }
 const boundaryCache = new Map<string, BoundaryCache>();
-const CACHE_TTL = 100; // 缓存有效期 100ms
+const CACHE_TTL = 500; // ⚡ 性能优化：延长缓存有效期到 500ms（减少重复计算）
 
 export const createGroupBoundaryOperationsSlice = (set: any, get: any): GroupBoundaryOperationsSlice => {
   /**

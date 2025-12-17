@@ -42,16 +42,18 @@ interface GraphPageProps {
 
 const NODE_VISUAL_PADDING = UI_DIMENSIONS.NODE_VISUAL_PADDING;
 
-const GraphPageContent = ({ className }: GraphPageProps) => {
-  const nodeTypes = useMemo(() => ({
-    custom: NoteNode,
-    group: GroupNode,
-  }), []);
+// ⚡ 性能优化：将 nodeTypes 和 edgeTypes 移到组件外部，避免每次渲染都创建新对象
+const NODE_TYPES = {
+  custom: NoteNode,
+  group: GroupNode,
+} as const;
 
-  const edgeTypes = useMemo(() => ({
-    default: CustomEdge,
-    crossGroup: CrossGroupEdge,
-  }), []);
+const EDGE_TYPES = {
+  default: CustomEdge,
+  crossGroup: CrossGroupEdge,
+} as const;
+
+const GraphPageContent = ({ className }: GraphPageProps) => {
   
   const reactFlowInstance = useReactFlow();
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
@@ -81,6 +83,10 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   // 边优化器实例和防抖定时器
   const edgeOptimizerRef = useRef<EdgeOptimizer>(new EdgeOptimizer());
   const edgeOptimizeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ⚡ 性能监控：FPS 追踪（仅开发模式）
+  const [fps, setFps] = useState<number>(60);
+  const renderCountRef = useRef<number>(0);
 
   const { onNodeAdd, onGroupAdd, onDragOver, onDrop } = useNodeHandling();
   const { onConnect } = useEdgeHandling();
@@ -206,6 +212,50 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       };
     }
   }, [rfInstance, setZoomValue]); // 添加 setZoomValue 依赖以确保一致性
+
+  // ⚡ 性能监控：渲染时间追踪（仅开发模式）
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      renderCountRef.current++;
+      const startTime = performance.now();
+
+      return () => {
+        const endTime = performance.now();
+        const renderTime = endTime - startTime;
+        if (renderTime > 16.67) { // 超过一帧的时间 (60fps = 16.67ms/frame)
+          console.log(`⚠️ 慢渲染 #${renderCountRef.current}: ${renderTime.toFixed(2)}ms, 节点数: ${reactFlowNodes.length}`);
+        }
+      };
+    }
+  }, [reactFlowNodes, reactFlowEdges]);
+
+  // ⚡ 性能监控：FPS 监控（仅开发模式）
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let animationFrameId: number;
+
+    const measureFps = () => {
+      frameCount++;
+      const currentTime = performance.now();
+
+      if (currentTime >= lastTime + 1000) {
+        setFps(frameCount);
+        if (frameCount < 30) {
+          console.log(`⚠️ 低 FPS: ${frameCount} fps, 节点数: ${reactFlowNodes.length}`);
+        }
+        frameCount = 0;
+        lastTime = currentTime;
+      }
+
+      animationFrameId = requestAnimationFrame(measureFps);
+    };
+
+    animationFrameId = requestAnimationFrame(measureFps);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [reactFlowNodes.length]);
 
   // 节点点击
   const onNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
@@ -357,14 +407,21 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           onPaneClick={onPaneClick}
           onNodeDragStart={onNodeDragStart}
           onNodeDragStop={onNodeDragStop}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
+          nodeTypes={NODE_TYPES}
+          edgeTypes={EDGE_TYPES}
           connectionMode={ConnectionMode.Loose}
           attributionPosition="bottom-left"
           minZoom={0.1}
           maxZoom={2}
           elementsSelectable={true}
           selectNodesOnDrag={false}
+          // ⚡ 性能优化：仅渲染可见元素
+          onlyRenderVisibleElements={true}
+          // ⚡ 性能优化：选中节点时提升层级（避免重新计算所有 z-index）
+          elevateNodesOnSelect={true}
+          // ⚡ 性能优化：启用快照到网格（减少状态更新频率）
+          snapToGrid={true}
+          snapGrid={[15, 15]}
           panOnDrag={[2]} // 仅右键拖拽画布（或使用 [1, 2] 允许左键和中键）
           nodesDraggable={true}
           nodesConnectable={true}
@@ -446,6 +503,20 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
             zoomable
           />
           <ZoomIndicator zoomValue={zoomValue} />
+          {/* ⚡ 性能监控：FPS 指示器（仅开发模式） */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="absolute top-4 right-4 bg-black/80 text-white px-3 py-2 rounded-lg text-sm font-mono z-50">
+              <div className="flex items-center gap-2">
+                <span>FPS:</span>
+                <span className={fps < 30 ? 'text-red-400' : fps < 50 ? 'text-yellow-400' : 'text-green-400'}>
+                  {fps}
+                </span>
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                节点: {reactFlowNodes.length}
+              </div>
+            </div>
+          )}
         </ReactFlow>
       </div>
     </div>
