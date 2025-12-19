@@ -213,7 +213,10 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
               }}
             />
           ) : (
-            <div className="cursor-text overflow-y-auto h-full custom-scrollbar" onDoubleClick={handleToggleEdit}>
+            <div
+              className={`cursor-text overflow-y-auto h-full custom-scrollbar ${selected ? 'nowheel' : ''}`}
+              onDoubleClick={handleToggleEdit}
+            >
               {editContent ? (
                 <MarkdownRenderer 
                   content={isExpanded ? editContent : truncateContent(editContent)} 
