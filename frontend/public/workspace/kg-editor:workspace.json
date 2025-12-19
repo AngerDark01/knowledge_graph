@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "workspace": {
     "userId": "user_0",
-    "currentCanvasId": "canvas_phgOqmbD8tqcshuR9D71d",
+    "currentCanvasId": "canvas_TOokEQYmQ8JILMd60XuqG",
     "canvases": [
       {
         "id": "canvas_default",
@@ -125,8 +125,8 @@
               "id": "group_1765351637258_0y8ycmy65",
               "type": "group",
               "position": {
-                "x": 201,
-                "y": 12
+                "x": 210.1796484223687,
+                "y": -186.42160927210654
               },
               "title": "Group 1",
               "collapsed": false,
@@ -135,31 +135,31 @@
                 "node_1765351675341_uygsmxbkw"
               ],
               "boundary": {
-                "minX": 201,
-                "minY": 12,
-                "maxX": 1001,
-                "maxY": 472
+                "minX": 210.1796484223687,
+                "minY": -186.42160927210654,
+                "maxX": 1299.1796484223687,
+                "maxY": 431.57839072789346
               },
               "createdAt": "2025-12-10T07:27:17.258Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.665Z",
               "data": {
                 "title": "Group 1",
                 "content": "Select this group and click \"Add Node/Group\" to add inside"
               },
               "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 800,
-              "height": 460,
+              "width": 1089,
+              "height": 618,
               "style": {
-                "width": 800,
-                "height": 460
+                "width": 1089,
+                "height": 618
               }
             },
             {
               "id": "group_1765351649871_t31ztt6up",
               "type": "group",
               "position": {
-                "x": 221,
-                "y": 82
+                "x": 230.1796484223687,
+                "y": -46.39045305842188
               },
               "title": "Group 2",
               "collapsed": false,
@@ -167,56 +167,76 @@
                 "node_1765351651562_8e2bq5yjn"
               ],
               "boundary": {
-                "minX": 221,
-                "minY": 82,
-                "maxX": 611,
-                "maxY": 452
+                "minX": 230.1796484223687,
+                "minY": -46.39045305842188,
+                "maxX": 774.1796484223687,
+                "maxY": 327.6095469415781
               },
               "createdAt": "2025-12-10T07:27:29.871Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.667Z",
               "data": {
                 "title": "Group 2",
                 "content": "Nested group - add nodes or groups inside"
               },
               "content": "Nested group - add nodes or groups inside",
-              "width": 390,
-              "height": 370,
+              "width": 544,
+              "height": 374,
               "groupId": "group_1765351637258_0y8ycmy65",
               "style": {
-                "width": 390,
-                "height": 370
+                "width": 544,
+                "height": 374
               }
             },
             {
               "id": "node_1765351651562_8e2bq5yjn",
               "type": "node",
               "position": {
-                "x": 241,
-                "y": 152
+                "x": 329.0105704944775,
+                "y": 23.609546941578117
               },
               "title": "Node 1",
               "createdAt": "2025-12-10T07:27:31.562Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.668Z",
               "data": {
                 "title": "Node 1",
                 "content": "Double click to edit",
                 "isExpanded": false
               },
-              "content": "Double click to edit",
-              "width": 350,
-              "height": 280,
+              "content": "欸，我去\n",
+              "width": 300,
+              "height": 240,
               "groupId": "group_1765351649871_t31ztt6up",
               "style": {
-                "width": 350,
-                "height": 280
+                "width": 300,
+                "height": 240
+              },
+              "nodeIds": [],
+              "collapsed": false,
+              "boundary": {
+                "minX": 329.0105704944775,
+                "minY": 23.609546941578117,
+                "maxX": 629.0105704944775,
+                "maxY": 263.6095469415781
+              },
+              "convertedFrom": "group",
+              "isConverted": true,
+              "savedChildren": [],
+              "savedEdges": [],
+              "originalPosition": {
+                "x": 329.0105704944775,
+                "y": 23.609546941578117
+              },
+              "originalSize": {
+                "width": 300,
+                "height": 240
               }
             },
             {
               "id": "group_1765351654166_yxlgvhdg7",
               "type": "group",
               "position": {
-                "x": 822,
-                "y": 962
+                "x": 815.4112718618594,
+                "y": 968.5887281381406
               },
               "title": "Group 3",
               "collapsed": false,
@@ -224,35 +244,35 @@
                 "node_1765351655392_nqtllnnt0"
               ],
               "boundary": {
-                "minX": 822,
-                "minY": 962,
-                "maxX": 1212,
-                "maxY": 1332
+                "minX": 815.4112718618594,
+                "minY": 968.5887281381406,
+                "maxX": 1209.4112718618594,
+                "maxY": 1342.5887281381406
               },
               "createdAt": "2025-12-10T07:27:34.166Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.666Z",
               "data": {
                 "title": "Group 3",
                 "content": "Select this group and click \"Add Node/Group\" to add inside"
               },
               "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 390,
-              "height": 370,
+              "width": 394,
+              "height": 374,
               "style": {
-                "width": 390,
-                "height": 370
+                "width": 394,
+                "height": 374
               }
             },
             {
               "id": "node_1765351655392_nqtllnnt0",
               "type": "node",
               "position": {
-                "x": 842,
-                "y": 1032
+                "x": 835.4112718618594,
+                "y": 1038.5887281381406
               },
               "title": "Node 2",
               "createdAt": "2025-12-10T07:27:35.392Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.667Z",
               "data": {
                 "title": "Node 2",
                 "content": "Double click to edit",
@@ -271,8 +291,8 @@
               "id": "group_1765351656736_ix1whc73r",
               "type": "group",
               "position": {
-                "x": 431,
-                "y": 572
+                "x": 546.3027424174604,
+                "y": 525.8789030330158
               },
               "title": "Group 4",
               "collapsed": false,
@@ -280,48 +300,51 @@
                 "group_1765351690361_z2aui7m6s"
               ],
               "boundary": {
-                "minX": 431,
-                "minY": 572,
-                "maxX": 771,
-                "maxY": 862
+                "minX": 546.3027424174604,
+                "minY": 525.8789030330158,
+                "maxX": 1034.3027424174604,
+                "maxY": 831.8789030330158
               },
               "createdAt": "2025-12-10T07:27:36.736Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.666Z",
               "data": {
                 "title": "Group 4",
                 "content": "Select this group and click \"Add Node/Group\" to add inside"
               },
               "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 340,
-              "height": 290,
+              "width": 488,
+              "height": 306,
               "style": {
-                "width": 340,
-                "height": 290
+                "width": 488,
+                "height": 306
               }
             },
             {
               "id": "node_1765351675341_uygsmxbkw",
               "type": "node",
               "position": {
-                "x": 631,
-                "y": 127
+                "x": 888.6619445224419,
+                "y": -23.38511762207105
               },
               "title": "Node 3",
               "createdAt": "2025-12-10T07:27:55.341Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.667Z",
               "data": {
                 "title": "Node 3",
                 "content": "Double click to edit",
                 "isExpanded": false
               },
-              "content": "Double click to edit",
+              "content": "我擦",
               "width": 350,
               "height": 280,
               "groupId": "group_1765351637258_0y8ycmy65",
               "style": {
                 "width": 350,
                 "height": 280
-              }
+              },
+              "summary": "",
+              "tags": [],
+              "attributes": {}
             },
             {
               "id": "group_1765351679425_ysbj363ts",
@@ -340,7 +363,7 @@
                 "maxY": 1162
               },
               "createdAt": "2025-12-10T07:27:59.425Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.666Z",
               "data": {
                 "title": "Group 5",
                 "content": "Select this group and click \"Add Node/Group\" to add inside"
@@ -357,20 +380,20 @@
               "id": "group_1765351690361_z2aui7m6s",
               "type": "group",
               "position": {
-                "x": 451,
-                "y": 642
+                "x": 627.0146621096827,
+                "y": 600.8204491366213
               },
               "title": "Group 6",
               "collapsed": false,
               "nodeIds": [],
               "boundary": {
-                "minX": 451,
-                "minY": 642,
-                "maxX": 751,
-                "maxY": 842
+                "minX": 627.0146621096827,
+                "minY": 600.8204491366213,
+                "maxX": 927.0146621096827,
+                "maxY": 800.8204491366213
               },
               "createdAt": "2025-12-10T07:28:10.361Z",
-              "updatedAt": "2025-12-15T09:16:55.450Z",
+              "updatedAt": "2025-12-18T02:34:35.667Z",
               "data": {
                 "title": "Group 6",
                 "content": "Nested group - add nodes or groups inside"
@@ -388,20 +411,20 @@
               "id": "group_1765351692231_y3otquwo8",
               "type": "group",
               "position": {
-                "x": 12,
-                "y": 962
+                "x": 15.294364069070411,
+                "y": 991.6492766216329
               },
               "title": "Group 7",
               "collapsed": false,
               "nodeIds": [],
               "boundary": {
-                "minX": 12,
-                "minY": 962,
-                "maxX": 312,
-                "maxY": 1162
+                "minX": 15.294364069070411,
+                "minY": 991.6492766216329,
+                "maxX": 315.2943640690704,
+                "maxY": 1191.649276621633
               },
               "createdAt": "2025-12-10T07:28:12.231Z",
-              "updatedAt": "2025-12-15T09:16:55.451Z",
+              "updatedAt": "2025-12-18T02:34:35.667Z",
               "data": {
                 "title": "Group 7",
                 "content": "Select this group and click \"Add Node/Group\" to add inside"
@@ -450,7 +473,7 @@
               },
               "title": "Node 4",
               "createdAt": "2025-12-10T07:37:12.688Z",
-              "updatedAt": "2025-12-15T09:16:55.451Z",
+              "updatedAt": "2025-12-18T02:34:35.667Z",
               "data": {
                 "title": "Node 4",
                 "content": "Double click to edit",
@@ -471,7 +494,7 @@
               "source": "group_1765351637258_0y8ycmy65",
               "target": "group_1765351656736_ix1whc73r",
               "createdAt": "2025-12-10T07:27:42.481Z",
-              "updatedAt": "2025-12-15T09:16:55.497Z",
+              "updatedAt": "2025-12-17T07:52:07.323Z",
               "sourceHandle": "bottom",
               "targetHandle": "top",
               "data": {
@@ -485,7 +508,7 @@
               "source": "group_1765351656736_ix1whc73r",
               "target": "group_1765351654166_yxlgvhdg7",
               "createdAt": "2025-12-10T07:27:44.704Z",
-              "updatedAt": "2025-12-15T09:16:55.498Z",
+              "updatedAt": "2025-12-17T07:52:18.677Z",
               "sourceHandle": "bottom",
               "targetHandle": "top",
               "data": {
@@ -507,7 +530,7 @@
               "source": "group_1765351656736_ix1whc73r",
               "target": "group_1765351679425_ysbj363ts",
               "createdAt": "2025-12-10T07:28:08.935Z",
-              "updatedAt": "2025-12-15T09:16:55.498Z",
+              "updatedAt": "2025-12-17T07:52:07.323Z",
               "sourceHandle": "right",
               "targetHandle": "left",
               "data": {
@@ -521,7 +544,7 @@
               "source": "group_1765351656736_ix1whc73r",
               "target": "group_1765351692231_y3otquwo8",
               "createdAt": "2025-12-10T07:28:17.672Z",
-              "updatedAt": "2025-12-15T09:16:55.498Z",
+              "updatedAt": "2025-12-17T07:52:16.821Z",
               "sourceHandle": "left",
               "targetHandle": "right",
               "data": {
@@ -535,7 +558,7 @@
               "source": "group_1765351656736_ix1whc73r",
               "target": "node_1765352232688_8fl6suxwb",
               "createdAt": "2025-12-10T07:37:53.077Z",
-              "updatedAt": "2025-12-15T09:16:55.498Z",
+              "updatedAt": "2025-12-17T07:52:07.324Z",
               "sourceHandle": "bottom",
               "targetHandle": "top",
               "data": {
@@ -553,7 +576,421 @@
         },
         "isCollapsed": false,
         "createdAt": "2025-12-10T06:57:06.807Z",
-        "updatedAt": "2025-12-15T09:16:56.126Z"
+        "updatedAt": "2025-12-18T03:45:18.505Z"
+      },
+      {
+        "id": "canvas_TOokEQYmQ8JILMd60XuqG",
+        "name": "诡眼",
+        "parentId": null,
+        "children": [],
+        "graphData": {
+          "nodes": [
+            {
+              "id": "node_1765964660110_8w9orjacy",
+              "type": "group",
+              "position": {
+                "x": 12,
+                "y": 12
+              },
+              "title": "世界观",
+              "collapsed": false,
+              "nodeIds": [
+                "group_1765964792700_4407rrkn6",
+                "group_1766038363804_vck0gp3om",
+                "group_1766038773342_8e6bgkvka"
+              ],
+              "boundary": {
+                "minX": 12,
+                "minY": 12,
+                "maxX": 2628,
+                "maxY": 821
+              },
+              "createdAt": "2025-12-17T09:44:20.110Z",
+              "updatedAt": "2025-12-18T10:15:04.493Z",
+              "data": {
+                "title": "Node 1",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "Double click to edit",
+              "width": 2616,
+              "height": 809,
+              "style": {
+                "width": 2616,
+                "height": 809
+              },
+              "convertedFrom": "group",
+              "isConverted": true,
+              "savedChildren": [],
+              "savedEdges": [],
+              "originalPosition": {
+                "x": 304.51465366875607,
+                "y": -32.183126635781306
+              },
+              "originalSize": {
+                "width": 350,
+                "height": 280
+              }
+            },
+            {
+              "id": "group_1765964792700_4407rrkn6",
+              "type": "group",
+              "position": {
+                "x": 556,
+                "y": 82
+              },
+              "title": "力量体系",
+              "collapsed": false,
+              "nodeIds": [
+                "group_1765964808819_ufrs9w421"
+              ],
+              "boundary": {
+                "minX": 556,
+                "minY": 82,
+                "maxX": 1019,
+                "maxY": 797
+              },
+              "createdAt": "2025-12-17T09:46:32.700Z",
+              "updatedAt": "2025-12-18T10:07:12.582Z",
+              "data": {
+                "title": "Group 2",
+                "content": "Nested group - add nodes or groups inside"
+              },
+              "content": "Nested group - add nodes or groups inside",
+              "width": 463,
+              "height": 715,
+              "groupId": "node_1765964660110_8w9orjacy",
+              "style": {
+                "width": 463,
+                "height": 715
+              },
+              "convertedFrom": "group",
+              "isConverted": true,
+              "savedChildren": [],
+              "savedEdges": [],
+              "originalPosition": {
+                "x": 324.51465366875607,
+                "y": 37.816873364218694
+              },
+              "originalSize": {
+                "width": 300,
+                "height": 200
+              }
+            },
+            {
+              "id": "group_1765964808819_ufrs9w421",
+              "type": "node",
+              "position": {
+                "x": 576,
+                "y": 152
+              },
+              "title": "力量本质",
+              "createdAt": "2025-12-17T09:46:48.819Z",
+              "updatedAt": "2025-12-18T10:15:07.938Z",
+              "data": {
+                "title": "Group 3",
+                "content": "Nested group - add nodes or groups inside"
+              },
+              "content": "核心规则（已成立）:\n  1. 诡物运作机制: \"规则化存在\" ✓\n     - 无智慧，只按规则行动（规则11）\n     - 通过规则杀人、附身（规则13）\n     \n  2. 能量系统: \"恐惧驱动\" ✓\n     - 吞噬其他诡是\n     - 杀人本身不提升，恐惧才提升（阶段3）\n     - 越原始、越强烈的恐惧越有效（规则12）\n     \n  3. 存在限制: \"七天规则\" ✓\n     - 基础存在期限≤7天（规则3）\n     - 需要通过附身/恐惧延长（规则4）\n     \n  4. 信息危害机制: \"知识诅咒\" ✓\n     - 了解越多→被侵蚀几率越大（规则1）\n     - 知道的人越多→世界越不稳定（规则2）\n     - 普通人不了解→几乎免疫（规则5）",
+              "collapsed": false,
+              "nodeIds": [],
+              "boundary": {
+                "minX": 491.11149417462286,
+                "minY": 101.23684256881407,
+                "maxX": 1091.1114941746227,
+                "maxY": 551.236842568814
+              },
+              "width": 419,
+              "height": 621,
+              "groupId": "group_1765964792700_4407rrkn6",
+              "style": {
+                "width": 419,
+                "height": 621
+              },
+              "convertedFrom": "group",
+              "isConverted": true,
+              "savedChildren": [],
+              "savedEdges": [],
+              "originalPosition": {
+                "x": 491.11149417462286,
+                "y": 101.23684256881407
+              },
+              "originalSize": {
+                "width": 600,
+                "height": 450
+              },
+              "isExpanded": true,
+              "customExpandedSize": {
+                "width": 601,
+                "height": 473
+              }
+            },
+            {
+              "id": "group_1766038363804_vck0gp3om",
+              "type": "group",
+              "position": {
+                "x": 1115.4918774841244,
+                "y": 122.5
+              },
+              "title": "世界设定",
+              "collapsed": false,
+              "nodeIds": [
+                "group_1766038395051_5xsbbz6u0",
+                "node_1766052159571_3jriafai9"
+              ],
+              "boundary": {
+                "minX": 884,
+                "minY": 122.5,
+                "maxX": 2322,
+                "maxY": 776.5
+              },
+              "createdAt": "2025-12-18T06:12:43.804Z",
+              "updatedAt": "2025-12-18T10:15:04.402Z",
+              "data": {
+                "title": "Group 3",
+                "content": "Nested group - add nodes or groups inside"
+              },
+              "content": "# 宇宙结构\n\n## 基本描述\n宇宙由物质空间和混沌域两个层级构成，所有神明都存在于这个二元结构中。\n\n## 物质空间（低维秩序空间）\n- **性质**: 三维空间+线性时间，遵循物理法则\n- **特征**: 稳定、有序、可预测、因果律明确\n- **居民**: 秩序神明、文明种族、物质生命\n\n## 混沌域（高维无序空间）\n- **性质**: 多维/无维空间，无固定法则\n- **特征**: 混乱、矛盾、不可理解、规则相互冲突\n- **居民**: 混沌神明（外神）\n\n## 空间关系\n- 两域之间存在\"概念边界\"\n- 正常状态互不干涉\n- 当秩序神明成长时，会\"牵引\"混沌域靠近\n- 边界震荡会导致投影渗透",
+              "width": 1438,
+              "height": 654,
+              "groupId": "node_1765964660110_8w9orjacy",
+              "style": {
+                "width": 1438,
+                "height": 654
+              },
+              "convertedFrom": "group",
+              "isConverted": true,
+              "savedChildren": [
+                {
+                  "id": "group_1766038395051_5xsbbz6u0",
+                  "type": "node",
+                  "position": {
+                    "x": 411.5152370329548,
+                    "y": 181.7339559093754
+                  },
+                  "data": {
+                    "title": "Group 4",
+                    "content": "Nested group - add nodes or groups inside"
+                  },
+                  "title": "基本规则",
+                  "content": "地球 = 新生秩序神明的胚胎\n\n状态:\n  - 正在从混沌走向秩序\n  - 尚未完全觉醒\n  - 处于成长的关键期\n\n成长动力:\n  人类文明 = 神明的养分\n  \n  - 秩序的建立（法律、制度、规则）\n  - 知识的积累（科学、哲学、文化）\n  - 社会的组织（国家、文明、协作）\n  \n  文明越发达 → 秩序能量越强 → 神明成长越快",
+                  "collapsed": false,
+                  "nodeIds": [],
+                  "boundary": {
+                    "minX": 515.7095783286345,
+                    "minY": 157.92449031743172,
+                    "maxX": 815.7095783286345,
+                    "maxY": 357.9244903174317
+                  },
+                  "createdAt": "2025-12-18T06:13:15.051Z",
+                  "updatedAt": "2025-12-18T10:01:36.738Z",
+                  "width": 362,
+                  "height": 550,
+                  "groupId": "group_1766038363804_vck0gp3om",
+                  "style": {
+                    "width": 362,
+                    "height": 550
+                  },
+                  "convertedFrom": "group",
+                  "isConverted": true,
+                  "savedChildren": [],
+                  "savedEdges": [],
+                  "originalPosition": {
+                    "x": 515.7095783286345,
+                    "y": 157.92449031743172
+                  },
+                  "originalSize": {
+                    "width": 300,
+                    "height": 200
+                  },
+                  "isExpanded": true,
+                  "customExpandedSize": {
+                    "width": 598,
+                    "height": 451
+                  }
+                }
+              ],
+              "savedEdges": [],
+              "originalPosition": {
+                "x": 363.6203637059465,
+                "y": 99.1812629122216
+              },
+              "originalSize": {
+                "width": 644,
+                "height": 726
+              },
+              "isExpanded": true,
+              "customExpandedSize": {
+                "width": 589,
+                "height": 486
+              }
+            },
+            {
+              "id": "group_1766038773342_8e6bgkvka",
+              "type": "group",
+              "position": {
+                "x": 32,
+                "y": 82.5
+              },
+              "title": "社会结构",
+              "collapsed": false,
+              "nodeIds": [],
+              "boundary": {
+                "minX": 32,
+                "minY": 82.5,
+                "maxX": 536,
+                "maxY": 792.5
+              },
+              "createdAt": "2025-12-18T06:19:33.342Z",
+              "updatedAt": "2025-12-18T10:07:12.532Z",
+              "data": {
+                "title": "Group 4",
+                "content": "Nested group - add nodes or groups inside"
+              },
+              "content": "Nested group - add nodes or groups inside",
+              "width": 504,
+              "height": 710,
+              "groupId": "node_1765964660110_8w9orjacy",
+              "style": {
+                "width": 504,
+                "height": 710
+              }
+            },
+            {
+              "id": "node_1766052159571_3jriafai9",
+              "type": "group",
+              "position": {
+                "x": 1266.0185481343456,
+                "y": 198.07897466540163
+              },
+              "title": "神明",
+              "collapsed": false,
+              "nodeIds": [
+                "node_1766052312011_4f4epe2gj",
+                "node_1766052368505_gb6m70xec"
+              ],
+              "boundary": {
+                "minX": 988,
+                "minY": 192.5,
+                "maxX": 2251,
+                "maxY": 746.5
+              },
+              "createdAt": "2025-12-18T10:02:39.571Z",
+              "updatedAt": "2025-12-18T10:15:04.402Z",
+              "data": {
+                "title": "Node 2",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "# 神明\n\n## 定义\n宇宙中的高维存在，带有生命的星球都是神明，代表秩序或混沌的具现。\n\n## 基本特征\n- 神明是宇宙的基本存在单元\n- 每个带生命的星球都是一个神明\n- 神明有成长周期：孕育 → 觉醒 → 成熟 → 衰亡\n- 神明分为两大类：秩序神明、混沌神明\n\n## 神明的本质\n- 不是意识体，而是\"规则的集合\"\n- 神明的存在会影响周围空间\n- 神明之间存在相互作用\n\n## 成长机制\n- 秩序神明：通过文明发展成长\n- 混沌神明：通过吞噬秩序成长（本能）",
+              "width": 1263,
+              "height": 554,
+              "groupId": "group_1766038363804_vck0gp3om",
+              "style": {
+                "width": 1263,
+                "height": 554
+              },
+              "isExpanded": true,
+              "customExpandedSize": {
+                "width": 583,
+                "height": 461
+              },
+              "convertedFrom": "group",
+              "isConverted": true,
+              "savedChildren": [],
+              "savedEdges": [],
+              "originalPosition": {
+                "x": 345.4015393639588,
+                "y": 262.97608290330516
+              },
+              "originalSize": {
+                "width": 562,
+                "height": 468
+              }
+            },
+            {
+              "id": "node_1766052312011_4f4epe2gj",
+              "type": "node",
+              "position": {
+                "x": 1353.0185481343456,
+                "y": 302.57897466540163
+              },
+              "title": "秩序神明",
+              "createdAt": "2025-12-18T10:05:12.011Z",
+              "updatedAt": "2025-12-18T10:15:04.403Z",
+              "data": {
+                "title": "Node 2",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "\n\n## 定义\n孕育文明的星球，正在从混沌走向秩序的神明。\n\n## 核心特征\n- **本质**: 秩序的化身，规则的建立者\n- **状态**: 大多处于成长期（未完全觉醒）\n- **动力**: 文明产生的秩序能量\n\n## 成长阶段\n\n### 阶段1：混沌胚胎\n- 星球存在但无生命\n- 处于完全混沌状态\n- 无意识\n\n### 阶段2：生命萌芽\n- 生命诞生\n- 开始产生初级秩序（生态循环）\n- 模糊意识\n\n### 阶段3：文明孕育（当前阶段-地球）\n- 智慧文明出现\n- 秩序快速累积\n- 意识觉醒中\n- **关键期**：最容易被外神吸引\n\n### 阶段4：完全觉醒（未来可能）\n- 神明意识完全清醒\n- 可主动调控秩序\n- 能够抵御外神\n\n### 阶段5：秩序成熟\n- 达到秩序巅峰\n- 可影响周围空间\n- 开始衰退倒计时\n\n## 秩序能量来源\n- 规则建立（法律、道德、制度）\n- 知识积累（科学、哲学、文化）\n- 社会组织（国家、文明、协作）\n- 文化创造（语言、艺术、信仰）\n\n公式：**文明复杂度 ∝ 秩序能量强度 ∝ 神明成长速度**\n\n## 弱点\n- 成长期极其脆弱\n- 散发的秩序信号会吸引外神\n- 发展越快，吸引越多\n- 处于\"必须发展但发展危险\"的悖论中",
+              "width": 332,
+              "height": 381,
+              "groupId": "node_1766052159571_3jriafai9",
+              "style": {
+                "width": 332,
+                "height": 381
+              }
+            },
+            {
+              "id": "node_1766052368505_gb6m70xec",
+              "type": "node",
+              "position": {
+                "x": 1820.9543181679276,
+                "y": 278.07897466540163
+              },
+              "title": "混沌神明-外神",
+              "createdAt": "2025-12-18T10:06:08.505Z",
+              "updatedAt": "2025-12-18T10:15:04.403Z",
+              "data": {
+                "title": "Node 3",
+                "content": "Double click to edit",
+                "isExpanded": false
+              },
+              "content": "\n\n## 定义\n存在于混沌域的高维存在，混沌本身的具现，宇宙无序状态的化身。\n\n## 核心特征\n- **本质**: 不是\"生物\"，而是混沌本身\n- **意识**: 无意识、无智慧、无目的\n- **行为**: 只有本能，无法控制\n- **状态**: 永恒存在于混沌域\n\n## 本质说明\n\n### 非生命性\n- 不是传统意义的\"生命\"\n- 没有生死概念\n- 无法被\"杀死\"，只能被\"驱离\"\n\n### 无意识性\n- 没有思考能力\n- 没有情感\n- 没有善恶概念\n- 一切行为都是本能反应\n\n### 无边界性\n- 没有明确的\"个体\"边界\n- 可能是混沌的\"区域聚集\"\n- 不同外神之间界限模糊\n\n## 本能行为\n\n### 吞噬本能\n- 外神的唯一本能：将秩序回归混沌\n- 不是\"主动侵略\"，而是\"自然流动\"\n- 类比：水往低处流，不是水的\"选择\"\n\n### 吸引机制\n- 被秩序信号吸引（如飞蛾扑火）\n- 越强的秩序，吸引力越大\n- 新生秩序神明 = 最强吸引源\n\n### 吞噬过程\n- 外神\"靠近\"秩序神明\n- 概念边界开始震荡\n- 投影渗透进入物质空间\n- 秩序逐渐被侵蚀\n- 最终：秩序崩溃 → 回归混沌\n\n## 外神的形态\n\n### 不可名状性\n- 无法用物质世界的语言描述\n- 任何描述都是\"投影\"的扭曲\n- 真实形态超越三维认知\n\n### 多样性\n- 混沌域中存在多个外神\n- 每个外神代表不同类型的混沌\n- 不同外神产生不同类型的投影\n\n## 外神与投影的关系\n- 外神 ≠ 投影\n- 投影是外神存在的\"副产品\"\n- 外神不知道、不控制、不在意投影\n- 类比：手电筒（外神）和墙上的影子（投影）\n",
+              "width": 600,
+              "height": 450,
+              "groupId": "node_1766052159571_3jriafai9",
+              "style": {
+                "width": 600,
+                "height": 450
+              },
+              "isExpanded": true
+            }
+          ],
+          "edges": [
+            {
+              "id": "edge_1766052415685",
+              "source": "node_1766052368505_gb6m70xec",
+              "target": "node_1766052312011_4f4epe2gj",
+              "createdAt": "2025-12-18T10:06:55.685Z",
+              "updatedAt": "2025-12-18T10:14:14.023Z",
+              "sourceHandle": "left",
+              "targetHandle": "right",
+              "data": {
+                "isCrossGroup": false,
+                "strokeWidth": 1,
+                "direction": "unidirectional",
+                "color": "#000000",
+                "strokeDasharray": "",
+                "weight": 1,
+                "strength": 1,
+                "customProperties": {
+                  "relationship": "吞噬"
+                }
+              },
+              "label": "吞噬"
+            }
+          ]
+        },
+        "viewportState": {
+          "x": 0,
+          "y": 0,
+          "zoom": 1
+        },
+        "isCollapsed": false,
+        "createdAt": "2025-12-17T07:50:19.658Z",
+        "updatedAt": "2025-12-19T01:38:23.586Z"
       }
     ],
     "canvasTree": [
@@ -575,8 +1012,14 @@
             "children": []
           }
         ]
+      },
+      {
+        "id": "canvas_TOokEQYmQ8JILMd60XuqG",
+        "name": "诡眼",
+        "isCollapsed": false,
+        "children": []
       }
     ]
   },
-  "timestamp": "2025-12-15T09:16:56.150Z"
+  "timestamp": "2025-12-19T01:38:23.595Z"
 }
