@@ -208,11 +208,17 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
             value={JSON.stringify(formData.customProperties || {}, null, 2)}
             onChange={(e) => {
               try {
-                const parsed = JSON.parse(e.target.value);
-                handleInputChange('customProperties', parsed);
+                if (e.target.value.trim() === '') {
+                  // 如果文本框为空，设置为空对象
+                  handleInputChange('customProperties', {});
+                } else {
+                  const parsed = JSON.parse(e.target.value);
+                  handleInputChange('customProperties', parsed);
+                }
               } catch (error) {
-                // 如果JSON格式不正确，保留原值或设置为空对象
-                console.error("Invalid JSON format for custom properties:", error);
+                // 如果JSON格式不正确，不更新值，但显示错误提示
+                console.log("Invalid JSON format for custom properties, keeping previous value:", error);
+                // 这里可以选择显示一个错误信息给用户
               }
             }}
             className="w-full p-2 border border-gray-300 rounded text-xs font-mono"

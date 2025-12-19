@@ -221,12 +221,33 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
     setSelectedEdgeId(null);
   }, [setSelectedNodeId, setSelectedEdgeId]);
 
+  // 双击检测相关状态
+  const [lastEdgeClickTime, setLastEdgeClickTime] = useState(0);
+  const [lastClickedEdgeId, setLastClickedEdgeId] = useState<string | null>(null);
+
   // 边点击
   const onEdgeClick = useCallback((event: React.MouseEvent, edge: ReactFlowEdge) => {
     event.stopPropagation();
-    setSelectedEdgeId(edge.id);
-    setSelectedNodeId(null);
-  }, [setSelectedEdgeId, setSelectedNodeId]);
+
+    // 检测双击
+    const now = Date.now();
+    if (
+      lastClickedEdgeId === edge.id &&
+      now - lastEdgeClickTime < 300 // 300ms 内再次点击认为是双击
+    ) {
+      // 双击逻辑 - 这里我们需要一种方式来通知边组件进入编辑模式
+      // 我们可以使用全局状态或事件系统
+      window.dispatchEvent(new CustomEvent('edgeDoubleClick', { detail: { edgeId: edge.id } }));
+      setLastEdgeClickTime(0); // 重置时间以避免三击被误认为是双击
+      setLastClickedEdgeId(null);
+    } else {
+      // 单击逻辑
+      setLastEdgeClickTime(now);
+      setLastClickedEdgeId(edge.id);
+      setSelectedEdgeId(edge.id);
+      setSelectedNodeId(null);
+    }
+  }, [setSelectedEdgeId, setSelectedNodeId, lastEdgeClickTime, lastClickedEdgeId]);
 
   // 画布点击
   const onPaneClick = useCallback(() => {
@@ -368,6 +389,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           panOnDrag={[2]} // 仅右键拖拽画布（或使用 [1, 2] 允许左键和中键）
           nodesDraggable={true}
           nodesConnectable={true}
+          preventScrolling={false} // ✅ 允许节点内部滚动，配合 nowheel 类使用
           onEdgesChange={(changes) => {
             onEdgesChange(changes);
 

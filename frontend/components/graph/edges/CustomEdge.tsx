@@ -1,5 +1,6 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { BaseEdge, EdgeLabelRenderer, Position, getBezierPath, EdgeProps, MarkerType } from 'reactflow';
+import { useGraphStore } from '@/stores/graph';
 
 interface CustomEdgeData {
   label?: string;
@@ -27,6 +28,7 @@ const CustomEdge = ({
   markerEnd,
   style,
 }: EdgeProps<CustomEdgeData>) => {
+  const { updateEdge } = useGraphStore();
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -116,6 +118,55 @@ const CustomEdge = ({
   // 确定标签文本
   const labelText = data?.label || (data?.customProperties?.relationship || '');
 
+  // 状态管理 - 使用局部状态处理双击编辑
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [labelValue, setLabelValue] = React.useState(labelText || '');
+
+  // 监听来自GraphPageContent的双击事件
+  React.useEffect(() => {
+    const handleEdgeDoubleClick = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail.edgeId === id) {
+        setIsEditing(true);
+      }
+    };
+
+    window.addEventListener('edgeDoubleClick', handleEdgeDoubleClick);
+    return () => {
+      window.removeEventListener('edgeDoubleClick', handleEdgeDoubleClick);
+    };
+  }, [id]);
+
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLabelValue(e.target.value);
+  };
+
+  const handleBlur = useCallback(() => {
+    // 更新边的标签 - 同时更新边的label字段和data.customProperties.relationship字段
+    const updatedData = {
+      ...data,
+      customProperties: {
+        ...(data?.customProperties || {}),
+        relationship: labelValue
+      }
+    };
+
+    updateEdge(id, {
+      ...updatedData,
+      label: labelValue  // 直接更新边的label属性
+    });
+    setIsEditing(false);
+  }, [id, data, labelValue, updateEdge]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBlur();
+    } else if (e.key === 'Escape') {
+      setLabelValue(labelText || ''); // 恢复原始值
+      setIsEditing(false);
+    }
+  };
+
   return (
     <>
       <BaseEdge
@@ -165,17 +216,17 @@ const CustomEdge = ({
           </marker>
         )}
       </defs>
-      {labelText && (
+      {(labelText || isEditing) && (
         <EdgeLabelRenderer>
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
               fontSize: '12px',
-              padding: '4px 6px',
-              background: labelBackground,
-              border: '1px solid #ddd',
-              borderRadius: '6px',
+              padding: isEditing ? '0' : '4px 6px',
+              background: isEditing ? 'transparent' : labelBackground,
+              border: isEditing ? 'none' : '1px solid #ddd',
+              borderRadius: isEditing ? '0' : '6px',
               pointerEvents: 'all',
               zIndex: 3, // 确保标签在边之上，但低于节点
               fontWeight: 'normal',
@@ -183,7 +234,30 @@ const CustomEdge = ({
             }}
             className="nodrag nopan"
           >
-            {labelText}
+            {isEditing ? (
+              <input
+                type="text"
+                value={labelValue}
+                onChange={handleLabelChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                style={{
+                  padding: '4px 6px',
+                  border: '1px solid #3b82f6',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  background: '#fff',
+                  outline: 'none',
+                  minWidth: '100px',
+                  width: 'auto',
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()} // 防止双击事件冒泡
+              />
+            ) : (
+              labelText
+            )}
           </div>
         </EdgeLabelRenderer>
       )}

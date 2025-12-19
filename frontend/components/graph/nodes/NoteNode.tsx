@@ -193,7 +193,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
 
         {/* 内容区域 - 使用flex-1自动占据剩余空间 */}
         <div 
-          className="flex-1 px-4 py-3 overflow-hidden nodrag"
+          className="flex-1 px-4 py-3 overflow-hidden nodrag nowheel"
           style={{
             minHeight: '100px', // 最小高度
           }}
@@ -213,7 +213,7 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
               }}
             />
           ) : (
-            <div className="cursor-text overflow-y-auto h-full custom-scrollbar" onDoubleClick={handleToggleEdit}>
+            <div className="cursor-text overflow-y-auto h-full custom-scrollbar nowheel" onDoubleClick={handleToggleEdit}>
               {editContent ? (
                 <MarkdownRenderer 
                   content={isExpanded ? editContent : truncateContent(editContent)} 
