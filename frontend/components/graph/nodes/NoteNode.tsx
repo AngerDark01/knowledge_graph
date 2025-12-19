@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useEffect } from 'react';
+import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { NodeProps } from 'reactflow';
 import BaseNode from './BaseNode';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
@@ -30,6 +30,27 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
 
   // 从store获取转换函数，这样可以订阅状态变化
   const { convertNodeToGroup } = useGraphStore();
+
+  // 用于处理滚轮事件的 ref
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // 处理选中节点时的滚轮事件，阻止全局缩放
+  useEffect(() => {
+    const element = contentRef.current;
+    if (!element || !selected) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // 阻止事件冒泡到 ReactFlow，防止触发全局缩放
+      e.stopPropagation();
+    };
+
+    // 使用 passive: false 允许 preventDefault
+    element.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      element.removeEventListener('wheel', handleWheel);
+    };
+  }, [selected]);
 
   // 监听节点尺寸变化(用户手动调整)
   useEffect(() => {
@@ -214,7 +235,8 @@ const NoteNode: React.FC<NodeProps<NoteNodeData>> = ({ id, data, selected, ...re
             />
           ) : (
             <div
-              className={`cursor-text overflow-y-auto h-full custom-scrollbar ${selected ? 'nowheel' : ''}`}
+              ref={contentRef}
+              className="cursor-text overflow-y-auto h-full custom-scrollbar"
               onDoubleClick={handleToggleEdit}
             >
               {editContent ? (
