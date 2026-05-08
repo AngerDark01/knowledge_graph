@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import LayoutControl from './LayoutControl';
 import { useGraphStore } from '@/stores/graph';
-import { BlockEnum } from '@/types/graph/models';
-import { MermaidImportDialog } from '@/components/graph/import/MermaidImportDialog';
+import { isLegacyOntologyDomainDisplay } from '@/features/ontology-canvas';
 
 interface ToolbarProps {
   onNodeAdd: () => void;
@@ -18,42 +17,27 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onRecenter,
   onClear
 }) => {
-  // 🔧 获取当前选中的节点信息
-  const { selectedNodeId, nodes } = useGraphStore();
+  const selectedNodeId = useGraphStore(state => state.selectedNodeId);
+  const nodes = useGraphStore(state => state.nodes);
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
-  const isGroupSelected = selectedNode?.type === BlockEnum.GROUP;
-
-  // Mermaid导入对话框状态
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const isDomainSelected = selectedNode
+    ? isLegacyOntologyDomainDisplay(selectedNode)
+    : false;
 
   return (
-    <>
-      <MermaidImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
     <div className="mt-6 space-y-2">
-      {/* 显示当前上下文提示 */}
-      {isGroupSelected && (
+      {isDomainSelected && (
         <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200 mb-2">
-          📦 Group selected: Adding items inside
+          Domain selected: new items will be added inside
         </div>
       )}
 
       <Button className="w-full" onClick={onNodeAdd}>
-        {isGroupSelected ? 'Add Node (Inside Group)' : 'Add Node'}
+        {isDomainSelected ? 'Add Class Inside' : 'Add Class'}
       </Button>
       <Button className="w-full" variant="outline" onClick={onGroupAdd}>
-        {isGroupSelected ? 'Add Nested Group' : 'Add Group'}
+        {isDomainSelected ? 'Add Nested Domain' : 'Add Domain'}
       </Button>
-
-      {/* Mermaid导入按钮 */}
-      <div className="pt-2 border-t border-gray-200">
-        <Button
-          className="w-full"
-          variant="outline"
-          onClick={() => setImportDialogOpen(true)}
-        >
-          📥 导入 Mermaid
-        </Button>
-      </div>
 
       <Button className="w-full" variant="outline" onClick={onRecenter}>
         Recenter View
@@ -67,6 +51,5 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <LayoutControl />
       </div>
     </div>
-    </>
   );
 };

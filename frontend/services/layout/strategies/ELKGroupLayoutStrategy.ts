@@ -1,17 +1,11 @@
 // src/services/layout/strategies/ELKGroupLayoutStrategy.ts（正确版本）
-import { Node, Group, Edge } from '../../../types/graph/models';
-import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTypes';
-import { ELKGraphConverter, ElkNode } from '../utils/ELKGraphConverter';
+import { Node, Group, Edge, BlockEnum } from '../../../types/graph/models';
+import { ILayoutStrategy, LayoutResult, LayoutOptions, LayoutNodePosition } from '../types/layoutTypes';
+import { type ElkEdge, type ElkNode } from '../utils/ELKGraphConverter';
 import { ELKConfigBuilder } from '../utils/ELKConfigBuilder';
+import { createELKEngine, type ELKEngine } from '../utils/ELKRuntime';
+import { logLayoutDebug } from '../utils/layoutDebug';
 import { LAYOUT_CONFIG, PADDING_CONFIG } from '../../../config/layout';
-
-let ELK: any;
-
-interface ElkEdge {
-  id: string;
-  sources: string[];
-  targets: string[];
-}
 
 /**
  * 修正的 ELK 群组布局策略
@@ -26,19 +20,21 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
   readonly name = 'ELK Group Layout';
   readonly id = 'elk-group-layout';
 
-  private elk: any;
-  private elkReady: Promise<void>;
+  private elkReady: Promise<ELKEngine> | null = null;
 
-  constructor() {
-    this.elkReady = this.initELK();
+  private getELK(): Promise<ELKEngine> {
+    if (!this.elkReady) {
+      this.elkReady = this.initELK();
+    }
+
+    return this.elkReady;
   }
 
-  private async initELK(): Promise<void> {
+  private async initELK(): Promise<ELKEngine> {
     try {
-      const elkModule = await import('elkjs/lib/elk.bundled.js');
-      ELK = elkModule.default || elkModule;
-      this.elk = new ELK();
-      console.log('✅ ELK 库加载成功 (Group Layout Strategy)');
+      const elk = await createELKEngine();
+      logLayoutDebug('ELK 库加载成功 (Group Layout Strategy)');
+      return elk;
     } catch (error) {
       console.error('❌ ELK 库加载失败:', error);
       throw new Error('Failed to load ELK library. Please install: npm install elkjs');
@@ -53,13 +49,9 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
     const startTime = performance.now();
 
     try {
-      console.log(`🎯 ELKGroupLayoutStrategy: 开始布局群组内部`);
+      logLayoutDebug('ELKGroupLayoutStrategy: 开始布局群组内部');
 
-      await this.elkReady;
-
-      if (!this.elk) {
-        throw new Error('ELK library is not initialized');
-      }
+      const elk = await this.getELK();
 
       const targetGroupId = options?.groupId;
       if (!targetGroupId) {
@@ -67,16 +59,16 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
       }
 
       const targetGroup = nodes.find(n => n.id === targetGroupId);
-      if (!targetGroup || targetGroup.type !== 'group') {
+      if (!targetGroup || targetGroup.type !== BlockEnum.GROUP) {
         throw new Error(`Target node is not a group: ${targetGroupId}`);
       }
 
-      console.log(`🔍 目标群组: ${targetGroupId.substring(0, 8)}..., 位置: (${targetGroup.position.x}, ${targetGroup.position.y})`);
+      logLayoutDebug(`目标群组: ${targetGroupId.substring(0, 8)}..., 位置: (${targetGroup.position.x}, ${targetGroup.position.y})`);
 
       // 提取子图
       const { subgraphNodes, subgraphEdges } = this.extractSubgraph(nodes, edges, targetGroupId);
 
-      console.log(`📊 子图包含 ${subgraphNodes.length} 个节点和 ${subgraphEdges.length} 条边`);
+      logLayoutDebug(`子图包含 ${subgraphNodes.length} 个节点和 ${subgraphEdges.length} 条边`);
 
       if (subgraphNodes.length === 0) {
         console.warn(`⚠️ 群组 ${targetGroupId} 没有内部节点，无需布局`);
@@ -92,11 +84,11 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
       // 构建 ELK 子图
       const elkGraph = this.createSubgraph(targetGroup, subgraphNodes, subgraphEdges, options);
 
-      console.log('🔄 执行 ELK 子图布局...');
+      logLayoutDebug('执行 ELK 子图布局...');
       const layoutStartTime = performance.now();
-      const elkLayout: ElkNode = await this.elk.layout(elkGraph);
+      const elkLayout: ElkNode = await elk.layout(elkGraph);
       const layoutDuration = performance.now() - layoutStartTime;
-      console.log(`⚡ ELK 子图布局计算耗时: ${layoutDuration.toFixed(0)}ms`);
+      logLayoutDebug(`ELK 子图布局计算耗时: ${layoutDuration.toFixed(0)}ms`);
 
       // ✅ 正确的坐标转换
       const nodePositions = this.extractLayoutResults(elkLayout, targetGroup);
@@ -118,9 +110,9 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
       const endTime = performance.now();
       const totalDuration = endTime - startTime;
 
-      console.log(`✅ ELK 群组内部布局完成！`);
-      console.log(`   • 更新了 ${nodePositions.size} 个节点位置（含自身边界）`);
-      console.log(`   • 总耗时: ${totalDuration.toFixed(0)}ms`);
+      logLayoutDebug('ELK 群组内部布局完成');
+      logLayoutDebug(`更新了 ${nodePositions.size} 个节点位置（含自身边界）`);
+      logLayoutDebug(`总耗时: ${totalDuration.toFixed(0)}ms`);
 
       return {
         success: true,
@@ -152,9 +144,9 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
     const descendantNodes = this.getDescendants(nodes, rootGroupId);
     const subgraphNodes = [...descendantNodes, ...nodes.filter(n => n.id === rootGroupId)];
 
+    const subgraphNodeIds = new Set(subgraphNodes.map(node => node.id));
     const subgraphEdges = edges.filter(edge =>
-      subgraphNodes.some(node => node.id === edge.source) &&
-      subgraphNodes.some(node => node.id === edge.target)
+      subgraphNodeIds.has(edge.source) && subgraphNodeIds.has(edge.target)
     );
 
     return { subgraphNodes, subgraphEdges };
@@ -162,13 +154,11 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
 
   private getDescendants(nodes: (Node | Group)[], groupId: string): (Node | Group)[] {
     const descendants: (Node | Group)[] = [];
-    const directChildren = nodes.filter(n =>
-      'groupId' in n && (n as Node | Group).groupId === groupId
-    );
+    const directChildren = nodes.filter(node => node.groupId === groupId);
 
     for (const child of directChildren) {
       descendants.push(child);
-      if (child.type === 'group') {
+      if (child.type === BlockEnum.GROUP) {
         const nestedDescendants = this.getDescendants(nodes, child.id);
         descendants.push(...nestedDescendants);
       }
@@ -177,14 +167,13 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
   }
 
   private createSubgraph(
-    targetGroup: Node | Group,
+    targetGroup: Group,
     subgraphNodes: (Node | Group)[],
     subgraphEdges: Edge[],
     options?: LayoutOptions
   ): ElkNode {
     const directChildren = subgraphNodes.filter(
-      node => node.id !== targetGroup.id && 'groupId' in node &&
-      (node as any).groupId === targetGroup.id
+      node => node.id !== targetGroup.id && node.groupId === targetGroup.id
     );
 
     // 使用ELKConfigBuilder获取基础配置，确保与ELKLayoutStrategy一致
@@ -200,8 +189,8 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
 
     return {
       id: targetGroup.id,
-      width: targetGroup.width || 1000,
-      height: targetGroup.height || 600,
+      width: targetGroup.width || LAYOUT_CONFIG.nodeSize.groupNode.width,
+      height: targetGroup.height || LAYOUT_CONFIG.nodeSize.groupNode.height,
       layoutOptions,
       children: this.convertNodesRecursive(directChildren, subgraphNodes),
       edges: this.convertEdges(subgraphEdges)
@@ -219,9 +208,9 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
         height: node.height || this.getDefaultHeight(node)
       };
 
-      if (node.type === 'group') {
+      if (node.type === BlockEnum.GROUP) {
         const groupChildren = allSubgraphNodes.filter(
-          n => 'groupId' in n && (n as any).groupId === node.id
+          n => n.groupId === node.id
         );
 
         if (groupChildren.length > 0) {
@@ -255,14 +244,14 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
    */
   private extractLayoutResults(
     elkLayout: ElkNode,
-    targetGroup: Node | Group
-  ): Map<string, { x: number; y: number; width?: number; height?: number }> {
-    const nodePositions = new Map<string, { x: number; y: number; width?: number; height?: number }>();
+    targetGroup: Group
+  ): Map<string, LayoutNodePosition> {
+    const nodePositions = new Map<string, LayoutNodePosition>();
 
     const groupBaseX = targetGroup.position.x;
     const groupBaseY = targetGroup.position.y;
 
-    console.log(`📍 群组基准点: (${groupBaseX}, ${groupBaseY})`);
+    logLayoutDebug(`群组基准点: (${groupBaseX}, ${groupBaseY})`);
 
     // 递归处理节点
     // parentOffsetX/Y: 从根群组到该节点父容器的累积位移
@@ -296,8 +285,8 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
       const absoluteY = groupBaseY + offsetY;
 
       const indent = '  '.repeat(depth);
-      console.log(
-        `${indent}📍 ${elkNode.id.substring(0, 8)}... ` +
+      logLayoutDebug(
+        `${indent}${elkNode.id.substring(0, 8)}... ` +
         `相对: (${nodeX.toFixed(0)}, ${nodeY.toFixed(0)}) | ` +
         `累积: (${offsetX.toFixed(0)}, ${offsetY.toFixed(0)}) | ` +
         `绝对: (${absoluteX.toFixed(0)}, ${absoluteY.toFixed(0)})`
@@ -312,7 +301,7 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
 
       // 递归处理子节点
       if (elkNode.children && elkNode.children.length > 0) {
-        console.log(`${indent}🔽 处理 ${elkNode.children.length} 个子节点`);
+        logLayoutDebug(`${indent}处理 ${elkNode.children.length} 个子节点`);
         for (const child of elkNode.children) {
           // 关键：传递当前节点的累积偏移作为子节点的父偏移
           processElkNode(child, offsetX, offsetY, depth + 1);
@@ -339,7 +328,9 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
 
   private getDefaultWidth(node: Node | Group): number {
     if (node.width && node.width > 0) return node.width;
-    return node.type === 'group' ? 180 : 120;
+    return node.type === BlockEnum.GROUP
+      ? LAYOUT_CONFIG.nodeSize.groupNode.width
+      : LAYOUT_CONFIG.nodeSize.defaultNode.width;
   }
 
   /**
@@ -383,10 +374,12 @@ export class ELKGroupLayoutStrategy implements ILayoutStrategy {
 
   private getDefaultHeight(node: Node | Group): number {
     if (node.height && node.height > 0) return node.height;
-    return node.type === 'group' ? 120 : 60;
+    return node.type === BlockEnum.GROUP
+      ? LAYOUT_CONFIG.nodeSize.groupNode.height
+      : LAYOUT_CONFIG.nodeSize.defaultNode.height;
   }
 
-  validateConfig(config: any): boolean {
+  validateConfig(): boolean {
     return true;
   }
 }

@@ -5,8 +5,33 @@ import { Node, Group, Edge } from '../../../types/graph/models';
 export type LayoutNode = Node | Group;
 export type LayoutEdge = Edge;
 
+export type LayoutStrategyId = 'elk-layout' | 'elk-group-layout' | string;
+export type ELKLayoutDirection = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
+export type ELKLayoutOptionValue = string | number | boolean;
+export type ELKLayoutOptions = Record<string, ELKLayoutOptionValue>;
+
+export interface LayoutProgress {
+  currentLevel: number;
+  totalLevels: number;
+  processedNodes: number;
+  totalNodes: number;
+}
+
+export interface LayoutNodePosition {
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  boundary?: Group['boundary'];
+}
+
+export interface LayoutEdgeUpdate {
+  sourceHandle?: string;
+  targetHandle?: string;
+}
+
 export interface LayoutOptions {
-  strategy?: string;
+  strategy?: LayoutStrategyId;
   animate?: boolean;
 
   // 布局范围控制
@@ -19,14 +44,14 @@ export interface LayoutOptions {
   // 特定功能参数
   groupId?: string;  // 用于群组内部布局策略
 
-  onProgress?: (progress: { currentLevel: number; totalLevels: number; processedNodes: number; totalNodes: number }) => void;
-  [key: string]: any;
+  elkOptions?: ELKLayoutOptions;
+  onProgress?: (progress: LayoutProgress) => void;
 }
 
 export interface LayoutResult {
   success: boolean;
-  nodes: Map<string, { x: number; y: number }>;
-  edges: Map<string, any>;
+  nodes: Map<string, LayoutNodePosition>;
+  edges: Map<string, LayoutEdgeUpdate>;
   errors: string[];
   stats: {
     duration: number;
@@ -45,5 +70,5 @@ export interface ILayoutStrategy {
     options?: LayoutOptions
   ): Promise<LayoutResult>;
   
-  validateConfig(config: any): boolean;
+  validateConfig(config: unknown): boolean;
 }

@@ -1,10 +1,9 @@
 // src/services/layout/strategies/ELKLayoutStrategy.ts
 import { Node, Group, Edge } from '../../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from '../types/layoutTypes';
-import { ELKGraphConverter, ElkNode } from '../utils/ELKGraphConverter';
-
-// 动态导入 ELK（按需加载，减小初始包体积）
-let ELK: any;
+import { ELKGraphConverter, type ElkNode } from '../utils/ELKGraphConverter';
+import { createELKEngine, type ELKEngine } from '../utils/ELKRuntime';
+import { logLayoutDebug } from '../utils/layoutDebug';
 
 /**
  * ELK布局策略
@@ -24,24 +23,24 @@ export class ELKLayoutStrategy implements ILayoutStrategy {
   readonly name = 'ELK Layout';
   readonly id = 'elk-layout';
 
-  private elk: any;
-  private elkReady: Promise<void>;
-
-  constructor() {
-    // 异步加载 ELK 库
-    this.elkReady = this.initELK();
-  }
+  private elkReady: Promise<ELKEngine> | null = null;
 
   /**
-   * 初始化 ELK 库（懒加载）
+   * 获取 ELK 库实例（真正执行布局时才加载）
    */
-  private async initELK(): Promise<void> {
+  private getELK(): Promise<ELKEngine> {
+    if (!this.elkReady) {
+      this.elkReady = this.initELK();
+    }
+
+    return this.elkReady;
+  }
+
+  private async initELK(): Promise<ELKEngine> {
     try {
-      // 动态导入 ELK
-      const elkModule = await import('elkjs/lib/elk.bundled.js');
-      ELK = elkModule.default || elkModule;
-      this.elk = new ELK();
-      console.log('✅ ELK 库加载成功');
+      const elk = await createELKEngine();
+      logLayoutDebug('ELK 库加载成功');
+      return elk;
     } catch (error) {
       console.error('❌ ELK 库加载失败:', error);
       throw new Error('Failed to load ELK library. Please install: npm install elkjs');
@@ -59,40 +58,35 @@ export class ELKLayoutStrategy implements ILayoutStrategy {
     const startTime = performance.now();
 
     try {
-      console.log(`🎯 ELKLayoutStrategy: 开始布局 ${nodes.length} 个节点, ${edges.length} 条边`);
+      logLayoutDebug(`ELKLayoutStrategy: 开始布局 ${nodes.length} 个节点, ${edges.length} 条边`);
 
-      // 确保 ELK 已加载
-      await this.elkReady;
-
-      if (!this.elk) {
-        throw new Error('ELK library is not initialized');
-      }
+      const elk = await this.getELK();
 
       // 1. 转换为 ELK 图格式
-      console.log('📊 步骤 1/3: 转换数据格式...');
+      logLayoutDebug('步骤 1/3: 转换数据格式...');
       const elkGraph = ELKGraphConverter.toELKGraph(nodes, edges, options);
 
       // 2. 调用 ELK 布局
-      console.log('🔄 步骤 2/3: 执行 ELK 布局算法...');
+      logLayoutDebug('步骤 2/3: 执行 ELK 布局算法...');
       const layoutStartTime = performance.now();
 
-      const elkLayout: ElkNode = await this.elk.layout(elkGraph);
+      const elkLayout: ElkNode = await elk.layout(elkGraph);
 
       const layoutDuration = performance.now() - layoutStartTime;
-      console.log(`⚡ ELK 布局计算耗时: ${layoutDuration.toFixed(0)}ms`);
+      logLayoutDebug(`ELK 布局计算耗时: ${layoutDuration.toFixed(0)}ms`);
 
       // 3. 提取节点位置
-      console.log('📍 步骤 3/3: 提取节点位置...');
+      logLayoutDebug('步骤 3/3: 提取节点位置...');
       const nodePositions = ELKGraphConverter.fromELKLayout(elkLayout);
 
       // 4. 构建返回结果
       const endTime = performance.now();
       const totalDuration = endTime - startTime;
 
-      console.log(`✅ ELK 布局完成！`);
-      console.log(`   • 更新了 ${nodePositions.size} 个节点位置`);
-      console.log(`   • 总耗时: ${totalDuration.toFixed(0)}ms`);
-      console.log(`   • 算法: ${elkGraph.layoutOptions?.['elk.algorithm'] || 'layered'}`);
+      logLayoutDebug('ELK 布局完成');
+      logLayoutDebug(`更新了 ${nodePositions.size} 个节点位置`);
+      logLayoutDebug(`总耗时: ${totalDuration.toFixed(0)}ms`);
+      logLayoutDebug(`算法: ${elkGraph.layoutOptions?.['elk.algorithm'] || 'layered'}`);
 
       return {
         success: true,
@@ -129,7 +123,7 @@ export class ELKLayoutStrategy implements ILayoutStrategy {
   /**
    * 验证配置
    */
-  validateConfig(config: any): boolean {
+  validateConfig(): boolean {
     // ELK 布局不需要特殊的配置验证
     // 配置项由 ELKConfigBuilder 提供默认值
     return true;

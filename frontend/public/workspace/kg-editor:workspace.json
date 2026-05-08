@@ -2,15 +2,168 @@
   "version": "1.0.0",
   "workspace": {
     "userId": "user_0",
-    "currentCanvasId": "canvas_TOokEQYmQ8JILMd60XuqG",
+    "currentCanvasId": "canvas_4MbLmkyQ6rwNJ1iH7NGNW",
     "canvases": [
       {
-        "id": "canvas_default",
-        "name": "测试画布",
+        "id": "canvas_ontology_root",
+        "name": "Ontology Canvas",
         "parentId": null,
-        "children": [],
+        "children": [
+          "canvas_4MbLmkyQ6rwNJ1iH7NGNW"
+        ],
+        "ontologyDocument": {
+          "persistenceVersion": 1,
+          "graph": {
+            "id": "canvas_ontology_root",
+            "name": "Ontology Canvas",
+            "schemaVersion": 1,
+            "nodes": {},
+            "edges": {},
+            "domains": {},
+            "subgraphs": {
+              "canvas_ontology_root:root": {
+                "id": "canvas_ontology_root:root",
+                "name": "Root",
+                "nodeIds": [],
+                "edgeIds": []
+              }
+            },
+            "metadata": {
+              "source": "legacy-graph"
+            }
+          },
+          "view": {
+            "nodeViews": {},
+            "domainViews": {},
+            "edgeViews": {},
+            "viewport": {
+              "x": 882.0399527533837,
+              "y": 391.2982110382435,
+              "zoom": 0.5872309856068268
+            },
+            "lod": "full",
+            "edgeVisibility": {
+              "mode": "all",
+              "ids": []
+            }
+          },
+          "revision": 457,
+          "savedAt": "2026-05-08T02:55:29.710Z"
+        },
         "graphData": {
           "nodes": [],
+          "edges": []
+        },
+        "viewportState": {
+          "x": 882.0399527533837,
+          "y": 391.2982110382435,
+          "zoom": 0.5872309856068268
+        },
+        "isCollapsed": false,
+        "createdAt": "2026-04-30T00:00:00.000Z",
+        "updatedAt": "2026-05-08T02:55:29.710Z"
+      },
+      {
+        "id": "canvas_d6ICtOkCyrQWLTaxhf0ts",
+        "name": "1",
+        "parentId": null,
+        "children": [],
+        "ontologyDocument": {
+          "persistenceVersion": 1,
+          "graph": {
+            "id": "canvas_d6ICtOkCyrQWLTaxhf0ts",
+            "name": "1",
+            "schemaVersion": 1,
+            "nodes": {
+              "class_1778123494408_lglixdcbt": {
+                "id": "class_1778123494408_lglixdcbt",
+                "name": "Class 1",
+                "type": "Class",
+                "description": "Ontology class node",
+                "fields": [],
+                "tags": [],
+                "subgraphId": "canvas_d6ICtOkCyrQWLTaxhf0ts:root",
+                "metadata": {
+                  "source": "ontology-canvas-toolbar"
+                }
+              }
+            },
+            "edges": {},
+            "domains": {},
+            "subgraphs": {
+              "canvas_d6ICtOkCyrQWLTaxhf0ts:root": {
+                "id": "canvas_d6ICtOkCyrQWLTaxhf0ts:root",
+                "name": "Root",
+                "nodeIds": [
+                  "class_1778123494408_lglixdcbt"
+                ],
+                "edgeIds": []
+              }
+            },
+            "metadata": {
+              "source": "ontology-canvas"
+            }
+          },
+          "view": {
+            "nodeViews": {
+              "class_1778123494408_lglixdcbt": {
+                "id": "class_1778123494408_lglixdcbt",
+                "position": {
+                  "x": -28.40123495314964,
+                  "y": -321.77053033298444
+                },
+                "width": 418,
+                "height": 240,
+                "expanded": false
+              }
+            },
+            "domainViews": {},
+            "edgeViews": {},
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "zoom": 1
+            },
+            "lod": "full",
+            "edgeVisibility": {
+              "mode": "all",
+              "ids": []
+            }
+          },
+          "revision": 35,
+          "savedAt": "2026-05-07T03:11:51.376Z"
+        },
+        "graphData": {
+          "nodes": [
+            {
+              "id": "class_1778123494408_lglixdcbt",
+              "type": "node",
+              "position": {
+                "x": -28.40123495314964,
+                "y": -321.77053033298444
+              },
+              "title": "Class 1",
+              "createdAt": "2026-05-07T03:11:51.376Z",
+              "updatedAt": "2026-05-07T03:11:51.376Z",
+              "data": {
+                "title": "Class 1",
+                "content": "Ontology class node",
+                "isExpanded": false,
+                "ontologyNodeId": "class_1778123494408_lglixdcbt",
+                "ontologyType": "Class"
+              },
+              "content": "Ontology class node",
+              "attributes": {
+                "ontologyType": "Class",
+                "ontologyNodeId": "class_1778123494408_lglixdcbt"
+              },
+              "tags": [],
+              "summary": "Ontology class node",
+              "isExpanded": false,
+              "width": 418,
+              "height": 240
+            }
+          ],
           "edges": []
         },
         "viewportState": {
@@ -19,2627 +172,263 @@
           "zoom": 1
         },
         "isCollapsed": false,
-        "createdAt": "2025-12-10T00:00:00.000Z",
-        "updatedAt": "2025-12-10T07:33:21.994Z"
+        "createdAt": "2026-05-07T03:11:30.246Z",
+        "updatedAt": "2026-05-07T03:11:51.376Z"
       },
       {
-        "id": "canvas_cmPufElHwliyM5Ysw8yru",
-        "name": "三端",
-        "parentId": null,
-        "children": [
-          "canvas_phgOqmbD8tqcshuR9D71d"
-        ],
-        "graphData": {
-          "nodes": [
-            {
-              "id": "node_1765349707569_a53sh94u2",
-              "type": "group",
-              "position": {
-                "x": 533.6341312150537,
-                "y": 81.73718331752056
-              },
-              "title": "Node 1",
-              "collapsed": false,
-              "nodeIds": [],
-              "boundary": {
-                "minX": 533.6341312150537,
-                "minY": 81.73718331752056,
-                "maxX": 1107.6341312150537,
-                "maxY": 902.7371833175206
-              },
-              "createdAt": "2025-12-10T06:55:07.569Z",
-              "updatedAt": "2025-12-10T07:33:37.305Z",
-              "data": {
-                "title": "Node 1",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "Double click to edit",
-              "width": 574,
-              "height": 821,
-              "style": {
-                "width": 574,
-                "height": 821
-              },
-              "convertedFrom": "node",
-              "isConverted": true
-            },
-            {
-              "id": "node_1765349755824_l31jv99g8",
-              "type": "node",
-              "position": {
-                "x": 12,
-                "y": 392
-              },
-              "title": "Node 2",
-              "createdAt": "2025-12-10T06:55:55.824Z",
-              "updatedAt": "2025-12-10T07:33:27.513Z",
-              "data": {
-                "title": "Node 2",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "Double click to edit",
-              "width": 350,
-              "height": 280,
-              "style": {
-                "width": 350,
-                "height": 280
-              }
-            }
-          ],
-          "edges": [
-            {
-              "id": "edge_1765349769842",
-              "source": "node_1765349707569_a53sh94u2",
-              "target": "node_1765349755824_l31jv99g8",
-              "createdAt": "2025-12-10T06:56:09.842Z",
-              "updatedAt": "2025-12-10T07:33:34.945Z",
-              "sourceHandle": "left",
-              "targetHandle": "right",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional"
-              }
-            }
-          ]
-        },
-        "viewportState": {
-          "x": 0,
-          "y": 0,
-          "zoom": 1
-        },
-        "isCollapsed": false,
-        "createdAt": "2025-12-10T06:55:01.064Z",
-        "updatedAt": "2025-12-10T07:33:37.370Z"
-      },
-      {
-        "id": "canvas_phgOqmbD8tqcshuR9D71d",
-        "name": "heihei",
-        "parentId": "canvas_cmPufElHwliyM5Ysw8yru",
+        "id": "canvas_4MbLmkyQ6rwNJ1iH7NGNW",
+        "name": "11",
+        "parentId": "canvas_ontology_root",
         "children": [],
+        "ontologyDocument": {
+          "persistenceVersion": 1,
+          "graph": {
+            "id": "canvas_4MbLmkyQ6rwNJ1iH7NGNW",
+            "name": "11",
+            "schemaVersion": 1,
+            "nodes": {
+              "class_1778208931711_myjgetrkg": {
+                "id": "class_1778208931711_myjgetrkg",
+                "name": "Class 1",
+                "type": "Class",
+                "description": "Ontology class node",
+                "fields": [
+                  {
+                    "id": "class_1778208931711_myjgetrkg:field:1778208942144",
+                    "name": "attribute",
+                    "dataType": "string",
+                    "category": "attribute"
+                  },
+                  {
+                    "id": "class_1778208931711_myjgetrkg:field:1778208943024",
+                    "name": "attribute2",
+                    "dataType": "string",
+                    "category": "attribute"
+                  },
+                  {
+                    "id": "class_1778208931711_myjgetrkg:field:1778208955526",
+                    "name": "attribute3",
+                    "dataType": "string",
+                    "category": "attribute"
+                  }
+                ],
+                "tags": [],
+                "subgraphId": "canvas_4MbLmkyQ6rwNJ1iH7NGNW:root",
+                "metadata": {
+                  "source": "ontology-canvas-toolbar"
+                }
+              }
+            },
+            "edges": {},
+            "domains": {},
+            "subgraphs": {
+              "canvas_4MbLmkyQ6rwNJ1iH7NGNW:root": {
+                "id": "canvas_4MbLmkyQ6rwNJ1iH7NGNW:root",
+                "name": "Root",
+                "nodeIds": [
+                  "class_1778208931711_myjgetrkg"
+                ],
+                "edgeIds": []
+              }
+            },
+            "metadata": {
+              "source": "ontology-canvas"
+            }
+          },
+          "view": {
+            "nodeViews": {
+              "class_1778208931711_myjgetrkg": {
+                "id": "class_1778208931711_myjgetrkg",
+                "position": {
+                  "x": -1183.58868961104,
+                  "y": -551.9331832493549
+                },
+                "width": 328,
+                "height": 240,
+                "expanded": true,
+                "customExpandedSize": {
+                  "width": 328,
+                  "height": 240
+                }
+              }
+            },
+            "domainViews": {},
+            "edgeViews": {},
+            "viewport": {
+              "x": 2055.949572111484,
+              "y": 845.1663170131924,
+              "zoom": 1.532619960207783
+            },
+            "lod": "full",
+            "edgeVisibility": {
+              "mode": "all",
+              "ids": []
+            }
+          },
+          "revision": 188,
+          "savedAt": "2026-05-08T03:24:50.468Z"
+        },
         "graphData": {
           "nodes": [
             {
-              "id": "group_1765351637258_0y8ycmy65",
-              "type": "group",
-              "position": {
-                "x": 210.1796484223687,
-                "y": -186.42160927210654
-              },
-              "title": "Group 1",
-              "collapsed": false,
-              "nodeIds": [
-                "group_1765351649871_t31ztt6up",
-                "node_1765351675341_uygsmxbkw"
-              ],
-              "boundary": {
-                "minX": 210.1796484223687,
-                "minY": -186.42160927210654,
-                "maxX": 1299.1796484223687,
-                "maxY": 431.57839072789346
-              },
-              "createdAt": "2025-12-10T07:27:17.258Z",
-              "updatedAt": "2025-12-18T02:34:35.665Z",
-              "data": {
-                "title": "Group 1",
-                "content": "Select this group and click \"Add Node/Group\" to add inside"
-              },
-              "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 1089,
-              "height": 618,
-              "style": {
-                "width": 1089,
-                "height": 618
-              }
-            },
-            {
-              "id": "group_1765351649871_t31ztt6up",
-              "type": "group",
-              "position": {
-                "x": 230.1796484223687,
-                "y": -46.39045305842188
-              },
-              "title": "Group 2",
-              "collapsed": false,
-              "nodeIds": [
-                "node_1765351651562_8e2bq5yjn"
-              ],
-              "boundary": {
-                "minX": 230.1796484223687,
-                "minY": -46.39045305842188,
-                "maxX": 774.1796484223687,
-                "maxY": 327.6095469415781
-              },
-              "createdAt": "2025-12-10T07:27:29.871Z",
-              "updatedAt": "2025-12-18T02:34:35.667Z",
-              "data": {
-                "title": "Group 2",
-                "content": "Nested group - add nodes or groups inside"
-              },
-              "content": "Nested group - add nodes or groups inside",
-              "width": 544,
-              "height": 374,
-              "groupId": "group_1765351637258_0y8ycmy65",
-              "style": {
-                "width": 544,
-                "height": 374
-              }
-            },
-            {
-              "id": "node_1765351651562_8e2bq5yjn",
+              "id": "class_1778208931711_myjgetrkg",
               "type": "node",
               "position": {
-                "x": 329.0105704944775,
-                "y": 23.609546941578117
+                "x": -1183.58868961104,
+                "y": -551.9331832493549
               },
-              "title": "Node 1",
-              "createdAt": "2025-12-10T07:27:31.562Z",
-              "updatedAt": "2025-12-18T02:34:35.668Z",
+              "title": "Class 1",
+              "createdAt": "2026-05-08T03:24:50.468Z",
+              "updatedAt": "2026-05-08T03:24:50.468Z",
               "data": {
-                "title": "Node 1",
-                "content": "Double click to edit",
-                "isExpanded": false
+                "title": "Class 1",
+                "content": "Ontology class node",
+                "isExpanded": true,
+                "ontologyNodeId": "class_1778208931711_myjgetrkg",
+                "ontologyType": "Class",
+                "ontologyViewModel": {
+                  "id": "class_1778208931711_myjgetrkg",
+                  "title": "Class 1",
+                  "type": "Class",
+                  "description": "Ontology class node",
+                  "tags": [],
+                  "sections": [
+                    {
+                      "id": "fields",
+                      "title": "Fields",
+                      "metricLabel": "3",
+                      "emptyLabel": "No fields yet",
+                      "items": [
+                        {
+                          "id": "class_1778208931711_myjgetrkg:field:1778208942144",
+                          "name": "attribute",
+                          "dataType": "string",
+                          "category": "attribute",
+                          "iconLabel": "P",
+                          "tone": "field"
+                        },
+                        {
+                          "id": "class_1778208931711_myjgetrkg:field:1778208943024",
+                          "name": "attribute2",
+                          "dataType": "string",
+                          "category": "attribute",
+                          "iconLabel": "P",
+                          "tone": "field"
+                        },
+                        {
+                          "id": "class_1778208931711_myjgetrkg:field:1778208955526",
+                          "name": "attribute3",
+                          "dataType": "string",
+                          "category": "attribute",
+                          "iconLabel": "P",
+                          "tone": "field"
+                        }
+                      ]
+                    }
+                  ],
+                  "metrics": [
+                    {
+                      "id": "fields",
+                      "label": "Fields",
+                      "value": 3,
+                      "iconLabel": "P",
+                      "tone": "field"
+                    },
+                    {
+                      "id": "methods",
+                      "label": "Methods",
+                      "value": 0,
+                      "iconLabel": "M",
+                      "tone": "method"
+                    },
+                    {
+                      "id": "children",
+                      "label": "Child Nodes",
+                      "value": 0,
+                      "iconLabel": "S",
+                      "tone": "subcanvas"
+                    },
+                    {
+                      "id": "relationships",
+                      "label": "Relations",
+                      "value": 0,
+                      "iconLabel": "L",
+                      "tone": "relationship"
+                    }
+                  ],
+                  "counts": {
+                    "fields": 3,
+                    "methods": 0,
+                    "rules": 0,
+                    "interfaces": 0,
+                    "relationships": 0,
+                    "childNodes": 0
+                  },
+                  "hasSubcanvas": true,
+                  "subcanvasLabel": "Root"
+                }
               },
-              "content": "欸，我去\n",
-              "width": 300,
-              "height": 240,
-              "groupId": "group_1765351649871_t31ztt6up",
-              "style": {
-                "width": 300,
-                "height": 240
+              "content": "Ontology class node",
+              "attributes": {
+                "ontologyType": "Class",
+                "ontologyNodeId": "class_1778208931711_myjgetrkg",
+                "attribute": {
+                  "dataType": "string",
+                  "category": "attribute"
+                },
+                "attribute2": {
+                  "dataType": "string",
+                  "category": "attribute"
+                },
+                "attribute3": {
+                  "dataType": "string",
+                  "category": "attribute"
+                }
               },
-              "nodeIds": [],
-              "collapsed": false,
-              "boundary": {
-                "minX": 329.0105704944775,
-                "minY": 23.609546941578117,
-                "maxX": 629.0105704944775,
-                "maxY": 263.6095469415781
-              },
-              "convertedFrom": "group",
-              "isConverted": true,
-              "savedChildren": [],
-              "savedEdges": [],
-              "originalPosition": {
-                "x": 329.0105704944775,
-                "y": 23.609546941578117
-              },
-              "originalSize": {
-                "width": 300,
-                "height": 240
-              }
-            },
-            {
-              "id": "group_1765351654166_yxlgvhdg7",
-              "type": "group",
-              "position": {
-                "x": 815.4112718618594,
-                "y": 968.5887281381406
-              },
-              "title": "Group 3",
-              "collapsed": false,
-              "nodeIds": [
-                "node_1765351655392_nqtllnnt0"
-              ],
-              "boundary": {
-                "minX": 815.4112718618594,
-                "minY": 968.5887281381406,
-                "maxX": 1209.4112718618594,
-                "maxY": 1342.5887281381406
-              },
-              "createdAt": "2025-12-10T07:27:34.166Z",
-              "updatedAt": "2025-12-18T02:34:35.666Z",
-              "data": {
-                "title": "Group 3",
-                "content": "Select this group and click \"Add Node/Group\" to add inside"
-              },
-              "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 394,
-              "height": 374,
-              "style": {
-                "width": 394,
-                "height": 374
-              }
-            },
-            {
-              "id": "node_1765351655392_nqtllnnt0",
-              "type": "node",
-              "position": {
-                "x": 835.4112718618594,
-                "y": 1038.5887281381406
-              },
-              "title": "Node 2",
-              "createdAt": "2025-12-10T07:27:35.392Z",
-              "updatedAt": "2025-12-18T02:34:35.667Z",
-              "data": {
-                "title": "Node 2",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "Double click to edit",
-              "width": 350,
-              "height": 280,
-              "groupId": "group_1765351654166_yxlgvhdg7",
-              "style": {
-                "width": 350,
-                "height": 280
-              }
-            },
-            {
-              "id": "group_1765351656736_ix1whc73r",
-              "type": "group",
-              "position": {
-                "x": 546.3027424174604,
-                "y": 525.8789030330158
-              },
-              "title": "Group 4",
-              "collapsed": false,
-              "nodeIds": [
-                "group_1765351690361_z2aui7m6s"
-              ],
-              "boundary": {
-                "minX": 546.3027424174604,
-                "minY": 525.8789030330158,
-                "maxX": 1034.3027424174604,
-                "maxY": 831.8789030330158
-              },
-              "createdAt": "2025-12-10T07:27:36.736Z",
-              "updatedAt": "2025-12-18T02:34:35.666Z",
-              "data": {
-                "title": "Group 4",
-                "content": "Select this group and click \"Add Node/Group\" to add inside"
-              },
-              "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 488,
-              "height": 306,
-              "style": {
-                "width": 488,
-                "height": 306
-              }
-            },
-            {
-              "id": "node_1765351675341_uygsmxbkw",
-              "type": "node",
-              "position": {
-                "x": 888.6619445224419,
-                "y": -23.38511762207105
-              },
-              "title": "Node 3",
-              "createdAt": "2025-12-10T07:27:55.341Z",
-              "updatedAt": "2025-12-18T02:34:35.667Z",
-              "data": {
-                "title": "Node 3",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "我擦",
-              "width": 350,
-              "height": 280,
-              "groupId": "group_1765351637258_0y8ycmy65",
-              "style": {
-                "width": 350,
-                "height": 280
-              },
-              "summary": "",
               "tags": [],
-              "attributes": {}
-            },
-            {
-              "id": "group_1765351679425_ysbj363ts",
-              "type": "group",
-              "position": {
-                "x": 1292,
-                "y": 962
-              },
-              "title": "Group 5",
-              "collapsed": false,
-              "nodeIds": [],
-              "boundary": {
-                "minX": 1292,
-                "minY": 962,
-                "maxX": 1592,
-                "maxY": 1162
-              },
-              "createdAt": "2025-12-10T07:27:59.425Z",
-              "updatedAt": "2025-12-18T02:34:35.666Z",
-              "data": {
-                "title": "Group 5",
-                "content": "Select this group and click \"Add Node/Group\" to add inside"
-              },
-              "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 300,
-              "height": 200,
-              "style": {
-                "width": 300,
-                "height": 200
-              }
-            },
-            {
-              "id": "group_1765351690361_z2aui7m6s",
-              "type": "group",
-              "position": {
-                "x": 627.0146621096827,
-                "y": 600.8204491366213
-              },
-              "title": "Group 6",
-              "collapsed": false,
-              "nodeIds": [],
-              "boundary": {
-                "minX": 627.0146621096827,
-                "minY": 600.8204491366213,
-                "maxX": 927.0146621096827,
-                "maxY": 800.8204491366213
-              },
-              "createdAt": "2025-12-10T07:28:10.361Z",
-              "updatedAt": "2025-12-18T02:34:35.667Z",
-              "data": {
-                "title": "Group 6",
-                "content": "Nested group - add nodes or groups inside"
-              },
-              "content": "Nested group - add nodes or groups inside",
-              "width": 300,
-              "height": 200,
-              "groupId": "group_1765351656736_ix1whc73r",
-              "style": {
-                "width": 300,
-                "height": 200
-              }
-            },
-            {
-              "id": "group_1765351692231_y3otquwo8",
-              "type": "group",
-              "position": {
-                "x": 15.294364069070411,
-                "y": 991.6492766216329
-              },
-              "title": "Group 7",
-              "collapsed": false,
-              "nodeIds": [],
-              "boundary": {
-                "minX": 15.294364069070411,
-                "minY": 991.6492766216329,
-                "maxX": 315.2943640690704,
-                "maxY": 1191.649276621633
-              },
-              "createdAt": "2025-12-10T07:28:12.231Z",
-              "updatedAt": "2025-12-18T02:34:35.667Z",
-              "data": {
-                "title": "Group 7",
-                "content": "Select this group and click \"Add Node/Group\" to add inside"
-              },
-              "content": "Select this group and click \"Add Node/Group\" to add inside",
-              "width": 300,
-              "height": 200,
-              "style": {
-                "width": 300,
-                "height": 200
-              },
-              "convertedFrom": "group",
-              "isConverted": true,
-              "savedChildren": [],
-              "savedEdges": [
-                {
-                  "id": "edge_1765351697672",
-                  "source": "group_1765351656736_ix1whc73r",
-                  "target": "group_1765351692231_y3otquwo8",
-                  "sourceHandle": "left",
-                  "targetHandle": "right",
-                  "createdAt": "2025-12-10T07:28:17.672Z",
-                  "updatedAt": "2025-12-10T07:28:20.190Z",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional"
-                  }
-                }
-              ],
-              "originalPosition": {
-                "x": 12,
-                "y": 962
-              },
-              "originalSize": {
-                "width": 300,
-                "height": 200
-              }
-            },
-            {
-              "id": "node_1765352232688_8fl6suxwb",
-              "type": "node",
-              "position": {
-                "x": 392,
-                "y": 962
-              },
-              "title": "Node 4",
-              "createdAt": "2025-12-10T07:37:12.688Z",
-              "updatedAt": "2025-12-18T02:34:35.667Z",
-              "data": {
-                "title": "Node 4",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "Double click to edit",
-              "width": 350,
-              "height": 280,
-              "style": {
-                "width": 350,
-                "height": 280
+              "summary": "Ontology class node",
+              "isExpanded": true,
+              "width": 328,
+              "height": 240,
+              "customExpandedSize": {
+                "width": 328,
+                "height": 240
               }
             }
           ],
-          "edges": [
-            {
-              "id": "edge_1765351662481",
-              "source": "group_1765351637258_0y8ycmy65",
-              "target": "group_1765351656736_ix1whc73r",
-              "createdAt": "2025-12-10T07:27:42.481Z",
-              "updatedAt": "2025-12-17T07:52:07.323Z",
-              "sourceHandle": "bottom",
-              "targetHandle": "top",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional"
-              }
-            },
-            {
-              "id": "edge_1765351664704",
-              "source": "group_1765351656736_ix1whc73r",
-              "target": "group_1765351654166_yxlgvhdg7",
-              "createdAt": "2025-12-10T07:27:44.704Z",
-              "updatedAt": "2025-12-17T07:52:18.677Z",
-              "sourceHandle": "bottom",
-              "targetHandle": "top",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional",
-                "color": "#000000",
-                "strokeDasharray": "",
-                "weight": 1,
-                "strength": 1,
-                "customProperties": {
-                  "relationship": "牛逼"
-                }
-              },
-              "label": "牛逼"
-            },
-            {
-              "id": "edge_1765351688935",
-              "source": "group_1765351656736_ix1whc73r",
-              "target": "group_1765351679425_ysbj363ts",
-              "createdAt": "2025-12-10T07:28:08.935Z",
-              "updatedAt": "2025-12-17T07:52:07.323Z",
-              "sourceHandle": "right",
-              "targetHandle": "left",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional"
-              }
-            },
-            {
-              "id": "edge_1765351697672",
-              "source": "group_1765351656736_ix1whc73r",
-              "target": "group_1765351692231_y3otquwo8",
-              "createdAt": "2025-12-10T07:28:17.672Z",
-              "updatedAt": "2025-12-17T07:52:16.821Z",
-              "sourceHandle": "left",
-              "targetHandle": "right",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional"
-              }
-            },
-            {
-              "id": "edge_1765352273077",
-              "source": "group_1765351656736_ix1whc73r",
-              "target": "node_1765352232688_8fl6suxwb",
-              "createdAt": "2025-12-10T07:37:53.077Z",
-              "updatedAt": "2025-12-17T07:52:07.324Z",
-              "sourceHandle": "bottom",
-              "targetHandle": "top",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional"
-              }
-            }
-          ]
+          "edges": []
         },
         "viewportState": {
-          "x": 0,
-          "y": 0,
-          "zoom": 1
+          "x": 2055.949572111484,
+          "y": 845.1663170131924,
+          "zoom": 1.532619960207783
         },
         "isCollapsed": false,
-        "createdAt": "2025-12-10T06:57:06.807Z",
-        "updatedAt": "2025-12-18T03:45:18.505Z"
-      },
-      {
-        "id": "canvas_TOokEQYmQ8JILMd60XuqG",
-        "name": "诡眼",
-        "parentId": null,
-        "children": [],
-        "graphData": {
-          "nodes": [
-            {
-              "id": "node_1765964660110_8w9orjacy",
-              "type": "group",
-              "position": {
-                "x": 12,
-                "y": 12
-              },
-              "title": "世界观",
-              "collapsed": false,
-              "nodeIds": [
-                "group_1766038363804_vck0gp3om",
-                "node_1766052159571_3jriafai9",
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766129923995_jm5jv3vlp",
-                "node_1766131492799_mbbpknh11",
-                "node_1766052159571_3jriafai9",
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766129923995_jm5jv3vlp",
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766052159571_3jriafai9",
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766129923995_jm5jv3vlp",
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766132226740_6caepjcb6"
-              ],
-              "boundary": {
-                "minX": 12,
-                "minY": 12,
-                "maxX": 3700,
-                "maxY": 2408
-              },
-              "createdAt": "2025-12-17T09:44:20.110Z",
-              "updatedAt": "2025-12-19T10:00:13.002Z",
-              "data": {
-                "title": "Node 1",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "世界基本设定\n宇宙结构\n宇宙由两个层级构成，它们以不同的方式存在，遵循不同的规则。\n物质空间\n这是人类生活的三维世界，遵循物理法则。空间稳定，时间线性，因果律明确。一切都按照可预测的规律运转——重力让物体下落，时间向前流动，生命诞生又死亡。这里的秩序是脆弱的，需要被维持，但一旦建立就相对稳固。\n混沌域\n高维空间，或者说根本没有维度的概念。这里没有固定的规则，或者说规则相互矛盾、不断变化。时间可能倒流，空间可能折叠，因果可能颠倒。这是宇宙最原始的状态，纯粹的无序和混沌。在这里，\"存在\"本身就是一个模糊的概念。\n边界\n两个空间之间有一道\"概念边界\"。正常情况下，这道边界将两个世界完全分隔。物质无法进入混沌域，混沌也无法侵入物质空间。但当某些特殊条件触发时，边界会震荡、扭曲，产生裂隙。",
-              "width": 3688,
-              "height": 2396,
-              "style": {
-                "width": 3688,
-                "height": 2396
-              },
-              "convertedFrom": "group",
-              "isConverted": true,
-              "savedChildren": [
-                {
-                  "id": "group_1766038363804_vck0gp3om",
-                  "type": "group",
-                  "position": {
-                    "x": 32,
-                    "y": 82
-                  },
-                  "title": "世界设定",
-                  "collapsed": false,
-                  "nodeIds": [
-                    "group_1766038395051_5xsbbz6u0",
-                    "node_1766052159571_3jriafai9",
-                    "node_1766131492799_mbbpknh11"
-                  ],
-                  "boundary": {
-                    "minX": 32,
-                    "minY": 82,
-                    "maxX": 2572,
-                    "maxY": 1902
-                  },
-                  "createdAt": "2025-12-18T06:12:43.804Z",
-                  "updatedAt": "2025-12-19T08:08:19.891Z",
-                  "data": {
-                    "title": "Group 3",
-                    "content": "Nested group - add nodes or groups inside"
-                  },
-                  "content": "# 宇宙结构\n\n## 基本描述\n宇宙由物质空间和混沌域两个层级构成，所有神明都存在于这个二元结构中。\n\n## 物质空间（低维秩序空间）\n- **性质**: 三维空间+线性时间，遵循物理法则\n- **特征**: 稳定、有序、可预测、因果律明确\n- **居民**: 秩序神明、文明种族、物质生命\n\n## 混沌域（高维无序空间）\n- **性质**: 多维/无维空间，无固定法则\n- **特征**: 混乱、矛盾、不可理解、规则相互冲突\n- **居民**: 混沌神明（外神）\n\n## 空间关系\n- 两域之间存在\"概念边界\"\n- 正常状态互不干涉\n- 当秩序神明成长时，会\"牵引\"混沌域靠近\n- 边界震荡会导致投影渗透",
-                  "width": 2540,
-                  "height": 1820,
-                  "groupId": "node_1765964660110_8w9orjacy",
-                  "style": {
-                    "width": 2540,
-                    "height": 1820
-                  },
-                  "convertedFrom": "group",
-                  "isConverted": true,
-                  "savedChildren": [
-                    {
-                      "id": "group_1766038395051_5xsbbz6u0",
-                      "type": "node",
-                      "position": {
-                        "x": 411.5152370329548,
-                        "y": 181.7339559093754
-                      },
-                      "data": {
-                        "title": "Group 4",
-                        "content": "Nested group - add nodes or groups inside"
-                      },
-                      "title": "基本规则",
-                      "content": "地球 = 新生秩序神明的胚胎\n\n状态:\n  - 正在从混沌走向秩序\n  - 尚未完全觉醒\n  - 处于成长的关键期\n\n成长动力:\n  人类文明 = 神明的养分\n  \n  - 秩序的建立（法律、制度、规则）\n  - 知识的积累（科学、哲学、文化）\n  - 社会的组织（国家、文明、协作）\n  \n  文明越发达 → 秩序能量越强 → 神明成长越快",
-                      "collapsed": false,
-                      "nodeIds": [],
-                      "boundary": {
-                        "minX": 515.7095783286345,
-                        "minY": 157.92449031743172,
-                        "maxX": 815.7095783286345,
-                        "maxY": 357.9244903174317
-                      },
-                      "createdAt": "2025-12-18T06:13:15.051Z",
-                      "updatedAt": "2025-12-18T10:01:36.738Z",
-                      "width": 362,
-                      "height": 550,
-                      "groupId": "group_1766038363804_vck0gp3om",
-                      "style": {
-                        "width": 362,
-                        "height": 550
-                      },
-                      "convertedFrom": "group",
-                      "isConverted": true,
-                      "savedChildren": [],
-                      "savedEdges": [],
-                      "originalPosition": {
-                        "x": 515.7095783286345,
-                        "y": 157.92449031743172
-                      },
-                      "originalSize": {
-                        "width": 300,
-                        "height": 200
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 598,
-                        "height": 451
-                      }
-                    }
-                  ],
-                  "savedEdges": [],
-                  "originalPosition": {
-                    "x": 363.6203637059465,
-                    "y": 99.1812629122216
-                  },
-                  "originalSize": {
-                    "width": 644,
-                    "height": 726
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 589,
-                    "height": 486
-                  }
-                },
-                {
-                  "id": "node_1766052159571_3jriafai9",
-                  "type": "group",
-                  "position": {
-                    "x": 906.3216691132898,
-                    "y": 194.91153752105055
-                  },
-                  "title": "神明",
-                  "collapsed": false,
-                  "nodeIds": [
-                    "node_1766052312011_4f4epe2gj",
-                    "node_1766052368505_gb6m70xec",
-                    "node_1766129923995_jm5jv3vlp"
-                  ],
-                  "boundary": {
-                    "minX": 906.3216691132898,
-                    "minY": 194.91153752105055,
-                    "maxX": 2454.3216691132898,
-                    "maxY": 1680.9115375210506
-                  },
-                  "createdAt": "2025-12-18T10:02:39.571Z",
-                  "updatedAt": "2025-12-19T08:08:19.891Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "# 神明的本质\n带有生命的星球都是神明。这不是比喻，而是字面意义上的真实——每个孕育生命的星球都是一个正在成长的高维存在，只是大多数还未觉醒。神明有成长周期：从混沌胚胎，到生命萌芽，到文明孕育，最终可能完全觉醒。\n神明不是传统意义上的\"神\"，不是全知全能的超然存在。它们更像是宇宙的基本单元，是秩序与混沌博弈的战场。每个神明代表一种倾向——秩序或混沌。\n",
-                  "width": 1548,
-                  "height": 1486,
-                  "groupId": "group_1766038363804_vck0gp3om",
-                  "style": {
-                    "width": 1548,
-                    "height": 1486
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 583,
-                    "height": 461
-                  },
-                  "convertedFrom": "group",
-                  "isConverted": true,
-                  "savedChildren": [
-                    {
-                      "id": "node_1766052312011_4f4epe2gj",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": 194.32289955585054
-                      },
-                      "title": "秩序神明",
-                      "createdAt": "2025-12-18T10:05:12.011Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 2",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "\n\n## 定义\n孕育文明的星球，正在从混沌走向秩序的神明。\n\n## 核心特征\n- **本质**: 秩序的化身，规则的建立者\n- **状态**: 大多处于成长期（未完全觉醒）\n- **动力**: 文明产生的秩序能量\n\n## 成长阶段\n\n### 阶段1：混沌胚胎\n- 星球存在但无生命\n- 处于完全混沌状态\n- 无意识\n\n### 阶段2：生命萌芽\n- 生命诞生\n- 开始产生初级秩序（生态循环）\n- 模糊意识\n\n### 阶段3：文明孕育（当前阶段-地球）\n- 智慧文明出现\n- 秩序快速累积\n- 意识觉醒中\n- **关键期**：最容易被外神吸引\n\n### 阶段4：完全觉醒（未来可能）\n- 神明意识完全清醒\n- 可主动调控秩序\n- 能够抵御外神\n\n### 阶段5：秩序成熟\n- 达到秩序巅峰\n- 可影响周围空间\n- 开始衰退倒计时\n\n## 秩序能量来源\n- 规则建立（法律、道德、制度）\n- 知识积累（科学、哲学、文化）\n- 社会组织（国家、文明、协作）\n- 文化创造（语言、艺术、信仰）\n\n公式：**文明复杂度 ∝ 秩序能量强度 ∝ 神明成长速度**\n\n## 弱点\n- 成长期极其脆弱\n- 散发的秩序信号会吸引外神\n- 发展越快，吸引越多\n- 处于\"必须发展但发展危险\"的悖论中",
-                      "width": 596,
-                      "height": 452,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 596,
-                        "height": 452
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 596,
-                        "height": 452
-                      }
-                    },
-                    {
-                      "id": "node_1766052368505_gb6m70xec",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": -362.2300527626187
-                      },
-                      "title": "混沌神明-外神",
-                      "createdAt": "2025-12-18T10:06:08.505Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 3",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "## 定义\n存在于混沌域的高维存在，混沌本身的具现，宇宙无序状态的化身。\n\n## 核心特征\n- **本质**: 不是\"生物\"，而是混沌本身\n- **意识**: 无意识、无智慧、无目的\n- **行为**: 只有本能，无法控制\n- **状态**: 永恒存在于混沌域\n\n## 本质说明\n\n### 非生命性\n- 不是传统意义的\"生命\"\n- 没有生死概念\n- 无法被\"杀死\"，只能被\"驱离\"\n\n### 无意识性\n- 没有思考能力\n- 没有情感\n- 没有善恶概念\n- 一切行为都是本能反应\n\n### 无边界性\n- 没有明确的\"个体\"边界\n- 可能是混沌的\"区域聚集\"\n- 不同外神之间界限模糊\n\n## 本能行为\n\n### 吞噬本能\n- 外神的唯一本能：将秩序回归混沌\n- 不是\"主动侵略\"，而是\"自然流动\"\n- 类比：水往低处流，不是水的\"选择\"\n\n### 吸引机制\n- 被秩序信号吸引（如飞蛾扑火）\n- 越被人了解，知道其概念的存在，对秩序世界的污染就越深\n- 越强的秩序，吸引力越大\n- 新生秩序神明 = 最强吸引源\n\n### 吞噬过程\n- 外神\"靠近\"秩序神明\n- 概念边界开始震荡\n- 投影渗透进入物质空间\n- 秩序逐渐被侵蚀\n- 最终：秩序崩溃 → 回归混沌\n\n## 外神的形态\n\n### 不可名状性\n- 无法用物质世界的语言描述\n- 任何描述都是\"投影\"的扭曲\n- 真实形态超越三维认知\n\n### 多样性\n- 混沌域中存在多个外神\n- 每个外神代表不同类型的混沌\n- 不同外神产生不同类型的投影\n\n## 外神与投影的关系\n- 外神 ≠ 投影\n- 投影是外神存在的\"副产品\"\n- 外神不知道、不控制、不在意投影\n- 类比：手电筒（外神）和墙上的影子（投影）\n",
-                      "width": 598,
-                      "height": 450,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 598,
-                        "height": 450
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 598,
-                        "height": 450
-                      }
-                    }
-                  ],
-                  "savedEdges": [
-                    {
-                      "id": "edge_1766052415685",
-                      "source": "node_1766052368505_gb6m70xec",
-                      "target": "node_1766052312011_4f4epe2gj",
-                      "createdAt": "2025-12-18T10:06:55.685Z",
-                      "updatedAt": "2025-12-19T07:02:28.762Z",
-                      "sourceHandle": "bottom",
-                      "targetHandle": "top",
-                      "data": {
-                        "isCrossGroup": false,
-                        "strokeWidth": 1,
-                        "direction": "unidirectional",
-                        "color": "#000000",
-                        "strokeDasharray": "",
-                        "weight": 1,
-                        "strength": 1,
-                        "customProperties": {
-                          "relationship": "吞噬"
-                        }
-                      },
-                      "label": "吞噬"
-                    }
-                  ],
-                  "originalPosition": {
-                    "x": 197.2025797425041,
-                    "y": -432.2300527626187
-                  },
-                  "originalSize": {
-                    "width": 642,
-                    "height": 1147
-                  }
-                },
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 1033.8361143097904,
-                    "y": 948.6781853323721
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 1024.9883357799565,
-                    "y": 264.91153752105055
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                },
-                {
-                  "id": "node_1766129923995_jm5jv3vlp",
-                  "type": "node",
-                  "position": {
-                    "x": 1830.3216691132898,
-                    "y": 668.7703883029752
-                  },
-                  "title": "侵入与对抗机制说明",
-                  "createdAt": "2025-12-19T07:38:43.995Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "外神的侵入深度取决于它在文明中的\"知名度\"。\n\n当人类认知到外神的真实概念时，会在集体意识中为这个外神\"铺设轨道\"。概念越清晰、知道的人越多，轨道越宽，外神的投影越容易进入、越强大、越难被清除。\n\n无人知晓的外神，投影根本无法成形——没有概念基础，混沌找不到\"落脚点\"。\n\n少数人知晓的外神，产生微弱投影，但会被世界的免疫机制自动清除（7天规则）。\n\n多数人知晓的外神，产生强大投影，世界已经无法自动清除，需要人为对抗。但这些对抗者会因为知识诅咒而成为新的侵入点。\n\n全员知晓的外神，侵入深度达到\"文明级\"，会产生永久性的改变——眷属诞生。这时即使外神离开，侵入的痕迹也无法消除。\n\n这就是为什么\"禁止言说其名\"\"不要深究真相\"是有效的保护机制。扭曲的认知反而是隔离层。\n\n但是直接传播\n\n\n\n\n",
-                  "width": 600,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 600,
-                    "height": 450
-                  },
-                  "isExpanded": true
-                },
-                {
-                  "id": "node_1766131492799_mbbpknh11",
-                  "type": "node",
-                  "position": {
-                    "x": 62.028501668762374,
-                    "y": 627.9350158669537
-                  },
-                  "title": "世界层级",
-                  "createdAt": "2025-12-19T08:04:52.799Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 4",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "# 世界层级\n\n从混沌域到物质世界之间存在多个层级，它们不是简单的空间划分，而是\"规则密度\"的渐变。\n\n## 混沌域\n\n纯粹的无序空间。外神在这里游荡。没有物质概念，没有时间流动，没有因果逻辑。人类无法理解、无法描述、无法直接观测。任何进入这里的物质生命会瞬间崩解。\n概念边界\n秩序与混沌的交界。这里不是一条线，而是一个\"模糊地带\"。人类的意识活动在这里留下印记——每一次思考、每一种情绪、每一个文化概念，都在边界上投下影子。\n外神靠近时，会首先接触到这些\"概念影子\"。混沌会扭曲这些概念，让它们变形、异化。扭曲的概念成为投影的内核。\n\n## 诡域\n当某个投影足够强大，会在物质世界\"打开\"一片空间，让混沌规则局部覆盖物理法则。这就是诡域。\n在诡域内，物理定律被扭曲或失效。重力可能颠倒，时间可能停滞，空间可能无限循环。混沌规则在这里占主导。\n诡域有固定的出入口——最初投影渗透进来的\"锚点\"。这个出入口无法移动，但诡域本身可以扩张，逐渐覆盖更大的现实区域。\n人多的地方秩序锚定力强，诡域难以形成。荒野、废墟、文明断层处，诡域更容易出现。\n\n## 物质世界（）\n人类生活的现实空间。秩序规则占主导。这里最稳定，但也是侵入的最终目标。",
-                  "width": 627,
-                  "height": 566,
-                  "groupId": "group_1766038363804_vck0gp3om",
-                  "style": {
-                    "width": 627,
-                    "height": 566
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 600,
-                    "height": 451
-                  }
-                },
-                {
-                  "id": "node_1766052159571_3jriafai9",
-                  "type": "group",
-                  "position": {
-                    "x": 906.3216691132898,
-                    "y": 194.91153752105055
-                  },
-                  "title": "神明",
-                  "collapsed": false,
-                  "nodeIds": [
-                    "node_1766052312011_4f4epe2gj",
-                    "node_1766052368505_gb6m70xec",
-                    "node_1766129923995_jm5jv3vlp"
-                  ],
-                  "boundary": {
-                    "minX": 906.3216691132898,
-                    "minY": 194.91153752105055,
-                    "maxX": 2454.3216691132898,
-                    "maxY": 1680.9115375210506
-                  },
-                  "createdAt": "2025-12-18T10:02:39.571Z",
-                  "updatedAt": "2025-12-19T08:08:19.891Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "# 神明的本质\n带有生命的星球都是神明。这不是比喻，而是字面意义上的真实——每个孕育生命的星球都是一个正在成长的高维存在，只是大多数还未觉醒。神明有成长周期：从混沌胚胎，到生命萌芽，到文明孕育，最终可能完全觉醒。\n神明不是传统意义上的\"神\"，不是全知全能的超然存在。它们更像是宇宙的基本单元，是秩序与混沌博弈的战场。每个神明代表一种倾向——秩序或混沌。\n",
-                  "width": 1548,
-                  "height": 1486,
-                  "groupId": "group_1766038363804_vck0gp3om",
-                  "style": {
-                    "width": 1548,
-                    "height": 1486
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 583,
-                    "height": 461
-                  },
-                  "convertedFrom": "group",
-                  "isConverted": true,
-                  "savedChildren": [
-                    {
-                      "id": "node_1766052312011_4f4epe2gj",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": 194.32289955585054
-                      },
-                      "title": "秩序神明",
-                      "createdAt": "2025-12-18T10:05:12.011Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 2",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "\n\n## 定义\n孕育文明的星球，正在从混沌走向秩序的神明。\n\n## 核心特征\n- **本质**: 秩序的化身，规则的建立者\n- **状态**: 大多处于成长期（未完全觉醒）\n- **动力**: 文明产生的秩序能量\n\n## 成长阶段\n\n### 阶段1：混沌胚胎\n- 星球存在但无生命\n- 处于完全混沌状态\n- 无意识\n\n### 阶段2：生命萌芽\n- 生命诞生\n- 开始产生初级秩序（生态循环）\n- 模糊意识\n\n### 阶段3：文明孕育（当前阶段-地球）\n- 智慧文明出现\n- 秩序快速累积\n- 意识觉醒中\n- **关键期**：最容易被外神吸引\n\n### 阶段4：完全觉醒（未来可能）\n- 神明意识完全清醒\n- 可主动调控秩序\n- 能够抵御外神\n\n### 阶段5：秩序成熟\n- 达到秩序巅峰\n- 可影响周围空间\n- 开始衰退倒计时\n\n## 秩序能量来源\n- 规则建立（法律、道德、制度）\n- 知识积累（科学、哲学、文化）\n- 社会组织（国家、文明、协作）\n- 文化创造（语言、艺术、信仰）\n\n公式：**文明复杂度 ∝ 秩序能量强度 ∝ 神明成长速度**\n\n## 弱点\n- 成长期极其脆弱\n- 散发的秩序信号会吸引外神\n- 发展越快，吸引越多\n- 处于\"必须发展但发展危险\"的悖论中",
-                      "width": 596,
-                      "height": 452,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 596,
-                        "height": 452
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 596,
-                        "height": 452
-                      }
-                    },
-                    {
-                      "id": "node_1766052368505_gb6m70xec",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": -362.2300527626187
-                      },
-                      "title": "混沌神明-外神",
-                      "createdAt": "2025-12-18T10:06:08.505Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 3",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "## 定义\n存在于混沌域的高维存在，混沌本身的具现，宇宙无序状态的化身。\n\n## 核心特征\n- **本质**: 不是\"生物\"，而是混沌本身\n- **意识**: 无意识、无智慧、无目的\n- **行为**: 只有本能，无法控制\n- **状态**: 永恒存在于混沌域\n\n## 本质说明\n\n### 非生命性\n- 不是传统意义的\"生命\"\n- 没有生死概念\n- 无法被\"杀死\"，只能被\"驱离\"\n\n### 无意识性\n- 没有思考能力\n- 没有情感\n- 没有善恶概念\n- 一切行为都是本能反应\n\n### 无边界性\n- 没有明确的\"个体\"边界\n- 可能是混沌的\"区域聚集\"\n- 不同外神之间界限模糊\n\n## 本能行为\n\n### 吞噬本能\n- 外神的唯一本能：将秩序回归混沌\n- 不是\"主动侵略\"，而是\"自然流动\"\n- 类比：水往低处流，不是水的\"选择\"\n\n### 吸引机制\n- 被秩序信号吸引（如飞蛾扑火）\n- 越被人了解，知道其概念的存在，对秩序世界的污染就越深\n- 越强的秩序，吸引力越大\n- 新生秩序神明 = 最强吸引源\n\n### 吞噬过程\n- 外神\"靠近\"秩序神明\n- 概念边界开始震荡\n- 投影渗透进入物质空间\n- 秩序逐渐被侵蚀\n- 最终：秩序崩溃 → 回归混沌\n\n## 外神的形态\n\n### 不可名状性\n- 无法用物质世界的语言描述\n- 任何描述都是\"投影\"的扭曲\n- 真实形态超越三维认知\n\n### 多样性\n- 混沌域中存在多个外神\n- 每个外神代表不同类型的混沌\n- 不同外神产生不同类型的投影\n\n## 外神与投影的关系\n- 外神 ≠ 投影\n- 投影是外神存在的\"副产品\"\n- 外神不知道、不控制、不在意投影\n- 类比：手电筒（外神）和墙上的影子（投影）\n",
-                      "width": 598,
-                      "height": 450,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 598,
-                        "height": 450
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 598,
-                        "height": 450
-                      }
-                    }
-                  ],
-                  "savedEdges": [
-                    {
-                      "id": "edge_1766052415685",
-                      "source": "node_1766052368505_gb6m70xec",
-                      "target": "node_1766052312011_4f4epe2gj",
-                      "createdAt": "2025-12-18T10:06:55.685Z",
-                      "updatedAt": "2025-12-19T07:02:28.762Z",
-                      "sourceHandle": "bottom",
-                      "targetHandle": "top",
-                      "data": {
-                        "isCrossGroup": false,
-                        "strokeWidth": 1,
-                        "direction": "unidirectional",
-                        "color": "#000000",
-                        "strokeDasharray": "",
-                        "weight": 1,
-                        "strength": 1,
-                        "customProperties": {
-                          "relationship": "吞噬"
-                        }
-                      },
-                      "label": "吞噬"
-                    }
-                  ],
-                  "originalPosition": {
-                    "x": 197.2025797425041,
-                    "y": -432.2300527626187
-                  },
-                  "originalSize": {
-                    "width": 642,
-                    "height": 1147
-                  }
-                },
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 1033.8361143097904,
-                    "y": 948.6781853323721
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 1024.9883357799565,
-                    "y": 264.91153752105055
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                },
-                {
-                  "id": "node_1766129923995_jm5jv3vlp",
-                  "type": "node",
-                  "position": {
-                    "x": 1830.3216691132898,
-                    "y": 668.7703883029752
-                  },
-                  "title": "侵入与对抗机制说明",
-                  "createdAt": "2025-12-19T07:38:43.995Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "外神的侵入深度取决于它在文明中的\"知名度\"。\n\n当人类认知到外神的真实概念时，会在集体意识中为这个外神\"铺设轨道\"。概念越清晰、知道的人越多，轨道越宽，外神的投影越容易进入、越强大、越难被清除。\n\n无人知晓的外神，投影根本无法成形——没有概念基础，混沌找不到\"落脚点\"。\n\n少数人知晓的外神，产生微弱投影，但会被世界的免疫机制自动清除（7天规则）。\n\n多数人知晓的外神，产生强大投影，世界已经无法自动清除，需要人为对抗。但这些对抗者会因为知识诅咒而成为新的侵入点。\n\n全员知晓的外神，侵入深度达到\"文明级\"，会产生永久性的改变——眷属诞生。这时即使外神离开，侵入的痕迹也无法消除。\n\n这就是为什么\"禁止言说其名\"\"不要深究真相\"是有效的保护机制。扭曲的认知反而是隔离层。\n\n但是直接传播\n\n\n\n\n",
-                  "width": 600,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 600,
-                    "height": 450
-                  },
-                  "isExpanded": true
-                },
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 1033.8361143097904,
-                    "y": 948.6781853323721
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 1024.9883357799565,
-                    "y": 264.91153752105055
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                },
-                {
-                  "id": "node_1766052159571_3jriafai9",
-                  "type": "group",
-                  "position": {
-                    "x": 906.3216691132898,
-                    "y": 194.91153752105055
-                  },
-                  "title": "神明",
-                  "collapsed": false,
-                  "nodeIds": [
-                    "node_1766052312011_4f4epe2gj",
-                    "node_1766052368505_gb6m70xec",
-                    "node_1766129923995_jm5jv3vlp"
-                  ],
-                  "boundary": {
-                    "minX": 906.3216691132898,
-                    "minY": 194.91153752105055,
-                    "maxX": 2454.3216691132898,
-                    "maxY": 1680.9115375210506
-                  },
-                  "createdAt": "2025-12-18T10:02:39.571Z",
-                  "updatedAt": "2025-12-19T08:08:19.891Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "# 神明的本质\n带有生命的星球都是神明。这不是比喻，而是字面意义上的真实——每个孕育生命的星球都是一个正在成长的高维存在，只是大多数还未觉醒。神明有成长周期：从混沌胚胎，到生命萌芽，到文明孕育，最终可能完全觉醒。\n神明不是传统意义上的\"神\"，不是全知全能的超然存在。它们更像是宇宙的基本单元，是秩序与混沌博弈的战场。每个神明代表一种倾向——秩序或混沌。\n",
-                  "width": 1548,
-                  "height": 1486,
-                  "groupId": "group_1766038363804_vck0gp3om",
-                  "style": {
-                    "width": 1548,
-                    "height": 1486
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 583,
-                    "height": 461
-                  },
-                  "convertedFrom": "group",
-                  "isConverted": true,
-                  "savedChildren": [
-                    {
-                      "id": "node_1766052312011_4f4epe2gj",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": 194.32289955585054
-                      },
-                      "title": "秩序神明",
-                      "createdAt": "2025-12-18T10:05:12.011Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 2",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "\n\n## 定义\n孕育文明的星球，正在从混沌走向秩序的神明。\n\n## 核心特征\n- **本质**: 秩序的化身，规则的建立者\n- **状态**: 大多处于成长期（未完全觉醒）\n- **动力**: 文明产生的秩序能量\n\n## 成长阶段\n\n### 阶段1：混沌胚胎\n- 星球存在但无生命\n- 处于完全混沌状态\n- 无意识\n\n### 阶段2：生命萌芽\n- 生命诞生\n- 开始产生初级秩序（生态循环）\n- 模糊意识\n\n### 阶段3：文明孕育（当前阶段-地球）\n- 智慧文明出现\n- 秩序快速累积\n- 意识觉醒中\n- **关键期**：最容易被外神吸引\n\n### 阶段4：完全觉醒（未来可能）\n- 神明意识完全清醒\n- 可主动调控秩序\n- 能够抵御外神\n\n### 阶段5：秩序成熟\n- 达到秩序巅峰\n- 可影响周围空间\n- 开始衰退倒计时\n\n## 秩序能量来源\n- 规则建立（法律、道德、制度）\n- 知识积累（科学、哲学、文化）\n- 社会组织（国家、文明、协作）\n- 文化创造（语言、艺术、信仰）\n\n公式：**文明复杂度 ∝ 秩序能量强度 ∝ 神明成长速度**\n\n## 弱点\n- 成长期极其脆弱\n- 散发的秩序信号会吸引外神\n- 发展越快，吸引越多\n- 处于\"必须发展但发展危险\"的悖论中",
-                      "width": 596,
-                      "height": 452,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 596,
-                        "height": 452
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 596,
-                        "height": 452
-                      }
-                    },
-                    {
-                      "id": "node_1766052368505_gb6m70xec",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": -362.2300527626187
-                      },
-                      "title": "混沌神明-外神",
-                      "createdAt": "2025-12-18T10:06:08.505Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 3",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "## 定义\n存在于混沌域的高维存在，混沌本身的具现，宇宙无序状态的化身。\n\n## 核心特征\n- **本质**: 不是\"生物\"，而是混沌本身\n- **意识**: 无意识、无智慧、无目的\n- **行为**: 只有本能，无法控制\n- **状态**: 永恒存在于混沌域\n\n## 本质说明\n\n### 非生命性\n- 不是传统意义的\"生命\"\n- 没有生死概念\n- 无法被\"杀死\"，只能被\"驱离\"\n\n### 无意识性\n- 没有思考能力\n- 没有情感\n- 没有善恶概念\n- 一切行为都是本能反应\n\n### 无边界性\n- 没有明确的\"个体\"边界\n- 可能是混沌的\"区域聚集\"\n- 不同外神之间界限模糊\n\n## 本能行为\n\n### 吞噬本能\n- 外神的唯一本能：将秩序回归混沌\n- 不是\"主动侵略\"，而是\"自然流动\"\n- 类比：水往低处流，不是水的\"选择\"\n\n### 吸引机制\n- 被秩序信号吸引（如飞蛾扑火）\n- 越被人了解，知道其概念的存在，对秩序世界的污染就越深\n- 越强的秩序，吸引力越大\n- 新生秩序神明 = 最强吸引源\n\n### 吞噬过程\n- 外神\"靠近\"秩序神明\n- 概念边界开始震荡\n- 投影渗透进入物质空间\n- 秩序逐渐被侵蚀\n- 最终：秩序崩溃 → 回归混沌\n\n## 外神的形态\n\n### 不可名状性\n- 无法用物质世界的语言描述\n- 任何描述都是\"投影\"的扭曲\n- 真实形态超越三维认知\n\n### 多样性\n- 混沌域中存在多个外神\n- 每个外神代表不同类型的混沌\n- 不同外神产生不同类型的投影\n\n## 外神与投影的关系\n- 外神 ≠ 投影\n- 投影是外神存在的\"副产品\"\n- 外神不知道、不控制、不在意投影\n- 类比：手电筒（外神）和墙上的影子（投影）\n",
-                      "width": 598,
-                      "height": 450,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 598,
-                        "height": 450
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 598,
-                        "height": 450
-                      }
-                    }
-                  ],
-                  "savedEdges": [
-                    {
-                      "id": "edge_1766052415685",
-                      "source": "node_1766052368505_gb6m70xec",
-                      "target": "node_1766052312011_4f4epe2gj",
-                      "createdAt": "2025-12-18T10:06:55.685Z",
-                      "updatedAt": "2025-12-19T07:02:28.762Z",
-                      "sourceHandle": "bottom",
-                      "targetHandle": "top",
-                      "data": {
-                        "isCrossGroup": false,
-                        "strokeWidth": 1,
-                        "direction": "unidirectional",
-                        "color": "#000000",
-                        "strokeDasharray": "",
-                        "weight": 1,
-                        "strength": 1,
-                        "customProperties": {
-                          "relationship": "吞噬"
-                        }
-                      },
-                      "label": "吞噬"
-                    }
-                  ],
-                  "originalPosition": {
-                    "x": 197.2025797425041,
-                    "y": -432.2300527626187
-                  },
-                  "originalSize": {
-                    "width": 642,
-                    "height": 1147
-                  }
-                },
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 1033.8361143097904,
-                    "y": 948.6781853323721
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 1024.9883357799565,
-                    "y": 264.91153752105055
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                },
-                {
-                  "id": "node_1766129923995_jm5jv3vlp",
-                  "type": "node",
-                  "position": {
-                    "x": 1830.3216691132898,
-                    "y": 668.7703883029752
-                  },
-                  "title": "侵入与对抗机制说明",
-                  "createdAt": "2025-12-19T07:38:43.995Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "外神的侵入深度取决于它在文明中的\"知名度\"。\n\n当人类认知到外神的真实概念时，会在集体意识中为这个外神\"铺设轨道\"。概念越清晰、知道的人越多，轨道越宽，外神的投影越容易进入、越强大、越难被清除。\n\n无人知晓的外神，投影根本无法成形——没有概念基础，混沌找不到\"落脚点\"。\n\n少数人知晓的外神，产生微弱投影，但会被世界的免疫机制自动清除（7天规则）。\n\n多数人知晓的外神，产生强大投影，世界已经无法自动清除，需要人为对抗。但这些对抗者会因为知识诅咒而成为新的侵入点。\n\n全员知晓的外神，侵入深度达到\"文明级\"，会产生永久性的改变——眷属诞生。这时即使外神离开，侵入的痕迹也无法消除。\n\n这就是为什么\"禁止言说其名\"\"不要深究真相\"是有效的保护机制。扭曲的认知反而是隔离层。\n\n但是直接传播\n\n\n\n\n",
-                  "width": 600,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 600,
-                    "height": 450
-                  },
-                  "isExpanded": true
-                },
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 1033.8361143097904,
-                    "y": 948.6781853323721
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 1024.9883357799565,
-                    "y": 264.91153752105055
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                },
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 1033.8361143097904,
-                    "y": 948.6781853323721
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 1024.9883357799565,
-                    "y": 264.91153752105055
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T08:08:19.892Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                }
-              ],
-              "savedEdges": [
-                {
-                  "id": "edge_1766130301943",
-                  "source": "node_1766052368505_gb6m70xec",
-                  "target": "node_1766052312011_4f4epe2gj",
-                  "createdAt": "2025-12-19T07:45:01.943Z",
-                  "updatedAt": "2025-12-19T08:07:57.157Z",
-                  "sourceHandle": "bottom",
-                  "targetHandle": "top",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": "吞噬"
-                    }
-                  },
-                  "label": ""
-                },
-                {
-                  "id": "edge_1766130305112",
-                  "source": "node_1766052368505_gb6m70xec",
-                  "target": "node_1766129923995_jm5jv3vlp",
-                  "createdAt": "2025-12-19T07:45:05.112Z",
-                  "updatedAt": "2025-12-19T08:07:55.408Z",
-                  "sourceHandle": "right",
-                  "targetHandle": "left",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": "作用"
-                    }
-                  },
-                  "label": ""
-                },
-                {
-                  "id": "edge_1766130511207",
-                  "source": "node_1766052312011_4f4epe2gj",
-                  "target": "node_1766129923995_jm5jv3vlp",
-                  "createdAt": "2025-12-19T07:48:31.207Z",
-                  "updatedAt": "2025-12-19T08:07:57.157Z",
-                  "sourceHandle": "right",
-                  "targetHandle": "left",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": ""
-                    }
-                  },
-                  "label": ""
-                },
-                {
-                  "id": "edge_1766131578352",
-                  "source": "node_1766131492799_mbbpknh11",
-                  "target": "node_1766052159571_3jriafai9",
-                  "createdAt": "2025-12-19T08:06:18.352Z",
-                  "updatedAt": "2025-12-19T08:08:01.485Z",
-                  "sourceHandle": "right",
-                  "targetHandle": "left",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": ""
-                    }
-                  },
-                  "label": ""
-                }
-              ],
-              "originalPosition": {
-                "x": 12,
-                "y": 12
-              },
-              "originalSize": {
-                "width": 3569,
-                "height": 2041
-              },
-              "isExpanded": true,
-              "customExpandedSize": {
-                "width": 1733,
-                "height": 1362
-              }
-            },
-            {
-              "id": "group_1766038363804_vck0gp3om",
-              "type": "group",
-              "position": {
-                "x": 217.17867814128817,
-                "y": 82
-              },
-              "title": "世界设定",
-              "collapsed": false,
-              "nodeIds": [
-                "node_1766052159571_3jriafai9",
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766129923995_jm5jv3vlp",
-                "node_1766131492799_mbbpknh11",
-                "node_1766132207578_t8vp9kn61"
-              ],
-              "boundary": {
-                "minX": 217.17867814128817,
-                "minY": 82,
-                "maxX": 1967.1786781412882,
-                "maxY": 2299
-              },
-              "createdAt": "2025-12-18T06:12:43.804Z",
-              "updatedAt": "2025-12-19T10:00:13.002Z",
-              "data": {
-                "title": "Group 3",
-                "content": "Nested group - add nodes or groups inside"
-              },
-              "content": "# 宇宙结构\n\n## 基本描述\n宇宙由物质空间和混沌域两个层级构成，所有神明都存在于这个二元结构中。\n\n## 物质空间（低维秩序空间）\n- **性质**: 三维空间+线性时间，遵循物理法则\n- **特征**: 稳定、有序、可预测、因果律明确\n- **居民**: 秩序神明、文明种族、物质生命\n\n## 混沌域（高维无序空间）\n- **性质**: 多维/无维空间，无固定法则\n- **特征**: 混乱、矛盾、不可理解、规则相互冲突\n- **居民**: 混沌神明（外神）\n\n## 空间关系\n- 两域之间存在\"概念边界\"\n- 正常状态互不干涉\n- 当秩序神明成长时，会\"牵引\"混沌域靠近\n- 边界震荡会导致投影渗透",
-              "width": 1750,
-              "height": 2217,
-              "groupId": "node_1765964660110_8w9orjacy",
-              "style": {
-                "width": 1750,
-                "height": 2217
-              },
-              "convertedFrom": "group",
-              "isConverted": true,
-              "savedChildren": [
-                {
-                  "id": "node_1766052159571_3jriafai9",
-                  "type": "group",
-                  "position": {
-                    "x": 921.5408104005517,
-                    "y": 222.76915595574667
-                  },
-                  "title": "神明",
-                  "collapsed": false,
-                  "nodeIds": [
-                    "node_1766052312011_4f4epe2gj",
-                    "node_1766052368505_gb6m70xec",
-                    "node_1766129923995_jm5jv3vlp"
-                  ],
-                  "boundary": {
-                    "minX": 921.5408104005517,
-                    "minY": 222.76915595574667,
-                    "maxX": 2469.540810400552,
-                    "maxY": 1708.7691559557466
-                  },
-                  "createdAt": "2025-12-18T10:02:39.571Z",
-                  "updatedAt": "2025-12-19T08:15:33.629Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "# 神明的本质\n带有生命的星球都是神明。这不是比喻，而是字面意义上的真实——每个孕育生命的星球都是一个正在成长的高维存在，只是大多数还未觉醒。神明有成长周期：从混沌胚胎，到生命萌芽，到文明孕育，最终可能完全觉醒。\n神明不是传统意义上的\"神\"，不是全知全能的超然存在。它们更像是宇宙的基本单元，是秩序与混沌博弈的战场。每个神明代表一种倾向——秩序或混沌。\n",
-                  "width": 1548,
-                  "height": 1486,
-                  "groupId": "group_1766038363804_vck0gp3om",
-                  "style": {
-                    "width": 1548,
-                    "height": 1486
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 583,
-                    "height": 461
-                  },
-                  "convertedFrom": "group",
-                  "isConverted": true,
-                  "savedChildren": [
-                    {
-                      "id": "node_1766052312011_4f4epe2gj",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": 194.32289955585054
-                      },
-                      "title": "秩序神明",
-                      "createdAt": "2025-12-18T10:05:12.011Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 2",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "\n\n## 定义\n孕育文明的星球，正在从混沌走向秩序的神明。\n\n## 核心特征\n- **本质**: 秩序的化身，规则的建立者\n- **状态**: 大多处于成长期（未完全觉醒）\n- **动力**: 文明产生的秩序能量\n\n## 成长阶段\n\n### 阶段1：混沌胚胎\n- 星球存在但无生命\n- 处于完全混沌状态\n- 无意识\n\n### 阶段2：生命萌芽\n- 生命诞生\n- 开始产生初级秩序（生态循环）\n- 模糊意识\n\n### 阶段3：文明孕育（当前阶段-地球）\n- 智慧文明出现\n- 秩序快速累积\n- 意识觉醒中\n- **关键期**：最容易被外神吸引\n\n### 阶段4：完全觉醒（未来可能）\n- 神明意识完全清醒\n- 可主动调控秩序\n- 能够抵御外神\n\n### 阶段5：秩序成熟\n- 达到秩序巅峰\n- 可影响周围空间\n- 开始衰退倒计时\n\n## 秩序能量来源\n- 规则建立（法律、道德、制度）\n- 知识积累（科学、哲学、文化）\n- 社会组织（国家、文明、协作）\n- 文化创造（语言、艺术、信仰）\n\n公式：**文明复杂度 ∝ 秩序能量强度 ∝ 神明成长速度**\n\n## 弱点\n- 成长期极其脆弱\n- 散发的秩序信号会吸引外神\n- 发展越快，吸引越多\n- 处于\"必须发展但发展危险\"的悖论中",
-                      "width": 596,
-                      "height": 452,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 596,
-                        "height": 452
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 596,
-                        "height": 452
-                      }
-                    },
-                    {
-                      "id": "node_1766052368505_gb6m70xec",
-                      "type": "node",
-                      "position": {
-                        "x": 217.2025797425041,
-                        "y": -362.2300527626187
-                      },
-                      "title": "混沌神明-外神",
-                      "createdAt": "2025-12-18T10:06:08.505Z",
-                      "updatedAt": "2025-12-19T07:33:34.200Z",
-                      "data": {
-                        "title": "Node 3",
-                        "content": "Double click to edit",
-                        "isExpanded": false
-                      },
-                      "content": "## 定义\n存在于混沌域的高维存在，混沌本身的具现，宇宙无序状态的化身。\n\n## 核心特征\n- **本质**: 不是\"生物\"，而是混沌本身\n- **意识**: 无意识、无智慧、无目的\n- **行为**: 只有本能，无法控制\n- **状态**: 永恒存在于混沌域\n\n## 本质说明\n\n### 非生命性\n- 不是传统意义的\"生命\"\n- 没有生死概念\n- 无法被\"杀死\"，只能被\"驱离\"\n\n### 无意识性\n- 没有思考能力\n- 没有情感\n- 没有善恶概念\n- 一切行为都是本能反应\n\n### 无边界性\n- 没有明确的\"个体\"边界\n- 可能是混沌的\"区域聚集\"\n- 不同外神之间界限模糊\n\n## 本能行为\n\n### 吞噬本能\n- 外神的唯一本能：将秩序回归混沌\n- 不是\"主动侵略\"，而是\"自然流动\"\n- 类比：水往低处流，不是水的\"选择\"\n\n### 吸引机制\n- 被秩序信号吸引（如飞蛾扑火）\n- 越被人了解，知道其概念的存在，对秩序世界的污染就越深\n- 越强的秩序，吸引力越大\n- 新生秩序神明 = 最强吸引源\n\n### 吞噬过程\n- 外神\"靠近\"秩序神明\n- 概念边界开始震荡\n- 投影渗透进入物质空间\n- 秩序逐渐被侵蚀\n- 最终：秩序崩溃 → 回归混沌\n\n## 外神的形态\n\n### 不可名状性\n- 无法用物质世界的语言描述\n- 任何描述都是\"投影\"的扭曲\n- 真实形态超越三维认知\n\n### 多样性\n- 混沌域中存在多个外神\n- 每个外神代表不同类型的混沌\n- 不同外神产生不同类型的投影\n\n## 外神与投影的关系\n- 外神 ≠ 投影\n- 投影是外神存在的\"副产品\"\n- 外神不知道、不控制、不在意投影\n- 类比：手电筒（外神）和墙上的影子（投影）\n",
-                      "width": 598,
-                      "height": 450,
-                      "groupId": "node_1766052159571_3jriafai9",
-                      "style": {
-                        "width": 598,
-                        "height": 450
-                      },
-                      "isExpanded": true,
-                      "customExpandedSize": {
-                        "width": 598,
-                        "height": 450
-                      }
-                    }
-                  ],
-                  "savedEdges": [
-                    {
-                      "id": "edge_1766052415685",
-                      "source": "node_1766052368505_gb6m70xec",
-                      "target": "node_1766052312011_4f4epe2gj",
-                      "createdAt": "2025-12-18T10:06:55.685Z",
-                      "updatedAt": "2025-12-19T07:02:28.762Z",
-                      "sourceHandle": "bottom",
-                      "targetHandle": "top",
-                      "data": {
-                        "isCrossGroup": false,
-                        "strokeWidth": 1,
-                        "direction": "unidirectional",
-                        "color": "#000000",
-                        "strokeDasharray": "",
-                        "weight": 1,
-                        "strength": 1,
-                        "customProperties": {
-                          "relationship": "吞噬"
-                        }
-                      },
-                      "label": "吞噬"
-                    }
-                  ],
-                  "originalPosition": {
-                    "x": 197.2025797425041,
-                    "y": -432.2300527626187
-                  },
-                  "originalSize": {
-                    "width": 642,
-                    "height": 1147
-                  }
-                },
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 1049.0552555970523,
-                    "y": 976.5358037670683
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T08:15:33.629Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 1040.2074770672184,
-                    "y": 292.76915595574667
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T08:15:33.629Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                },
-                {
-                  "id": "node_1766129923995_jm5jv3vlp",
-                  "type": "node",
-                  "position": {
-                    "x": 1835.0678689672193,
-                    "y": 625.4120049910127
-                  },
-                  "title": "侵入与对抗机制说明",
-                  "createdAt": "2025-12-19T07:38:43.995Z",
-                  "updatedAt": "2025-12-19T08:15:33.629Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "外神的侵入深度取决于它在文明中的\"知名度\"。\n\n当人类认知到外神的真实概念时，会在集体意识中为这个外神\"铺设轨道\"。概念越清晰、知道的人越多，轨道越宽，外神的投影越容易进入、越强大、越难被清除。\n\n无人知晓的外神，投影根本无法成形——没有概念基础，混沌找不到\"落脚点\"。\n\n少数人知晓的外神，产生微弱投影，但会被世界的免疫机制自动清除（7天规则）。\n\n多数人知晓的外神，产生强大投影，世界已经无法自动清除，需要人为对抗。但这些对抗者会因为知识诅咒而成为新的侵入点。\n\n全员知晓的外神，侵入深度达到\"文明级\"，会产生永久性的改变——眷属诞生。这时即使外神离开，侵入的痕迹也无法消除。\n\n这就是为什么\"禁止言说其名\"\"不要深究真相\"是有效的保护机制。扭曲的认知反而是隔离层。\n\n但是直接传播\n\n\n\n\n",
-                  "width": 600,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 600,
-                    "height": 450
-                  },
-                  "isExpanded": true
-                },
-                {
-                  "id": "node_1766131492799_mbbpknh11",
-                  "type": "node",
-                  "position": {
-                    "x": 169.52600402095527,
-                    "y": 373.73424765035145
-                  },
-                  "title": "世界层级",
-                  "createdAt": "2025-12-19T08:04:52.799Z",
-                  "updatedAt": "2025-12-19T08:15:33.629Z",
-                  "data": {
-                    "title": "Node 4",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "# 世界层级\n\n从混沌域到物质世界之间存在多个层级，它们不是简单的空间划分，而是\"规则密度\"的渐变。\n\n## 混沌域\n\n纯粹的无序空间。外神在这里游荡。没有物质概念，没有时间流动，没有因果逻辑。人类无法理解、无法描述、无法直接观测。任何进入这里的物质生命会瞬间崩解。\n概念边界\n秩序与混沌的交界。这里不是一条线，而是一个\"模糊地带\"。人类的意识活动在这里留下印记——每一次思考、每一种情绪、每一个文化概念，都在边界上投下影子。\n外神靠近时，会首先接触到这些\"概念影子\"。混沌会扭曲这些概念，让它们变形、异化。扭曲的概念成为投影的内核。\n\n## 诡域\n当某个投影足够强大，会在物质世界\"打开\"一片空间，让混沌规则局部覆盖物理法则。这就是诡域。\n在诡域内，物理定律被扭曲或失效。重力可能颠倒，时间可能停滞，空间可能无限循环。混沌规则在这里占主导。\n诡域有固定的出入口——最初投影渗透进来的\"锚点\"。这个出入口无法移动，但诡域本身可以扩张，逐渐覆盖更大的现实区域。\n人多的地方秩序锚定力强，诡域难以形成。荒野、废墟、文明断层处，诡域更容易出现。\n\n## 物质世界（）\n人类生活的现实空间。秩序规则占主导。这里最稳定，但也是侵入的最终目标。",
-                  "width": 627,
-                  "height": 566,
-                  "groupId": "group_1766038363804_vck0gp3om",
-                  "style": {
-                    "width": 627,
-                    "height": 566
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 600,
-                    "height": 451
-                  }
-                }
-              ],
-              "savedEdges": [
-                {
-                  "id": "edge_1766130301943",
-                  "source": "node_1766052368505_gb6m70xec",
-                  "target": "node_1766052312011_4f4epe2gj",
-                  "createdAt": "2025-12-19T07:45:01.943Z",
-                  "updatedAt": "2025-12-19T08:07:57.157Z",
-                  "sourceHandle": "bottom",
-                  "targetHandle": "top",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": "吞噬"
-                    }
-                  },
-                  "label": ""
-                },
-                {
-                  "id": "edge_1766130305112",
-                  "source": "node_1766052368505_gb6m70xec",
-                  "target": "node_1766129923995_jm5jv3vlp",
-                  "createdAt": "2025-12-19T07:45:05.112Z",
-                  "updatedAt": "2025-12-19T08:10:16.351Z",
-                  "sourceHandle": "right",
-                  "targetHandle": "left",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": "作用"
-                    }
-                  },
-                  "label": ""
-                },
-                {
-                  "id": "edge_1766130511207",
-                  "source": "node_1766052312011_4f4epe2gj",
-                  "target": "node_1766129923995_jm5jv3vlp",
-                  "createdAt": "2025-12-19T07:48:31.207Z",
-                  "updatedAt": "2025-12-19T08:10:16.351Z",
-                  "sourceHandle": "right",
-                  "targetHandle": "left",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": ""
-                    }
-                  },
-                  "label": ""
-                },
-                {
-                  "id": "edge_1766131578352",
-                  "source": "node_1766131492799_mbbpknh11",
-                  "target": "node_1766052159571_3jriafai9",
-                  "createdAt": "2025-12-19T08:06:18.352Z",
-                  "updatedAt": "2025-12-19T08:15:25.064Z",
-                  "sourceHandle": "right",
-                  "targetHandle": "left",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": "啊"
-                    }
-                  },
-                  "label": "a "
-                }
-              ],
-              "originalPosition": {
-                "x": 35.03143322208234,
-                "y": 82
-              },
-              "originalSize": {
-                "width": 2602,
-                "height": 1820
-              },
-              "isExpanded": true,
-              "customExpandedSize": {
-                "width": 589,
-                "height": 486
-              }
-            },
-            {
-              "id": "node_1766052159571_3jriafai9",
-              "type": "group",
-              "position": {
-                "x": 237.17867814128817,
-                "y": 863.9594612731527
-              },
-              "title": "神明",
-              "collapsed": false,
-              "nodeIds": [
-                "node_1766052312011_4f4epe2gj",
-                "node_1766052368505_gb6m70xec",
-                "node_1766129923995_jm5jv3vlp"
-              ],
-              "boundary": {
-                "minX": 237.17867814128817,
-                "minY": 863.9594612731527,
-                "maxX": 1906.1786781412882,
-                "maxY": 2098.9594612731526
-              },
-              "createdAt": "2025-12-18T10:02:39.571Z",
-              "updatedAt": "2025-12-19T10:00:13.003Z",
-              "data": {
-                "title": "Node 2",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "# 神明的本质\n带有生命的星球都是神明。这不是比喻，而是字面意义上的真实——每个孕育生命的星球都是一个正在成长的高维存在，只是大多数还未觉醒。神明有成长周期：从混沌胚胎，到生命萌芽，到文明孕育，最终可能完全觉醒。\n神明不是传统意义上的\"神\"，不是全知全能的超然存在。它们更像是宇宙的基本单元，是秩序与混沌博弈的战场。每个神明代表一种倾向——秩序或混沌。\n",
-              "width": 1669,
-              "height": 1235,
-              "groupId": "group_1766038363804_vck0gp3om",
-              "style": {
-                "width": 1669,
-                "height": 1235
-              },
-              "isExpanded": true,
-              "customExpandedSize": {
-                "width": 583,
-                "height": 461
-              },
-              "convertedFrom": "group",
-              "isConverted": true,
-              "savedChildren": [
-                {
-                  "id": "node_1766052312011_4f4epe2gj",
-                  "type": "node",
-                  "position": {
-                    "x": 217.2025797425041,
-                    "y": 194.32289955585054
-                  },
-                  "title": "秩序神明",
-                  "createdAt": "2025-12-18T10:05:12.011Z",
-                  "updatedAt": "2025-12-19T07:33:34.200Z",
-                  "data": {
-                    "title": "Node 2",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "\n\n## 定义\n孕育文明的星球，正在从混沌走向秩序的神明。\n\n## 核心特征\n- **本质**: 秩序的化身，规则的建立者\n- **状态**: 大多处于成长期（未完全觉醒）\n- **动力**: 文明产生的秩序能量\n\n## 成长阶段\n\n### 阶段1：混沌胚胎\n- 星球存在但无生命\n- 处于完全混沌状态\n- 无意识\n\n### 阶段2：生命萌芽\n- 生命诞生\n- 开始产生初级秩序（生态循环）\n- 模糊意识\n\n### 阶段3：文明孕育（当前阶段-地球）\n- 智慧文明出现\n- 秩序快速累积\n- 意识觉醒中\n- **关键期**：最容易被外神吸引\n\n### 阶段4：完全觉醒（未来可能）\n- 神明意识完全清醒\n- 可主动调控秩序\n- 能够抵御外神\n\n### 阶段5：秩序成熟\n- 达到秩序巅峰\n- 可影响周围空间\n- 开始衰退倒计时\n\n## 秩序能量来源\n- 规则建立（法律、道德、制度）\n- 知识积累（科学、哲学、文化）\n- 社会组织（国家、文明、协作）\n- 文化创造（语言、艺术、信仰）\n\n公式：**文明复杂度 ∝ 秩序能量强度 ∝ 神明成长速度**\n\n## 弱点\n- 成长期极其脆弱\n- 散发的秩序信号会吸引外神\n- 发展越快，吸引越多\n- 处于\"必须发展但发展危险\"的悖论中",
-                  "width": 596,
-                  "height": 452,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 596,
-                    "height": 452
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 596,
-                    "height": 452
-                  }
-                },
-                {
-                  "id": "node_1766052368505_gb6m70xec",
-                  "type": "node",
-                  "position": {
-                    "x": 217.2025797425041,
-                    "y": -362.2300527626187
-                  },
-                  "title": "混沌神明-外神",
-                  "createdAt": "2025-12-18T10:06:08.505Z",
-                  "updatedAt": "2025-12-19T07:33:34.200Z",
-                  "data": {
-                    "title": "Node 3",
-                    "content": "Double click to edit",
-                    "isExpanded": false
-                  },
-                  "content": "## 定义\n存在于混沌域的高维存在，混沌本身的具现，宇宙无序状态的化身。\n\n## 核心特征\n- **本质**: 不是\"生物\"，而是混沌本身\n- **意识**: 无意识、无智慧、无目的\n- **行为**: 只有本能，无法控制\n- **状态**: 永恒存在于混沌域\n\n## 本质说明\n\n### 非生命性\n- 不是传统意义的\"生命\"\n- 没有生死概念\n- 无法被\"杀死\"，只能被\"驱离\"\n\n### 无意识性\n- 没有思考能力\n- 没有情感\n- 没有善恶概念\n- 一切行为都是本能反应\n\n### 无边界性\n- 没有明确的\"个体\"边界\n- 可能是混沌的\"区域聚集\"\n- 不同外神之间界限模糊\n\n## 本能行为\n\n### 吞噬本能\n- 外神的唯一本能：将秩序回归混沌\n- 不是\"主动侵略\"，而是\"自然流动\"\n- 类比：水往低处流，不是水的\"选择\"\n\n### 吸引机制\n- 被秩序信号吸引（如飞蛾扑火）\n- 越被人了解，知道其概念的存在，对秩序世界的污染就越深\n- 越强的秩序，吸引力越大\n- 新生秩序神明 = 最强吸引源\n\n### 吞噬过程\n- 外神\"靠近\"秩序神明\n- 概念边界开始震荡\n- 投影渗透进入物质空间\n- 秩序逐渐被侵蚀\n- 最终：秩序崩溃 → 回归混沌\n\n## 外神的形态\n\n### 不可名状性\n- 无法用物质世界的语言描述\n- 任何描述都是\"投影\"的扭曲\n- 真实形态超越三维认知\n\n### 多样性\n- 混沌域中存在多个外神\n- 每个外神代表不同类型的混沌\n- 不同外神产生不同类型的投影\n\n## 外神与投影的关系\n- 外神 ≠ 投影\n- 投影是外神存在的\"副产品\"\n- 外神不知道、不控制、不在意投影\n- 类比：手电筒（外神）和墙上的影子（投影）\n",
-                  "width": 598,
-                  "height": 450,
-                  "groupId": "node_1766052159571_3jriafai9",
-                  "style": {
-                    "width": 598,
-                    "height": 450
-                  },
-                  "isExpanded": true,
-                  "customExpandedSize": {
-                    "width": 598,
-                    "height": 450
-                  }
-                }
-              ],
-              "savedEdges": [
-                {
-                  "id": "edge_1766052415685",
-                  "source": "node_1766052368505_gb6m70xec",
-                  "target": "node_1766052312011_4f4epe2gj",
-                  "createdAt": "2025-12-18T10:06:55.685Z",
-                  "updatedAt": "2025-12-19T07:02:28.762Z",
-                  "sourceHandle": "bottom",
-                  "targetHandle": "top",
-                  "data": {
-                    "isCrossGroup": false,
-                    "strokeWidth": 1,
-                    "direction": "unidirectional",
-                    "color": "#000000",
-                    "strokeDasharray": "",
-                    "weight": 1,
-                    "strength": 1,
-                    "customProperties": {
-                      "relationship": "吞噬"
-                    }
-                  },
-                  "label": "吞噬"
-                }
-              ],
-              "originalPosition": {
-                "x": 197.2025797425041,
-                "y": -432.2300527626187
-              },
-              "originalSize": {
-                "width": 642,
-                "height": 1147
-              }
-            },
-            {
-              "id": "node_1766052312011_4f4epe2gj",
-              "type": "node",
-              "position": {
-                "x": 419.11561789952566,
-                "y": 1604.5615662637292
-              },
-              "title": "秩序神明",
-              "createdAt": "2025-12-18T10:05:12.011Z",
-              "updatedAt": "2025-12-19T10:00:13.004Z",
-              "data": {
-                "title": "Node 2",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "孕育文明的星球，正在从混沌走向秩序。\n\n生命的诞生是第一步，让星球从死寂的岩石变成复杂的生态系统。这时开始出现初级秩序——食物链、生态循环、季节更替。神明有了模糊的意识，像是在做梦。\n智慧文明的出现是质变。人类建立规则、创造文化、积累知识——这些都不是简单的社会行为，而是在为神明提供\"养分\"。每一部法律、每一本书、每一次科技进步，都在推动神明从梦境走向清醒。\n\n文明复杂度越高，秩序能量越强，神明成长越快。\n\n但成长是危险的。秩序神明在觉醒过程中会向宇宙散发\"信号\"——这是秩序能量的副作用。信号越强，成长越快，但也越容易被混沌域中的存在注意到。\n\n最关键的是\"文明孕育期\"——神明意识开始觉醒，但还未掌控力量。就像人类的婴儿期，最脆弱也最危险。一旦度过这个阶段，完全觉醒的秩序神明可以主动调控秩序，抵御外来威胁。但在此之前，它只能依靠本能反应。\n\n秩序神明有一种本能的\"免疫机制\"。当混沌侵入时，它会本能地排斥、驱逐。这个机制不需要意识控制，就像人体的免疫系统。但免疫力有限——微弱的入侵可以清除，深度的侵入就无能为力了。",
-              "width": 596,
-              "height": 452,
-              "groupId": "node_1766052159571_3jriafai9",
-              "style": {
-                "width": 596,
-                "height": 452
-              },
-              "isExpanded": true,
-              "customExpandedSize": {
-                "width": 596,
-                "height": 452
-              }
-            },
-            {
-              "id": "node_1766052368505_gb6m70xec",
-              "type": "node",
-              "position": {
-                "x": 424.4789799194126,
-                "y": 933.9594612731527
-              },
-              "title": "混沌神明-外神",
-              "createdAt": "2025-12-18T10:06:08.505Z",
-              "updatedAt": "2025-12-19T10:00:13.004Z",
-              "data": {
-                "title": "Node 3",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "存在于混沌域的高维存在，混沌本身的具现。\n\n外神不是生物，没有生死。它们不是意识体，没有思考、没有情感、没有目的。如果一定要描述，它们更像是\"混沌的流动\"，是无序状态的自然表现。\n外神只有一种本能：将秩序回归混沌。\n\n这不是主动的恶意，不是有计划的侵略。更像是水往低处流，是自然规律的必然。外神本能得会吞噬秩序，就像宇宙必然增熵\n\n新生的秩序神明会散发信号，在混沌域中形成\"亮点\"。外神被这个亮点吸引，本能地靠近。就像飞蛾扑火——不是飞蛾选择了火，而是火的存在必然吸引飞蛾。\n\n外神无法直接进入物质空间。它们的存在本身就与物质世界不兼容。但当它们靠近概念边界时，会产生\"投影\"——混沌渗透进秩序空间的表现。\n\n外神不知道投影的存在，不控制投影，甚至不在意投影。投影只是外神存在的副产品，像是手电筒照在墙上的影子。手电筒不知道影子的存在，影子也有自己的行为规律。\n",
-              "width": 598,
-              "height": 450,
-              "groupId": "node_1766052159571_3jriafai9",
-              "style": {
-                "width": 598,
-                "height": 450
-              },
-              "isExpanded": true,
-              "customExpandedSize": {
-                "width": 598,
-                "height": 450
-              }
-            },
-            {
-              "id": "node_1766129923995_jm5jv3vlp",
-              "type": "node",
-              "position": {
-                "x": 1240.1921910502372,
-                "y": 1236.8318244427123
-              },
-              "title": "侵入与对抗机制说明",
-              "createdAt": "2025-12-19T07:38:43.995Z",
-              "updatedAt": "2025-12-19T09:59:31.582Z",
-              "data": {
-                "title": "Node 3",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "外神的侵入深度取决于它在文明中的\"知名度\"。\n\n当人类认知到外神的真实概念时，会在集体意识中为这个外神\"铺设轨道\"。概念越清晰、知道的人越多，轨道越宽，外神的投影越容易进入、越强大、越难被清除。\n\n无人知晓的外神，投影根本无法成形——没有概念基础，混沌找不到\"落脚点\"。\n\n少数人知晓的外神，产生微弱投影，但会被世界的免疫机制自动清除（7天规则）。\n\n多数人知晓的外神，产生强大投影，世界已经无法自动清除，需要人为对抗。但这些对抗者会因为知识诅咒而成为新的侵入点。\n\n全员知晓的外神，侵入深度达到\"文明级\"，会产生永久性的改变——眷属诞生。这时即使外神离开，侵入的痕迹也无法消除。\n\n这就是为什么\"禁止言说其名\"\"不要深究真相\"是有效的保护机制。扭曲的认知反而是隔离层。\n\n但是直接传播\n\n\n\n\n",
-              "width": 600,
-              "height": 450,
-              "groupId": "node_1766052159571_3jriafai9",
-              "style": {
-                "width": 600,
-                "height": 450
-              },
-              "isExpanded": true
-            },
-            {
-              "id": "node_1766131492799_mbbpknh11",
-              "type": "node",
-              "position": {
-                "x": 774.1794363147455,
-                "y": 152
-              },
-              "title": "世界层级",
-              "createdAt": "2025-12-19T08:04:52.799Z",
-              "updatedAt": "2025-12-19T10:00:13.004Z",
-              "data": {
-                "title": "Node 4",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "# 世界层级\n\n从混沌域到物质世界之间存在多个层级，它们不是简单的空间划分，而是\"规则密度\"的渐变。\n\n## 混沌域\n\n纯粹的无序空间。外神在这里游荡。没有物质概念，没有时间流动，没有因果逻辑。人类无法理解、无法描述、无法直接观测。任何进入这里的物质生命会瞬间崩解。\n概念边界\n秩序与混沌的交界。这里不是一条线，而是一个\"模糊地带\"。人类的意识活动在这里留下印记——每一次思考、每一种情绪、每一个文化概念，都在边界上投下影子。\n外神靠近时，会首先接触到这些\"概念影子\"。混沌会扭曲这些概念，让它们变形、异化。扭曲的概念成为投影的内核。\n\n## 诡域\n当某个投影足够强大，会在物质世界\"打开\"一片空间，让混沌规则局部覆盖物理法则。这就是诡域。\n在诡域内，物理定律被扭曲或失效。重力可能颠倒，时间可能停滞，空间可能无限循环。混沌规则在这里占主导。\n诡域有固定的出入口——最初投影渗透进来的\"锚点\"。这个出入口无法移动，但诡域本身可以扩张，逐渐覆盖更大的现实区域。\n人多的地方秩序锚定力强，诡域难以形成。荒野、废墟、文明断层处，诡域更容易出现。\n\n## 物质世界（）\n人类生活的现实空间。秩序规则占主导。这里最稳定，但也是侵入的最终目标。",
-              "width": 627,
-              "height": 566,
-              "groupId": "group_1766038363804_vck0gp3om",
-              "style": {
-                "width": 627,
-                "height": 566
-              },
-              "isExpanded": true,
-              "customExpandedSize": {
-                "width": 600,
-                "height": 451
-              }
-            },
-            {
-              "id": "node_1766132226740_6caepjcb6",
-              "type": "group",
-              "position": {
-                "x": 2131.2480723123012,
-                "y": 354.01190354106666
-              },
-              "title": "力量体系",
-              "collapsed": false,
-              "nodeIds": [
-                "node_1766133794413_fhkq3mdn8"
-              ],
-              "boundary": {
-                "minX": 2131.2480723123012,
-                "minY": 354.01190354106666,
-                "maxX": 3592.2480723123012,
-                "maxY": 1003.0119035410667
-              },
-              "createdAt": "2025-12-19T08:17:06.740Z",
-              "updatedAt": "2025-12-19T10:00:13.004Z",
-              "data": {
-                "title": "Node 5",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "",
-              "width": 1461,
-              "height": 649,
-              "groupId": "node_1765964660110_8w9orjacy",
-              "style": {
-                "width": 1461,
-                "height": 649
-              },
-              "convertedFrom": "node",
-              "isConverted": true
-            },
-            {
-              "id": "node_1766133794413_fhkq3mdn8",
-              "type": "group",
-              "position": {
-                "x": 2233.2480723123012,
-                "y": 424.01190354106666
-              },
-              "title": "诡",
-              "collapsed": false,
-              "nodeIds": [
-                "node_1766136677565_c4kngidn4",
-                "node_1766137588459_nofpccocs"
-              ],
-              "boundary": {
-                "minX": 2233.2480723123012,
-                "minY": 424.01190354106666,
-                "maxX": 3568.2480723123012,
-                "maxY": 979.0119035410667
-              },
-              "createdAt": "2025-12-19T08:43:14.413Z",
-              "updatedAt": "2025-12-19T10:00:07.978Z",
-              "data": {
-                "title": "Node 5",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "## 诡的本质\n\n诡，是外神投影在物质世界的具现形态。\n\n当外神被地球的秩序信号吸引而靠近概念边界时，它的混沌特性会扭曲人类的概念，形成投影。这个投影渗透进物质世界，就是诡。\n\n诡不是外神本体，外神也不控制诡。但诡与外神之间存在\"投影关系\"——外神越强大，投影（诡）就越强大。",
-              "width": 1335,
-              "height": 555,
-              "groupId": "node_1766132226740_6caepjcb6",
-              "style": {
-                "width": 1335,
-                "height": 555
-              },
-              "convertedFrom": "node",
-              "isConverted": true
-            },
-            {
-              "id": "node_1766136677565_c4kngidn4",
-              "type": "node",
-              "position": {
-                "x": 2290.9980718862425,
-                "y": 501.5119040523372
-              },
-              "title": "核心机制",
-              "createdAt": "2025-12-19T09:31:17.565Z",
-              "updatedAt": "2025-12-19T10:00:13.005Z",
-              "data": {
-                "title": "Node 5",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "### 外神侵入的根本规律\n\n**对外神本质的认知深度 = 外神侵入世界的深度**\n\n完全不知晓：\n\n- 外神对世界无影响\n- 投影无法形成\n- 完全安全\n\n扭曲认知（关键保护机制）：\n\n- 用\"鬼怪\"\"传说\"\"迷信\"解释异常\n- 人接触不到外神的真实概念\n- 外神的力量在世界被削弱\n- 相对安全\n\n直接认知：\n\n- 理解外神的真实本质\n- 在集体意识中为外神\"铺轨道\"\n- 外神力量在世界被强化\n- 极度危险\n\n**认知人数的临界效应**\n\n少数人知晓：\n\n- 外神侵入浅\n- 世界可以自动清除（7天规则）\n\n越来越多人知晓：\n\n- 外神侵入加深\n- 轨道越铺越宽\n- 世界逐渐无法清除\n- 需要人为对抗\n\n大量人知晓：\n\n- 外神侵入深度达到\"文明级\"\n- 完全无法拔除\n- 产生眷属（永久性侵蚀）\n\n**矛盾的来源**\n\n如果所有人都保持扭曲认知：\n\n- 外神对世界完全没有危害\n- 理想状态\n\n但现实是：\n\n- 必须有人直接认知外神才能对抗诡物\n- 对抗者的认知会加深侵入\n- 知识会传播（有意或无意）\n- 知道的人越来越多\n- 侵入越来越深，越来越难拔除\n- 形成不可逆的恶性循环\n",
-              "width": 500,
-              "height": 444,
-              "groupId": "node_1766133794413_fhkq3mdn8",
-              "style": {
-                "width": 500,
-                "height": 444
-              },
-              "isExpanded": true,
-              "customExpandedSize": {
-                "width": 598,
-                "height": 450
-              }
-            },
-            {
-              "id": "node_1766137588459_nofpccocs",
-              "type": "node",
-              "position": {
-                "x": 2904.248069585525,
-                "y": 504.51190371149016
-              },
-              "title": "诡的力量维度",
-              "createdAt": "2025-12-19T09:46:28.459Z",
-              "updatedAt": "2025-12-19T09:59:31.583Z",
-              "data": {
-                "title": "Node 6",
-                "content": "Double click to edit",
-                "isExpanded": false
-              },
-              "content": "## 诡的双重属性\n\n诡有两个独立又相关的力量维度。\n\n### 维度1：投影属性（依赖外神）\n\n**本质**：诡是外神的投影\n\n外神本体越强大 → 投影（诡）越强大\n\n这个强度是\"基础强度\"，与外神的混沌属性直接相关。\n\n**诡的本能之一：传播本体存在**\n\n诡会本能地让更多人知道外神的存在。\n\n方式：\n\n- 制造异常现象（吸引注意）\n- 传播恐怖故事（扩散知识）\n- 在杀人时留下\"签名\"（暴露特征）\n- 影响知情者传播知识（主动或被动）\n\n目的：\n\n- 让更多人直接认知外神\n- 加深外神的侵入\n- 让外神的投影（诡自己）变得更强\n\n这是诡物的\"本体强化机制\"——通过传播让本体被更多人认知，从而让自己变强。\n\n### 维度2：自主成长（独立于外神）\n\n**本质**：诡可以自己变强\n\n诡不仅仅是被动的投影，还可以主动吸收世界的力量成长。\n\n**成长方式**\n\n吸收恐惧：\n\n- 恐惧是人类意识能量\n- 诡吸收恐惧强化自身\n- 越强烈、越原始的恐惧效果越好\n\n吞噬其他诡：\n\n- 诡之间可以相互吞噬\n- 吞噬者获得被吞噬者的规则和力量\n- 形成更复杂、更强大的诡\n\n附身人类：\n\n- 吸收人类的意识、记忆、生命力\n- 获得智慧和自我\n- 最终可能完全取代人类\n\n吸收秩序能量：\n\n- 高阶诡可以直接吸收世界的秩序能量\n- 这是在\"吞噬世界\"\n\n**终极目标：升格**\n\n当诡足够强大时，可以：\n\n- 吞噬世界的大量秩序能量\n- 完成从\"投影\"到\"独立存在\"的转变\n- 不再依赖外神\n- 不再被世界排斥\n- 成为新的神明\n\n这是觉醒诡的最终追求。\n\n### 两个维度的关系\n\n**相互独立**：\n\n- 外神强大不代表诡一定强大（需要认知传播）\n- 诡自身强大也不代表外神强大（可以独立成长）\n\n**相互影响**：\n\n- 外神越强 → 诡的基础强度越高 → 更容易成长\n- 诡传播外神知识 → 外神侵入加深 → 诡基础强度提升\n- 诡吸收世界能量 → 可能强大到脱离外神（升格）\n\n**战略差异**：\n\n- 有的诡专注于传播外神（强化投影属性）\n- 有的诡专注于自身成长（独立成长路线）\n- 觉醒诡通常选择后者（不想被外神吞噬）",
-              "width": 600,
-              "height": 450,
-              "groupId": "node_1766133794413_fhkq3mdn8",
-              "style": {
-                "width": 600,
-                "height": 450
-              },
-              "isExpanded": true
-            }
-          ],
-          "edges": [
-            {
-              "id": "edge_1766130301943",
-              "source": "node_1766052368505_gb6m70xec",
-              "target": "node_1766052312011_4f4epe2gj",
-              "createdAt": "2025-12-19T07:45:01.943Z",
-              "updatedAt": "2025-12-19T09:47:57.210Z",
-              "sourceHandle": "bottom",
-              "targetHandle": "top",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional",
-                "color": "#000000",
-                "strokeDasharray": "",
-                "weight": 1,
-                "strength": 1,
-                "customProperties": {
-                  "relationship": "吞噬"
-                }
-              },
-              "label": ""
-            },
-            {
-              "id": "edge_1766130305112",
-              "source": "node_1766052368505_gb6m70xec",
-              "target": "node_1766129923995_jm5jv3vlp",
-              "createdAt": "2025-12-19T07:45:05.112Z",
-              "updatedAt": "2025-12-19T09:48:03.526Z",
-              "sourceHandle": "right",
-              "targetHandle": "left",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional",
-                "color": "#000000",
-                "strokeDasharray": "",
-                "weight": 1,
-                "strength": 1,
-                "customProperties": {
-                  "relationship": "作用"
-                }
-              },
-              "label": "作用",
-              "isCrossGroup": false,
-              "strokeWidth": 1,
-              "direction": "unidirectional",
-              "color": "#000000",
-              "strokeDasharray": "",
-              "weight": 1,
-              "strength": 1,
-              "customProperties": {
-                "relationship": "作用"
-              }
-            },
-            {
-              "id": "edge_1766130511207",
-              "source": "node_1766052312011_4f4epe2gj",
-              "target": "node_1766129923995_jm5jv3vlp",
-              "createdAt": "2025-12-19T07:48:31.207Z",
-              "updatedAt": "2025-12-19T09:48:03.526Z",
-              "sourceHandle": "right",
-              "targetHandle": "left",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional",
-                "color": "#000000",
-                "strokeDasharray": "",
-                "weight": 1,
-                "strength": 1,
-                "customProperties": {
-                  "relationship": ""
-                }
-              },
-              "label": "完全没有\n"
-            },
-            {
-              "id": "edge_1766131578352",
-              "source": "node_1766131492799_mbbpknh11",
-              "target": "node_1766052159571_3jriafai9",
-              "createdAt": "2025-12-19T08:06:18.352Z",
-              "updatedAt": "2025-12-19T09:48:07.742Z",
-              "sourceHandle": "bottom",
-              "targetHandle": "top",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional",
-                "color": "#000000",
-                "strokeDasharray": "",
-                "weight": 1,
-                "strength": 1,
-                "customProperties": {
-                  "relationship": "啊"
-                }
-              },
-              "label": "a "
-            },
-            {
-              "id": "edge_1766132470224",
-              "source": "group_1766038363804_vck0gp3om",
-              "target": "node_1766132226740_6caepjcb6",
-              "createdAt": "2025-12-19T08:21:10.224Z",
-              "updatedAt": "2025-12-19T09:48:19.070Z",
-              "sourceHandle": "right",
-              "targetHandle": "left",
-              "data": {
-                "isCrossGroup": false,
-                "strokeWidth": 1,
-                "direction": "unidirectional",
-                "color": "#000000",
-                "strokeDasharray": "",
-                "weight": 1,
-                "strength": 1,
-                "customProperties": {
-                  "relationship": "衍生"
-                }
-              },
-              "label": "衍生",
-              "isCrossGroup": false,
-              "strokeWidth": 1,
-              "direction": "unidirectional",
-              "color": "#000000",
-              "strokeDasharray": "",
-              "weight": 1,
-              "strength": 1,
-              "customProperties": {
-                "relationship": "衍生"
-              }
-            }
-          ]
-        },
-        "viewportState": {
-          "x": 0,
-          "y": 0,
-          "zoom": 1
-        },
-        "isCollapsed": false,
-        "createdAt": "2025-12-17T07:50:19.658Z",
-        "updatedAt": "2025-12-19T10:00:38.121Z"
+        "createdAt": "2026-05-07T06:34:27.337Z",
+        "updatedAt": "2026-05-08T03:24:50.468Z"
       }
     ],
     "canvasTree": [
       {
-        "id": "canvas_default",
-        "name": "测试画布",
-        "isCollapsed": false,
-        "children": []
-      },
-      {
-        "id": "canvas_cmPufElHwliyM5Ysw8yru",
-        "name": "三端",
+        "id": "canvas_ontology_root",
+        "name": "Ontology Canvas",
         "isCollapsed": false,
         "children": [
           {
-            "id": "canvas_phgOqmbD8tqcshuR9D71d",
-            "name": "heihei",
+            "id": "canvas_4MbLmkyQ6rwNJ1iH7NGNW",
+            "name": "11",
             "isCollapsed": false,
             "children": []
           }
         ]
       },
       {
-        "id": "canvas_TOokEQYmQ8JILMd60XuqG",
-        "name": "诡眼",
+        "id": "canvas_d6ICtOkCyrQWLTaxhf0ts",
+        "name": "1",
         "isCollapsed": false,
         "children": []
       }
     ]
   },
-  "timestamp": "2025-12-19T10:00:38.133Z"
+  "timestamp": "2026-05-08T03:24:50.472Z"
 }

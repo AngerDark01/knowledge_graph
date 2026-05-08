@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { useGraphStore } from '@/stores/graph';
 
+type EdgeFilterType = 'all' | 'crossGroup' | 'internal' | 'custom';
+
 const EdgeFilterControl: React.FC = () => {
   const { 
     getCrossGroupEdges, 
     getInternalGroupEdges, 
     filterEdges, 
     getEdges, 
-    setVisibleEdgeIds,
+    setCustomEdgeVisibility,
+    showAllEdges,
     nodes
   } = useGraphStore();
   
-  const [filterType, setFilterType] = useState<'all' | 'crossGroup' | 'internal' | 'custom'>('all');
+  const [filterType, setFilterType] = useState<EdgeFilterType>('all');
   const [customFilter, setCustomFilter] = useState<string>('');
   
   // 应用过滤器
@@ -56,11 +59,11 @@ const EdgeFilterControl: React.FC = () => {
         }
         break;
       default:
-        edgeIdsToDisplay = getEdges().map(edge => edge.id);
+        showAllEdges();
+        return;
     }
     
-    // 设置可见的边ID
-    setVisibleEdgeIds(edgeIdsToDisplay);
+    setCustomEdgeVisibility(edgeIdsToDisplay);
   };
 
   const handleApplyFilter = () => {
@@ -76,7 +79,7 @@ const EdgeFilterControl: React.FC = () => {
           <label className="block text-xs text-gray-600 mb-1">过滤类型</label>
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value as any)}
+            onChange={(e) => setFilterType(e.target.value as EdgeFilterType)}
             className="w-full p-2 border border-gray-300 rounded text-sm"
           >
             <option value="all">全部</option>

@@ -1,96 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useGraphStore } from '@/stores/graph';
-import { Edge } from '@/types/graph/models';
+import { Button } from '@/components/ui/button';
+import type { Edge } from '@/types/graph/models';
+import {
+  createEdgeInspectorSavePlan,
+  createEdgeEditorDraft,
+  projectOntologyEdgeToLegacyEdge,
+  parseCustomPropertiesText,
+  updateOntologyRelationInDocument,
+  useOntologyDocumentStore,
+  type EdgeDirection,
+  type EdgeEditorDraft,
+} from '@/features/ontology-canvas';
+import { useWorkspaceStore } from '@/stores/workspace';
+import { getActiveOntologyDocument } from '@/utils/workspace/canvasSync';
 
 interface EdgeEditorProps {
   edgeId: string;
 }
 
-const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
-  const { getEdgeById, updateEdge } = useGraphStore();
-  const [edge, setEdge] = useState<Edge | null>(null);
-  const [formData, setFormData] = useState<any>({});
+interface EdgeEditorFormProps {
+  edge: Edge;
+  updateEdge: (id: string, updates: Partial<Edge>) => void;
+}
 
-  useEffect(() => {
-    const currentEdge = getEdgeById(edgeId);
-    if (currentEdge) {
-      setEdge(currentEdge);
-      setFormData({
-        label: currentEdge.label || currentEdge.data?.customProperties?.relationship || '',
-        color: currentEdge.data?.color || '#000000',
-        strokeWidth: currentEdge.data?.strokeWidth || 1,
-        strokeDasharray: currentEdge.data?.strokeDasharray || '',
-        weight: currentEdge.data?.weight || 1,
-        strength: currentEdge.data?.strength || 1,
-        direction: currentEdge.data?.direction || 'unidirectional',
-        customProperties: currentEdge.data?.customProperties || {}
-      });
+const COLOR_OPTIONS = [
+  { label: '黑色', value: '#000000' },
+  { label: '红色', value: '#FF0000' },
+  { label: '绿色', value: '#00FF00' },
+  { label: '蓝色', value: '#0000FF' },
+  { label: '橙色', value: '#FFA500' },
+  { label: '紫色', value: '#800080' },
+  { label: '青色', value: '#00FFFF' },
+];
+
+const STROKE_WIDTH_OPTIONS = [1, 2, 3, 4, 5];
+
+const STROKE_DASHARRAY_OPTIONS = [
+  { label: '实线', value: '' },
+  { label: '虚线', value: '5,5' },
+  { label: '点线', value: '2,2' },
+  { label: '长虚线', value: '10,5' },
+];
+
+const DIRECTION_OPTIONS: Array<{ label: string; value: EdgeDirection }> = [
+  { label: '单向', value: 'unidirectional' },
+  { label: '双向', value: 'bidirectional' },
+  { label: '无向', value: 'undirected' },
+];
+
+const getEdgeVersion = (edge: Edge): string => (
+  edge.updatedAt instanceof Date
+    ? edge.updatedAt.toISOString()
+    : String(edge.updatedAt ?? '')
+);
+
+const EdgeEditorForm: React.FC<EdgeEditorFormProps> = ({ edge, updateEdge }) => {
+  const [draft, setDraft] = useState<EdgeEditorDraft>(() => createEdgeEditorDraft(edge));
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const currentCanvasId = useWorkspaceStore(state => state.currentCanvasId);
+  const applyOntologyCommandResult = useOntologyDocumentStore(state => state.applyCommandResult);
+
+  const customPropertiesResult = useMemo(
+    () => parseCustomPropertiesText(draft.customPropertiesText),
+    [draft.customPropertiesText]
+  );
+
+  const handleDraftChange = useCallback(
+    <K extends keyof EdgeEditorDraft,>(field: K, value: EdgeEditorDraft[K]) => {
+      setDraft(previousDraft => ({
+        ...previousDraft,
+        [field]: value,
+      }));
+      setSubmitError(null);
+    },
+    []
+  );
+
+  const handleSave = useCallback(() => {
+    if (!edge) {
+      return;
     }
-  }, [edgeId, getEdgeById]);
 
-  useEffect(() => {
-    if (edge) {
-      // 更新边数据
-      updateEdge(edge.id, {
-        ...edge,
-        label: formData.label,
-        data: {
-          ...edge.data,
-          color: formData.color,
-          strokeWidth: formData.strokeWidth,
-          strokeDasharray: formData.strokeDasharray,
-          weight: formData.weight,
-          strength: formData.strength,
-          direction: formData.direction,
-          customProperties: {
-            ...edge.data?.customProperties,
-            relationship: formData.label, // 将关系标签保存到customProperties中
-            ...formData.customProperties
-          }
-        },
-      });
+    const savePlan = createEdgeInspectorSavePlan(edge, draft);
+
+    if (!savePlan.ok) {
+      setSubmitError(savePlan.error);
+      return;
     }
-  }, [formData, edge, updateEdge]);
 
-  if (!edge) {
-    return <div className="text-gray-500 text-center py-10">Edge not found</div>;
-  }
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData({
-      ...formData,
-      [field]: value,
+    const document = getActiveOntologyDocument({
+      canvasId: currentCanvasId || 'current-canvas',
+      fallbackName: 'Current Canvas',
     });
-  };
+    const relationResult = updateOntologyRelationInDocument(document, {
+      edgeId: savePlan.edgeId,
+      relation: draft.label,
+      direction: draft.direction,
+      sourceHandle: edge.sourceHandle,
+      targetHandle: edge.targetHandle,
+      metadata: {
+        source: 'ontology-edge-editor',
+      },
+    });
 
-  // 常见的颜色选项
-  const colorOptions = [
-    { label: '黑色', value: '#000000' },
-    { label: '红色', value: '#FF0000' },
-    { label: '绿色', value: '#00FF00' },
-    { label: '蓝色', value: '#0000FF' },
-    { label: '橙色', value: '#FFA500' },
-    { label: '紫色', value: '#800080' },
-    { label: '青色', value: '#00FFFF' },
-  ];
+    if (!relationResult.changed) {
+      setSubmitError(relationResult.warnings[0]?.message ?? '关系保存失败');
+      return;
+    }
 
-  // 线宽选项
-  const strokeWidthOptions = [1, 2, 3, 4, 5];
+    applyOntologyCommandResult(relationResult, {
+      canvasId: currentCanvasId,
+      reason: 'edge-editor-save',
+    });
 
-  // 虚线样式选项
-  const strokeDasharrayOptions = [
-    { label: '实线', value: '' },
-    { label: '虚线', value: '5,5' },
-    { label: '点线', value: '2,2' },
-    { label: '长虚线', value: '10,5' },
-  ];
+    const projectedEdge = projectOntologyEdgeToLegacyEdge(relationResult.document, savePlan.edgeId, {
+      data: savePlan.update.data,
+      groupId: edge.groupId,
+    });
 
-  // 方向选项
-  const directionOptions = [
-    { label: '单向', value: 'unidirectional' },
-    { label: '双向', value: 'bidirectional' },
-    { label: '无向', value: 'undirected' },
-  ];
+    if (!projectedEdge) {
+      setSubmitError('关系保存后投影失败');
+      return;
+    }
+
+    updateEdge(savePlan.edgeId, projectedEdge);
+    setSubmitError(null);
+  }, [applyOntologyCommandResult, currentCanvasId, draft, edge, updateEdge]);
+
+  const handleReset = useCallback(() => {
+    setDraft(createEdgeEditorDraft(edge));
+    setSubmitError(null);
+  }, [edge]);
 
   return (
     <div className="space-y-4">
@@ -100,8 +141,8 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
         <div>
           <label className="block text-sm font-medium mb-1">关系标签</label>
           <textarea
-            value={formData.label}
-            onChange={(e) => handleInputChange('label', e.target.value)}
+            value={draft.label}
+            onChange={(e) => handleDraftChange('label', e.target.value)}
             className="w-full p-2 border border-gray-300 rounded"
             placeholder="输入关系标签，如: 是...的...、包含、属于等"
             rows={2}
@@ -111,19 +152,20 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
         <div>
           <label className="block text-sm font-medium mb-1">颜色</label>
           <div className="flex flex-wrap gap-2">
-            {colorOptions.map((color) => (
+            {COLOR_OPTIONS.map((color) => (
               <button
+                type="button"
                 key={color.value}
-                className={`w-8 h-8 rounded-full border-2 ${formData.color === color.value ? 'border-blue-500' : 'border-gray-300'}`}
+                className={`w-8 h-8 rounded-full border-2 ${draft.color === color.value ? 'border-blue-500' : 'border-gray-300'}`}
                 style={{ backgroundColor: color.value }}
-                onClick={() => handleInputChange('color', color.value)}
+                onClick={() => handleDraftChange('color', color.value)}
                 title={color.label}
               />
             ))}
             <input
               type="color"
-              value={formData.color}
-              onChange={(e) => handleInputChange('color', e.target.value)}
+              value={draft.color}
+              onChange={(e) => handleDraftChange('color', e.target.value)}
               className="w-10 h-8"
             />
           </div>
@@ -132,11 +174,12 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
         <div>
           <label className="block text-sm font-medium mb-1">线宽</label>
           <div className="flex flex-wrap gap-2">
-            {strokeWidthOptions.map((width) => (
+            {STROKE_WIDTH_OPTIONS.map((width) => (
               <button
+                type="button"
                 key={width}
-                className={`px-3 py-1 rounded border ${formData.strokeWidth === width ? 'bg-blue-500 text-white' : 'bg-white'}`}
-                onClick={() => handleInputChange('strokeWidth', width)}
+                className={`px-3 py-1 rounded border ${draft.strokeWidth === width ? 'bg-blue-500 text-white' : 'bg-white'}`}
+                onClick={() => handleDraftChange('strokeWidth', width)}
               >
                 {width}px
               </button>
@@ -147,11 +190,12 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
         <div>
           <label className="block text-sm font-medium mb-1">线型</label>
           <div className="flex flex-wrap gap-2">
-            {strokeDasharrayOptions.map((option) => (
+            {STROKE_DASHARRAY_OPTIONS.map((option) => (
               <button
+                type="button"
                 key={option.value}
-                className={`px-3 py-1 rounded border ${formData.strokeDasharray === option.value ? 'bg-blue-500 text-white' : 'bg-white'}`}
-                onClick={() => handleInputChange('strokeDasharray', option.value)}
+                className={`px-3 py-1 rounded border ${draft.strokeDasharray === option.value ? 'bg-blue-500 text-white' : 'bg-white'}`}
+                onClick={() => handleDraftChange('strokeDasharray', option.value)}
               >
                 {option.label}
               </button>
@@ -166,11 +210,11 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
             min="0"
             max="10"
             step="0.1"
-            value={formData.weight}
-            onChange={(e) => handleInputChange('weight', parseFloat(e.target.value))}
+            value={draft.weight}
+            onChange={(e) => handleDraftChange('weight', parseFloat(e.target.value))}
             className="w-full"
           />
-          <div className="text-center text-sm">{formData.weight}</div>
+          <div className="text-center text-sm">{draft.weight}</div>
         </div>
 
         <div>
@@ -180,21 +224,22 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
             min="0"
             max="10"
             step="0.1"
-            value={formData.strength}
-            onChange={(e) => handleInputChange('strength', parseFloat(e.target.value))}
+            value={draft.strength}
+            onChange={(e) => handleDraftChange('strength', parseFloat(e.target.value))}
             className="w-full"
           />
-          <div className="text-center text-sm">{formData.strength}</div>
+          <div className="text-center text-sm">{draft.strength}</div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">方向性</label>
           <div className="flex flex-wrap gap-2">
-            {directionOptions.map((option) => (
+            {DIRECTION_OPTIONS.map((option) => (
               <button
+                type="button"
                 key={option.value}
-                className={`px-3 py-1 rounded border ${formData.direction === option.value ? 'bg-blue-500 text-white' : 'bg-white'}`}
-                onClick={() => handleInputChange('direction', option.value)}
+                className={`px-3 py-1 rounded border ${draft.direction === option.value ? 'bg-blue-500 text-white' : 'bg-white'}`}
+                onClick={() => handleDraftChange('direction', option.value)}
               >
                 {option.label}
               </button>
@@ -205,29 +250,52 @@ const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
         <div>
           <label className="block text-sm font-medium mb-1">自定义属性</label>
           <textarea
-            value={JSON.stringify(formData.customProperties || {}, null, 2)}
-            onChange={(e) => {
-              try {
-                if (e.target.value.trim() === '') {
-                  // 如果文本框为空，设置为空对象
-                  handleInputChange('customProperties', {});
-                } else {
-                  const parsed = JSON.parse(e.target.value);
-                  handleInputChange('customProperties', parsed);
-                }
-              } catch (error) {
-                // 如果JSON格式不正确，不更新值，但显示错误提示
-                console.log("Invalid JSON format for custom properties, keeping previous value:", error);
-                // 这里可以选择显示一个错误信息给用户
-              }
-            }}
+            value={draft.customPropertiesText}
+            onChange={(e) => handleDraftChange('customPropertiesText', e.target.value)}
             className="w-full p-2 border border-gray-300 rounded text-xs font-mono"
             placeholder="输入JSON格式的自定义属性"
             rows={4}
           />
+          {!customPropertiesResult.ok && (
+            <div className="mt-1 text-xs text-red-600">{customPropertiesResult.error}</div>
+          )}
+          {submitError && (
+            <div className="mt-1 text-xs text-red-600">{submitError}</div>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSave}
+            disabled={!customPropertiesResult.ok}
+          >
+            保存
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={handleReset}>
+            重置
+          </Button>
         </div>
       </div>
     </div>
+  );
+};
+
+const EdgeEditor: React.FC<EdgeEditorProps> = ({ edgeId }) => {
+  const edge = useGraphStore((state) => state.getEdgeById(edgeId));
+  const updateEdge = useGraphStore((state) => state.updateEdge);
+
+  if (!edge) {
+    return <div className="text-gray-500 text-center py-10">Edge not found</div>;
+  }
+
+  return (
+    <EdgeEditorForm
+      key={`${edge.id}:${getEdgeVersion(edge)}`}
+      edge={edge}
+      updateEdge={updateEdge}
+    />
   );
 };
 

@@ -2,17 +2,39 @@
 import { LayoutNode } from './node';
 import { LayoutEdge } from './edge';
 
+export interface LayoutProgress {
+  currentLevel: number;
+  totalLevels: number;
+  processedNodes: number;
+  totalNodes: number;
+}
+
+export interface LayoutNodePosition {
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+}
+
+export interface LayoutEdgeUpdate {
+  sourceHandle?: string;
+  targetHandle?: string;
+}
+
+export type ELKLayoutOptionValue = string | number | boolean;
+export type ELKLayoutOptions = Record<string, ELKLayoutOptionValue>;
+
 export interface LayoutOptions {
   strategy?: string;
   animate?: boolean;
-  onProgress?: (progress: { currentLevel: number; totalLevels: number; processedNodes: number; totalNodes: number }) => void;
-  [key: string]: any;
+  elkOptions?: ELKLayoutOptions;
+  onProgress?: (progress: LayoutProgress) => void;
 }
 
 export interface LayoutResult {
   success: boolean;
-  nodes: Map<string, { x: number; y: number }>;
-  edges: Map<string, any>;
+  nodes: Map<string, LayoutNodePosition>;
+  edges: Map<string, LayoutEdgeUpdate>;
   errors: string[];
   stats: {
     duration: number;
@@ -31,5 +53,5 @@ export interface ILayoutStrategy {
     options?: LayoutOptions
   ): Promise<LayoutResult>;
   
-  validateConfig(config: any): boolean;
+  validateConfig(config: unknown): boolean;
 }

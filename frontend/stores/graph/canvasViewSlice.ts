@@ -1,6 +1,3 @@
-import { create } from 'zustand';
-import { Node, Group, Edge, BlockEnum } from '@/types/graph/models';
-
 interface ViewportState {
   x: number;
   y: number;
@@ -15,10 +12,19 @@ interface CanvasViewSlice {
   setCanvasSize: (size: { width: number; height: number }) => void;
 }
 
-export const createCanvasViewSlice = (set: any): CanvasViewSlice => ({
+type CanvasViewStoreState = CanvasViewSlice;
+type CanvasViewStorePatch = Partial<CanvasViewStoreState>;
+type CanvasViewStoreSet = (
+  patch:
+    | CanvasViewStorePatch
+    | CanvasViewStoreState
+    | ((state: CanvasViewStoreState) => CanvasViewStorePatch | CanvasViewStoreState)
+) => void;
+
+export const createCanvasViewSlice = (set: CanvasViewStoreSet): CanvasViewSlice => ({
   viewport: { x: 0, y: 0, zoom: 1 },
   setViewport: (viewport) => set({ viewport }),
-  updateViewport: (update) => set((state: any) => ({
+  updateViewport: (update) => set((state) => ({
     viewport: { ...state.viewport, ...update }
   })),
   canvasSize: { width: 0, height: 0 },

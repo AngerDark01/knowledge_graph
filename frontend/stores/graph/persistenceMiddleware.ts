@@ -28,32 +28,11 @@ const persistenceMiddlewareImpl: PersistenceMiddlewareImpl = (f, options) => (se
       const { saveCurrentCanvasData } = await import('@/utils/workspace/canvasSync');
       saveCurrentCanvasData();
 
-      // 保存到文件
-      const { useWorkspaceStore } = await import('@/stores/workspace');
-      const workspace = useWorkspaceStore.getState();
+      const { persistWorkspace } = await import('@/utils/workspace/persistence');
+      const persisted = await persistWorkspace();
 
-      const response = await fetch('/api/workspace/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: {
-            version: '1.0.0',
-            workspace: {
-              userId: workspace.user?.id || 'user_0',
-              currentCanvasId: workspace.currentCanvasId,
-              canvases: workspace.canvases,
-              canvasTree: workspace.canvasTree,
-            },
-            timestamp: new Date(),
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('❌ 保存工作空间失败:', error);
+      if (!persisted) {
+        console.error('❌ 保存工作空间失败');
       } else {
         console.log('💾 工作空间已自动保存');
       }

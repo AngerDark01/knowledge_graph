@@ -15,7 +15,7 @@ interface CrossGroupEdgeData {
   strength?: number;
   direction?: 'unidirectional' | 'bidirectional' | 'undirected';
   // 自定义属性
-  customProperties?: Record<string, any>;
+  customProperties?: Record<string, unknown>;
 }
 
 // 计算跨群关系边的路径，确保边从群组边界穿出
@@ -23,9 +23,7 @@ const getCrossGroupEdgePath = (
   sourceX: number,
   sourceY: number,
   targetX: number,
-  targetY: number,
-  sourceGroupId?: string,
-  targetGroupId?: string
+  targetY: number
 ): string => {
   // 对于跨群关系，使用更复杂的贝塞尔曲线路径
   // 以确保边从群组边界穿出
@@ -38,7 +36,6 @@ const getCrossGroupEdgePath = (
   const adjustedTargetY = targetY;
 
   // 计算控制点，使路径更弯曲以避免重叠，同时确保路径平滑
-  const midX = (adjustedSourceX + adjustedTargetX) / 2;
   const midY = (adjustedSourceY + adjustedTargetY) / 2;
 
   // 根据源点和目标点的位置调整控制点，以产生更自然的曲线
@@ -55,10 +52,7 @@ const CrossGroupEdge = ({
   sourceY,
   targetX,
   targetY,
-  sourcePosition,
-  targetPosition,
   data,
-  markerEnd,
   style,
 }: EdgeProps<CrossGroupEdgeData>) => {
   // 计算边路径
@@ -66,9 +60,7 @@ const CrossGroupEdge = ({
     sourceX,
     sourceY,
     targetX,
-    targetY,
-    data?.sourceGroupId,
-    data?.targetGroupId
+    targetY
   );
 
   // 计算标签位置 - 使用贝塞尔路径的中点
@@ -147,7 +139,10 @@ const CrossGroupEdge = ({
   };
 
   // 确定标签文本
-  const labelText = data?.label || (data?.customProperties?.relationship || '');
+  const relationshipLabel = typeof data?.customProperties?.relationship === 'string'
+    ? data.customProperties.relationship
+    : '';
+  const labelText = data?.label || relationshipLabel;
 
   return (
     <>

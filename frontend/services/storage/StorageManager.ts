@@ -5,7 +5,7 @@ import {
   STORAGE_KEYS,
   STORAGE_VERSION,
 } from '@/types/workspace/storage';
-import { Workspace, Canvas } from '@/types/workspace/models';
+import { Workspace, Canvas, CanvasTreeNode } from '@/types/workspace/models';
 import { FileSystemAdapter } from './adapters/FileSystemAdapter';
 
 export class StorageManager {
@@ -110,7 +110,7 @@ export class StorageManager {
       const updatedCanvases = workspace.canvases.filter((c) => !idsToDelete.includes(c.id));
 
       // 更新画布树
-      const removeFromTree = (nodes: any[]): any[] => {
+      const removeFromTree = (nodes: CanvasTreeNode[]): CanvasTreeNode[] => {
         return nodes
           .filter((node) => !idsToDelete.includes(node.id))
           .map((node) => ({

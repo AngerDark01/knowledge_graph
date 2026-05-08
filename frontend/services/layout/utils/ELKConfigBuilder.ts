@@ -3,6 +3,7 @@
  * 职责：为不同的布局场景生成ELK配置选项
  */
 import { ELK_ALGORITHM_CONFIG } from '../../../config/elk-algorithm';
+import type { ELKLayoutDirection, ELKLayoutOptions } from '../types/layoutTypes';
 
 export class ELKConfigBuilder {
   /**
@@ -13,7 +14,7 @@ export class ELKConfigBuilder {
    * - 最小化边交叉
    * - 适合流程图、知识图谱
    */
-  static getLayeredConfig(direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' = 'DOWN'): Record<string, any> {
+  static getLayeredConfig(direction: ELKLayoutDirection = 'DOWN'): ELKLayoutOptions {
     return {
       'elk.algorithm': ELK_ALGORITHM_CONFIG.common.algorithm,
       'elk.direction': direction,
@@ -53,7 +54,7 @@ export class ELKConfigBuilder {
    * - 节点分布均匀
    * - 适合无向图、社交网络
    */
-  static getForceConfig(): Record<string, any> {
+  static getForceConfig(): ELKLayoutOptions {
     return {
       'elk.algorithm': 'force',
 
@@ -78,7 +79,7 @@ export class ELKConfigBuilder {
    * - 保持节点间距离关系
    * - 计算较慢但效果好
    */
-  static getStressConfig(): Record<string, any> {
+  static getStressConfig(): ELKLayoutOptions {
     return {
       'elk.algorithm': 'stress',
 
@@ -102,7 +103,7 @@ export class ELKConfigBuilder {
    * - 父节点在上，子节点在下
    * - 紧凑的层次结构
    */
-  static getTreeConfig(direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' = 'DOWN'): Record<string, any> {
+  static getTreeConfig(direction: ELKLayoutDirection = 'DOWN'): ELKLayoutOptions {
     return {
       'elk.algorithm': 'mrtree',  // Mr. Tree算法
 
@@ -125,7 +126,7 @@ export class ELKConfigBuilder {
    * - 其他节点环绕分布
    * - 适合展示中心关系
    */
-  static getRadialConfig(): Record<string, any> {
+  static getRadialConfig(): ELKLayoutOptions {
     return {
       'elk.algorithm': 'radial',
 
@@ -143,7 +144,7 @@ export class ELKConfigBuilder {
   /**
    * 获取紧凑布局配置（用于空间受限场景）
    */
-  static getCompactConfig(): Record<string, any> {
+  static getCompactConfig(): ELKLayoutOptions {
     return {
       'elk.algorithm': ELK_ALGORITHM_CONFIG.common.algorithm,
       'elk.direction': ELK_ALGORITHM_CONFIG.common.direction,
@@ -168,7 +169,7 @@ export class ELKConfigBuilder {
   /**
    * 获取宽松布局配置（用于复杂大图）
    */
-  static getSpacingConfig(): Record<string, any> {
+  static getSpacingConfig(): ELKLayoutOptions {
     return {
       'elk.algorithm': ELK_ALGORITHM_CONFIG.common.algorithm,
       'elk.direction': ELK_ALGORITHM_CONFIG.common.direction,
@@ -194,9 +195,9 @@ export class ELKConfigBuilder {
    * @param userConfig 用户配置（会覆盖基础配置）
    */
   static mergeConfig(
-    baseConfig: Record<string, any>,
-    userConfig?: Record<string, any>
-  ): Record<string, any> {
+    baseConfig: ELKLayoutOptions,
+    userConfig?: ELKLayoutOptions
+  ): ELKLayoutOptions {
     return {
       ...baseConfig,
       ...(userConfig || {})
@@ -214,7 +215,7 @@ export class ELKConfigBuilder {
     nodeCount: number,
     hasNesting: boolean,
     isDirected: boolean = true
-  ): Record<string, any> {
+  ): ELKLayoutOptions {
     // 小图（<20个节点）使用紧凑布局
     if (nodeCount < 20) {
       return this.getCompactConfig();
@@ -237,7 +238,7 @@ export class ELKConfigBuilder {
   /**
    * 获取调试配置（包含详细日志）
    */
-  static getDebugConfig(): Record<string, any> {
+  static getDebugConfig(): ELKLayoutOptions {
     return {
       ...this.getLayeredConfig('DOWN'),
       // ELK内部会输出更多调试信息

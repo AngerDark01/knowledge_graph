@@ -11,3 +11,5 @@ export type { NestingTreeNode } from './NestingTreeBuilder';
 export { ELKGraphConverter } from './ELKGraphConverter';
 export type { ElkNode, ElkEdge } from './ELKGraphConverter';
 export { ELKConfigBuilder } from './ELKConfigBuilder';
+export { createELKEngine } from './ELKRuntime';
+export type { ELKEngine } from './ELKRuntime';

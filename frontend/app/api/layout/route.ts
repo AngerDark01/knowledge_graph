@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Node, Group, Edge } from '@/types/graph/models';
 import { LayoutManager } from '@/services/layout';
+import type { LayoutOptions } from '@/services/layout';
 
 // 初始化布局管理器（自动注册所有策略，包括新策略和旧策略）
 const layoutManager = new LayoutManager();
@@ -11,7 +12,7 @@ interface LayoutRequest {
   nodes: (Node | Group)[];
   edges: Edge[];
   strategy?: string;
-  options?: any;
+  options?: Omit<LayoutOptions, 'strategy'>;
 }
 
 interface LayoutResponse {

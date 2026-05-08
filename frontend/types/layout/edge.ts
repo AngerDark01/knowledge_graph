@@ -1,6 +1,3 @@
-// src/types/layout/edge.ts
-import { LayoutNode } from './node';
-
 export interface LayoutEdge {
   id: string;
   source: string;
@@ -8,5 +5,5 @@ export interface LayoutEdge {
   sourceHandle?: string;
   targetHandle?: string;
   type?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }

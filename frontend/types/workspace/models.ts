@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import type { Node, Group, Edge } from '@/types/graph/models';
+import {
+  createEmptyPersistedOntologyCanvas,
+  PersistedOntologyCanvasSchema,
+  type PersistedOntologyCanvas,
+} from './ontologyCanvas';
 
 // ========== 用户模型 (预留设计) ==========
 export interface User {
@@ -32,6 +37,8 @@ export interface Canvas {
   name: string;
   parentId: string | null;
   children: string[];  // 子画布 ID 列表
+  ontologyDocument?: PersistedOntologyCanvas;
+  // Legacy React Flow display cache. The ontology document is the source of truth.
   graphData: {
     nodes: (Node | Group)[];
     edges: Edge[];
@@ -148,6 +155,7 @@ export const CanvasSchema = z.object({
   name: z.string().min(1),
   parentId: z.string().nullable(),
   children: z.array(z.string()),
+  ontologyDocument: PersistedOntologyCanvasSchema.optional(),
   graphData: z.object({
     nodes: z.array(z.union([NodeSchemaForCanvas, GroupSchemaForCanvas])),
     edges: z.array(EdgeSchemaForCanvas),
@@ -226,6 +234,7 @@ export const DEFAULT_CANVAS: Canvas = {
   name: '默认画布',
   parentId: null,
   children: [],
+  ontologyDocument: createEmptyPersistedOntologyCanvas('canvas_default', '默认画布'),
   graphData: {
     nodes: [],
     edges: [],

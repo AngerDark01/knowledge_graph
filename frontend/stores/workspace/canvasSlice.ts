@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { Canvas, CanvasTreeNode, DEFAULT_CANVAS } from '@/types/workspace/models';
+import { createEmptyPersistedOntologyCanvas } from '@/types/workspace/ontologyCanvas';
 import { nanoid } from 'nanoid';
 
 export interface CanvasSlice {
@@ -20,7 +21,7 @@ export interface CanvasSlice {
   initializeWorkspace: (canvases: Canvas[], tree: CanvasTreeNode[], currentId: string) => void;
 }
 
-export const createCanvasSlice: StateCreator<CanvasSlice> = (set, get) => ({
+export const createCanvasSlice: StateCreator<CanvasSlice> = (set) => ({
   canvases: [DEFAULT_CANVAS],
   canvasTree: [
     {
@@ -33,11 +34,13 @@ export const createCanvasSlice: StateCreator<CanvasSlice> = (set, get) => ({
   currentCanvasId: DEFAULT_CANVAS.id,
 
   createCanvas: (name, parentId) => {
+    const newCanvasId = `canvas_${nanoid()}`;
     const newCanvas: Canvas = {
-      id: `canvas_${nanoid()}`,
+      id: newCanvasId,
       name,
       parentId: parentId || null,
       children: [],
+      ontologyDocument: createEmptyPersistedOntologyCanvas(newCanvasId, name),
       graphData: {
         nodes: [],
         edges: [],

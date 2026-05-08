@@ -1,9 +1,17 @@
 // src/components/graph/controls/LayoutControl.tsx
 import React, { useState, useCallback } from 'react';
 import { Button } from '../../ui/button';
-import { PlayIcon, CogIcon, ArrowsPointingOutIcon } from '@heroicons/react/24/outline';
+import { CogIcon, ArrowsPointingOutIcon } from '@heroicons/react/24/outline';
 import { useGraphStore } from '@/stores/graph';
 import { LayoutManager } from '@/services/layout';
+import {
+  createCanvasLayoutOptions,
+  createGroupLayoutOptions,
+  createLayoutEdgeUpdate,
+  createLayoutNodeUpdate,
+  getDirectGroupChildren,
+  isGroupNode,
+} from '@/features/ontology-canvas';
 
 interface LayoutControlProps {
   className?: string;
@@ -20,14 +28,15 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
   const setSelectedNodeId = useGraphStore(state => state.setSelectedNodeId);
   const selectedNodeId = useGraphStore(state => state.selectedNodeId);
   const updateGroupBoundary = useGraphStore(state => state.updateGroupBoundary);
+  const setIsLayoutMode = useGraphStore(state => state.setIsLayoutMode);
 
   // 检查选中的节点是否为群组
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
-  const isGroupSelected = selectedNode?.type === 'group';
+  const isGroupSelected = isGroupNode(selectedNode);
 
   // 获取选中群组的子节点数量
   const childrenCount = isGroupSelected
-    ? nodes.filter(n => 'groupId' in n && (n as any).groupId === selectedNodeId).length
+    ? getDirectGroupChildren(nodes, selectedNode.id).length
     : 0;
 
   // 布局处理函数（全画布）
@@ -41,7 +50,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
       setIsProcessing(true);
 
       // 禁用用户交互
-      useGraphStore.getState().setSelectedNodeId(null);
+      setSelectedNodeId(null);
 
       // 初始化布局管理器（自动使用 ELK 布局策略）
       const layoutManager = new LayoutManager();
@@ -50,41 +59,21 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
-        {
-          animate: true,
-          strategy: 'elk-layout'
-        }
+        createCanvasLayoutOptions()
       );
 
       if (layoutResult.success) {
         // 启用布局模式以防止约束逻辑干扰
-        useGraphStore.getState().setIsLayoutMode(true);
+        setIsLayoutMode(true);
 
         // 批量更新节点位置和尺寸，但避免触发边界更新
         for (const [nodeId, positionData] of layoutResult.nodes) {
-          const updateData: any = { position: { x: positionData.x, y: positionData.y } };
-
-          // 如果布局结果包含尺寸信息（群组节点），也一并更新
-          if ((positionData as any).width !== undefined) {
-            updateData.width = (positionData as any).width;
-          }
-          if ((positionData as any).height !== undefined) {
-            updateData.height = (positionData as any).height;
-          }
-          // 如果包含边界信息，也一并更新
-          if ((positionData as any).boundary !== undefined) {
-            updateData.boundary = (positionData as any).boundary;
-          }
-
-          updateNode(nodeId, updateData);
+          updateNode(nodeId, createLayoutNodeUpdate(positionData));
         }
 
         // 更新边的连接点
         layoutResult.edges.forEach((edgeData, edgeId) => {
-          updateEdge(edgeId, {
-            sourceHandle: edgeData.sourceHandle,
-            targetHandle: edgeData.targetHandle
-          });
+          updateEdge(edgeId, createLayoutEdgeUpdate(edgeData));
         });
 
         // 清除选中状态
@@ -102,10 +91,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
             // 更新所有边的连接点
             optimizedEdges.forEach((edgeData) => {
-              updateEdge(edgeData.id, {
-                sourceHandle: edgeData.sourceHandle,
-                targetHandle: edgeData.targetHandle
-              });
+              updateEdge(edgeData.id, createLayoutEdgeUpdate(edgeData));
             });
 
             console.log(`🔄 布局后优化了 ${optimizedEdges.length} 条边的连接点`);
@@ -116,21 +102,21 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
           .finally(() => {
             // 延迟禁用布局模式，确保所有更新完成
             setTimeout(() => {
-              useGraphStore.getState().setIsLayoutMode(false);
+              setIsLayoutMode(false);
             }, 100);
           });
       } else {
         console.error("Layout failed:", layoutResult.errors);
 
         // 即使布局失败，也要确保禁用布局模式
-        useGraphStore.getState().setIsLayoutMode(false);
+        setIsLayoutMode(false);
       }
     } catch (error) {
       console.error("Layout error:", error);
     } finally {
       setIsProcessing(false);
     }
-  }, [nodes, edges, isProcessing, updateNode, updateEdge, setSelectedNodeId]);
+  }, [nodes, edges, isProcessing, updateNode, updateEdge, setSelectedNodeId, setIsLayoutMode]);
 
   // 群组内部布局处理函数
   const handleGroupLayout = useCallback(async () => {
@@ -143,6 +129,8 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
       console.warn("No group selected for layout");
       return;
     }
+
+    const targetGroupId = selectedNodeId;
 
     if (childrenCount === 0) {
       console.warn("Selected group has no children to layout");
@@ -161,39 +149,16 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
       const layoutResult = await layoutManager.applyLayout(
         nodes,
         edges,
-        {
-          animate: true,
-          strategy: 'elk-group-layout', // 使用新的群组布局策略
-          groupId: selectedNodeId       // 传递目标群组ID
-        }
+        createGroupLayoutOptions(targetGroupId)
       );
 
       if (layoutResult.success) {
         // 启用布局模式以防止约束逻辑干扰
-        useGraphStore.getState().setIsLayoutMode(true);
+        setIsLayoutMode(true);
 
         // ⭐ 修复：更新群组内节点的位置（包括目标群组自身）
         for (const [nodeId, positionData] of layoutResult.nodes) {
-          const updateData: any = { position: { x: positionData.x, y: positionData.y } };
-
-          // ✅ 如果布局结果包含尺寸信息（群组节点），也一并更新
-          if ((positionData as any).width !== undefined) {
-            updateData.width = (positionData as any).width;
-          }
-          if ((positionData as any).height !== undefined) {
-            updateData.height = (positionData as any).height;
-          }
-          if ((positionData as any).boundary !== undefined) {
-            updateData.boundary = (positionData as any).boundary;
-          }
-
-          // ⭐ 同时更新 style，确保 ReactFlow 渲染正确的尺寸
-          if ((positionData as any).width !== undefined || (positionData as any).height !== undefined) {
-            updateData.style = {
-              width: (positionData as any).width,
-              height: (positionData as any).height
-            };
-          }
+          const updateData = createLayoutNodeUpdate(positionData, true);
 
           console.log(`🔧 更新节点 ${nodeId}:`, updateData);
           updateNode(nodeId, updateData);
@@ -206,10 +171,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
 
         // 更新边的连接点 - 这里暂时保留但可能不适用
         layoutResult.edges.forEach((edgeData, edgeId) => {
-          updateEdge(edgeId, {
-            sourceHandle: edgeData.sourceHandle,
-            targetHandle: edgeData.targetHandle
-          });
+          updateEdge(edgeId, createLayoutEdgeUpdate(edgeData));
         });
 
         console.log(`✅ 群组布局完成，更新了 ${layoutResult.nodes.size} 个群组内节点`);
@@ -217,16 +179,14 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
         // 🔧 群组内部布局完成后，需要正确处理所选群组的边界
         console.log(`🔧 更新目标群组边界: ${selectedNodeId}`);
         // 确保选中的群组（目标群组）的边界被更新
-        updateGroupBoundary(selectedNodeId);
+        updateGroupBoundary(targetGroupId);
 
         // 额外的边优化 - 仅优化群组内的边
         const currentNodes = useGraphStore.getState().getNodes();
         const currentEdges = useGraphStore.getState().getEdges();
 
         // 只获取群组内的节点用于边优化
-        const groupNodes = currentNodes.filter(
-          n => 'groupId' in n && (n as any).groupId === selectedNodeId
-        );
+        const groupNodes = getDirectGroupChildren(currentNodes, targetGroupId);
 
         import('@/services/layout/algorithms/EdgeOptimizer')
           .then(({ EdgeOptimizer }) => {
@@ -239,10 +199,7 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
                 groupNodes.some(n => n.id === edgeData.source) ||
                 groupNodes.some(n => n.id === edgeData.target)
               ) {
-                updateEdge(edgeData.id, {
-                  sourceHandle: edgeData.sourceHandle,
-                  targetHandle: edgeData.targetHandle
-                });
+                updateEdge(edgeData.id, createLayoutEdgeUpdate(edgeData));
               }
             });
 
@@ -255,20 +212,20 @@ const LayoutControl: React.FC<LayoutControlProps> = ({ className = '' }) => {
             // 延迟禁用布局模式，确保所有更新完成
             setTimeout(() => {
               // 群组内部布局完成后，需要正确处理嵌套群组的边界
-              useGraphStore.getState().setIsLayoutMode(false);
+              setIsLayoutMode(false);
             }, 100);
           });
       } else {
         console.error("Group layout failed:", layoutResult.errors);
-        useGraphStore.getState().setIsLayoutMode(false);
+        setIsLayoutMode(false);
       }
     } catch (error) {
       console.error("Group layout error:", error);
-      useGraphStore.getState().setIsLayoutMode(false);
+      setIsLayoutMode(false);
     } finally {
       setIsProcessing(false);
     }
-  }, [nodes, edges, isProcessing, selectedNodeId, isGroupSelected, childrenCount, updateNode, updateEdge, updateGroupBoundary]);
+  }, [nodes, edges, isProcessing, selectedNodeId, isGroupSelected, childrenCount, updateNode, updateEdge, updateGroupBoundary, setIsLayoutMode]);
 
   return (
     <div className={`flex flex-col gap-2 w-full ${className}`}>

@@ -6,7 +6,9 @@ export enum BlockEnum {
   GROUP = 'group'
 }
 
-export interface CommonNodeType<T = any> {
+export type GraphRecord = Record<string, unknown>;
+
+export interface CommonNodeType<T = GraphRecord> {
   id: string;
   type: BlockEnum;
   position: { x: number; y: number };
@@ -16,21 +18,14 @@ export interface CommonNodeType<T = any> {
   selected?: boolean;
   dragging?: boolean;
   parentId?: string; // 用于嵌套节点
-  // 转换相关字段
-  convertedFrom?: BlockEnum.NODE | BlockEnum.GROUP; // 原始类型
-  isConverted?: boolean; // 是否为转换节点
-  savedChildren?: (Node | Group)[]; // 保存的子节点数据（仅在转换为NoteNode时使用）
-  savedEdges?: Edge[]; // 保存的边关系数据（仅在转换为NoteNode时使用）
-  originalPosition?: { x: number; y: number }; // 原始位置（仅在转换为NoteNode时使用）
-  originalSize?: { width: number; height: number }; // 原始尺寸（仅在转换为NoteNode时使用）
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Node extends CommonNodeType {
   type: BlockEnum.NODE;
   title: string;
   content?: string;
-  attributes?: Record<string, any>; // 结构化属性
+  attributes?: GraphRecord; // 结构化属性
   tags?: string[]; // 标签
   summary?: string; // 摘要
   isEditing?: boolean; // 编辑状态
@@ -38,6 +33,7 @@ export interface Node extends CommonNodeType {
   validationError?: string;
   isExpanded?: boolean; // 是否展开状态
   customExpandedSize?: { width: number; height: number }; // 用户自定义的展开尺寸
+  collapsedSections?: string[]; // 节点内部分区折叠状态
   style?: CSSProperties; // 样式属性
   createdAt: Date;
   updatedAt: Date;
@@ -47,7 +43,7 @@ export interface Group extends CommonNodeType {
   type: BlockEnum.GROUP;
   title: string;
   content?: string;
-  attributes?: Record<string, any>; // 结构化属性
+  attributes?: GraphRecord; // 结构化属性
   tags?: string[]; // 标签
   summary?: string; // 摘要
   isEditing?: boolean; // 编辑状态
@@ -83,7 +79,7 @@ export interface Edge {
     strength?: number;             // 关系强度
     direction?: 'unidirectional' | 'bidirectional' | 'undirected'; // 方向性
     // 自定义属性
-    customProperties?: Record<string, any>;
+    customProperties?: GraphRecord;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -99,7 +95,7 @@ export const NodeSchema = z.object({
   }),
   title: z.string().min(1),
   content: z.string().optional(),
-  attributes: z.record(z.string(), z.any()).optional(),
+  attributes: z.record(z.string(), z.unknown()).optional(),
   tags: z.array(z.string()).optional(),
   summary: z.string().optional(),
   isEditing: z.boolean().optional(),
@@ -108,6 +104,7 @@ export const NodeSchema = z.object({
     width: z.number(),
     height: z.number()
   }).optional(),
+  collapsedSections: z.array(z.string()).optional(),
   width: z.number().optional(),
   height: z.number().optional(),
   groupId: z.string().optional(),
@@ -124,7 +121,7 @@ export const GroupSchema = z.object({
   }),
   title: z.string().min(1),
   content: z.string().optional(),
-  attributes: z.record(z.string(), z.any()).optional(),
+  attributes: z.record(z.string(), z.unknown()).optional(),
   tags: z.array(z.string()).optional(),
   summary: z.string().optional(),
   isEditing: z.boolean().optional(),
@@ -160,7 +157,7 @@ export const EdgeSchema = z.object({
     weight: z.number().optional(),
     strength: z.number().optional(),
     direction: z.enum(['unidirectional', 'bidirectional', 'undirected']).optional(),
-    customProperties: z.record(z.string(), z.any()).optional(),
+    customProperties: z.record(z.string(), z.unknown()).optional(),
   }).optional(),
   createdAt: z.date(),
   updatedAt: z.date(),

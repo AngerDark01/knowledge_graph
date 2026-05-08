@@ -1,6 +1,16 @@
-import { Node, Group, Edge, BlockEnum } from '@/types/graph/models';
+import { BlockEnum, type Node, type Group, type Edge } from '@/types/graph/models';
 import { UI_DIMENSIONS } from '@/config/constants';
 import { PADDING_CONFIG } from '@/config/layout';
+import type { EdgeVisibility } from '@/domain/ontology';
+
+export type GraphNode = Node | Group;
+export type GraphNodeUpdate = Partial<Node> | Partial<Group>;
+export type GraphPosition = { x: number; y: number };
+export type GraphBoundary = Group['boundary'];
+export type GraphStorePatch = Partial<GraphNodeStoreState>;
+export type GraphStoreUpdater = (state: GraphNodeStoreState) => GraphStorePatch | GraphNodeStoreState;
+export type GraphStoreSet = (patch: GraphStorePatch | GraphNodeStoreState | GraphStoreUpdater) => void;
+export type GraphStoreGet = () => GraphNodeStoreState;
 
 // 群组内边距常量 - 从配置中导入以保证一致性
 export const GROUP_PADDING = PADDING_CONFIG.GROUP_PADDING;
@@ -9,17 +19,39 @@ export const GROUP_PADDING = PADDING_CONFIG.GROUP_PADDING;
 export const NODE_VISUAL_PADDING = UI_DIMENSIONS.NODE_VISUAL_PADDING;
 
 // 安全的数值验证函数
-export const safeNumber = (value: any, defaultValue: number = 0): number => {
+export const safeNumber = (value: unknown, defaultValue: number = 0): number => {
   const num = Number(value);
   return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
 };
 
 // 确保位置对象有效
-export const safePosition = (position: any): { x: number; y: number } => {
+export const safePosition = (position: unknown): GraphPosition => {
+  const candidate = typeof position === 'object' && position !== null
+    ? position as Partial<GraphPosition>
+    : {};
+
   return {
-    x: safeNumber(position?.x, 0),
-    y: safeNumber(position?.y, 0)
+    x: safeNumber(candidate.x, 0),
+    y: safeNumber(candidate.y, 0)
   };
+};
+
+export const toRecord = (value: unknown): Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+};
+
+export const isGraphBoundary = (value: unknown): value is GraphBoundary => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const boundary = value as Partial<GraphBoundary>;
+  return Number.isFinite(boundary.minX)
+    && Number.isFinite(boundary.minY)
+    && Number.isFinite(boundary.maxX)
+    && Number.isFinite(boundary.maxY);
 };
 
 /**
@@ -31,7 +63,7 @@ export const safePosition = (position: any): { x: number; y: number } => {
 export const constrainNodeToGroupBoundary = (
   node: Node | Group,
   parentGroup: Group
-): { x: number; y: number } => {
+): GraphPosition => {
   // 根据节点类型确定默认尺寸
   let defaultWidth = 150;
   let defaultHeight = 100;
@@ -69,14 +101,14 @@ export const constrainNodeToGroupBoundary = (
 };
 
 export interface NodeOperationsSlice {
-  nodes: (Node | Group)[];
+  nodes: GraphNode[];
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   addNode: (node: Node | Group) => void;
-  updateNode: (id: string, updates: Partial<Node | Group>) => void;
+  updateNode: (id: string, updates: GraphNodeUpdate) => void;
   deleteNode: (id: string) => void;
-  getNodes: () => (Node | Group)[];
-  getNodeById: (id: string) => (Node | Group) | undefined;
+  getNodes: () => GraphNode[];
+  getNodeById: (id: string) => GraphNode | undefined;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedEdgeId: (id: string | null) => void;
 }
@@ -101,4 +133,15 @@ export interface LayoutOperationsSlice {
 
 export interface GroupBoundaryOperationsSlice {
   updateGroupBoundary: (groupId: string) => void;
+}
+
+export interface GraphNodeStoreState
+  extends NodeOperationsSlice,
+    GroupOperationsSlice,
+    ConstraintOperationsSlice,
+    GroupBoundaryOperationsSlice,
+    LayoutOperationsSlice {
+  edges: Edge[];
+  edgeVisibility: EdgeVisibility;
+  addHistorySnapshot?: () => void;
 }

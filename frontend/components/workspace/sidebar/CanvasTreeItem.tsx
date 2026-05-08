@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { CanvasTreeNode } from '@/types/workspace/models';
 import {

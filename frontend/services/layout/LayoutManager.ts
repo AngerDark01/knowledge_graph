@@ -2,6 +2,7 @@
 import { Node, Group, Edge } from '../../types/graph/models';
 import { ILayoutStrategy, LayoutResult, LayoutOptions } from './types/layoutTypes';
 import { LAYOUT_CONFIG } from '../../config/graph.config';
+import { logLayoutDebug } from './utils/layoutDebug';
 
 // ELK布局策略
 import { ELKLayoutStrategy } from './strategies/ELKLayoutStrategy';
@@ -61,12 +62,12 @@ export class LayoutManager implements ILayoutManager {
     // 注册 ELK 布局策略
     const elkStrategy = new ELKLayoutStrategy();
     this.strategies.set(elkStrategy.id, elkStrategy);
-    console.log(`✅ 策略已注册: ${elkStrategy.name} (${elkStrategy.id})`);
+    logLayoutDebug(`策略已注册: ${elkStrategy.name} (${elkStrategy.id})`);
 
     // 注册 ELK 群组布局策略
     const elkGroupStrategy = new ELKGroupLayoutStrategy();
     this.strategies.set(elkGroupStrategy.id, elkGroupStrategy);
-    console.log(`✅ 策略已注册: ${elkGroupStrategy.name} (${elkGroupStrategy.id})`);
+    logLayoutDebug(`策略已注册: ${elkGroupStrategy.name} (${elkGroupStrategy.id})`);
   }
   
   async applyLayout(nodes: (Node | Group)[], edges: Edge[], options?: LayoutOptions): Promise<LayoutResult> {
@@ -111,7 +112,7 @@ export class LayoutManager implements ILayoutManager {
       // 智能策略选择
       const strategyId = this.selectStrategy(options);
 
-      console.log(`📋 LayoutManager: 选择策略 "${strategyId}"`);
+      logLayoutDebug(`LayoutManager: 选择策略 "${strategyId}"`);
 
       // 获取策略实例
       const strategy = this.strategies.get(strategyId);

@@ -14,33 +14,54 @@ import ReactFlow, {
   Node as ReactFlowNode,
   Edge as ReactFlowEdge,
 } from 'reactflow';
-import { Group, Node, BlockEnum } from '@/types/graph/models';
 import 'reactflow/dist/style.css';
 
 import { NoteNode, GroupNode } from '../nodes';
 import CustomEdge from '../edges/CustomEdge';
 import CrossGroupEdge from '../edges/CrossGroupEdge';
-import NodeEditor from '../editors/NodeEditor';
-import EdgeEditor from '../editors/EdgeEditor';
-import EdgeFilterControl from '../controls/EdgeFilterControl';
-import HistoryControl from '../controls/HistoryControl';
 import { useGraphStore } from '@/stores/graph';
+import { useWorkspaceStore } from '@/stores/workspace';
 
 import { useNodeHandling } from './hooks/useNodeHandling';
 import { useEdgeHandling } from './hooks/useEdgeHandling';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useViewportControls } from './hooks/useViewportControls';
 import { ZoomIndicator } from '../controls/ZoomIndicator';
-import { Toolbar } from '../controls/Toolbar';
-import { syncStoreToReactFlowNodes } from './nodeSyncUtils';
 import { EdgeOptimizer } from '@/services/layout/algorithms/EdgeOptimizer';
-import { EDGE_OPTIMIZATION_CONFIG, UI_DIMENSIONS } from '@/config/graph.config';
+import { EDGE_OPTIMIZATION_CONFIG } from '@/config/graph.config';
+import {
+  commitDomainDrag,
+  commitDomainResize,
+  commitNodeDrag,
+  commitNodeResize,
+  createResizeCommitGate,
+  getCustomExpandedSizeToPersist,
+  projectOntologyDocumentToReactFlowEdges,
+  projectOntologyDocumentToReactFlowNodes,
+  projectOntologyDocumentToLegacyGraphEdges,
+  projectOntologyDocumentToLegacyGraphNodes,
+  resolveReactFlowLodMode,
+  resolveReactFlowNodePersistedPosition,
+  useOntologyDocumentStore,
+  type OntologyDocumentState,
+  type OntologyInteractionPatch,
+  type ReactFlowViewportBounds,
+} from '@/features/ontology-canvas';
+import { ontologyNodeViewTokens } from '@/features/ontology-canvas/config';
+import { getActiveOntologyDocument } from '@/utils/workspace/canvasSync';
 
 interface GraphPageProps {
   className?: string;
 }
 
-const NODE_VISUAL_PADDING = UI_DIMENSIONS.NODE_VISUAL_PADDING;
+type ReactFlowViewportSnapshot = {
+  x: number;
+  y: number;
+  zoom: number;
+};
+
+const VIEWPORT_CULLING_NODE_THRESHOLD = 80;
+const VIEWPORT_CULLING_PADDING = 800;
 
 const GraphPageContent = ({ className }: GraphPageProps) => {
   const nodeTypes = useMemo(() => ({
@@ -56,40 +77,187 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   const reactFlowInstance = useReactFlow();
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   
-  const {
-    nodes: storeNodes,
-    edges,
-    visibleEdgeIds,
-    updateNode,
-    updateNodePosition,
-    deleteNode,
-    deleteEdge,
-    selectedNodeId,
-    selectedEdgeId,
-    setSelectedNodeId,
-    setSelectedEdgeId,
-    handleGroupMove,
-    updateGroupBoundary,
-  } = useGraphStore();
+  const edgeVisibility = useGraphStore(state => state.edgeVisibility);
+  const deleteNode = useGraphStore(state => state.deleteNode);
+  const deleteEdge = useGraphStore(state => state.deleteEdge);
+  const selectedNodeId = useGraphStore(state => state.selectedNodeId);
+  const selectedEdgeId = useGraphStore(state => state.selectedEdgeId);
+  const setSelectedNodeId = useGraphStore(state => state.setSelectedNodeId);
+  const setSelectedEdgeId = useGraphStore(state => state.setSelectedEdgeId);
+  const currentCanvasId = useWorkspaceStore(state => state.currentCanvasId);
+  const ontologyDocument = useOntologyDocumentStore(state => state.document);
+  const ontologySourceCanvasId = useOntologyDocumentStore(state => state.sourceCanvasId);
+  const isOntologyDocumentHydrated = useOntologyDocumentStore(state => state.hydrated);
+  const replaceOntologyDocument = useOntologyDocumentStore(state => state.replaceDocument);
+  const applyInteractionPatch = useOntologyDocumentStore(state => state.applyInteractionPatch);
+  const updateOntologyViewport = useOntologyDocumentStore(state => state.updateViewport);
+  const deleteOntologyElements = useOntologyDocumentStore(state => state.deleteElements);
   
   const [zoomValue, setZoomValue] = useState<number>(1);
   const [reactFlowNodes, setReactFlowNodes, onNodesChange] = useNodesState([]);
   const [reactFlowEdges, setReactFlowEdges, onEdgesChange] = useEdgesState([]);
+  const [projectionBounds, setProjectionBounds] = useState<ReactFlowViewportBounds | null>(null);
   const isDraggingRef = useRef<boolean>(false);
-  const lastDraggedNodeRef = useRef<string | null>(null);
+  const isResizingRef = useRef<boolean>(false);
+  const resizeCommitGateRef = useRef(createResizeCommitGate());
+  const viewportFrameRef = useRef<number | null>(null);
+  const pendingViewportRef = useRef<ReactFlowViewportSnapshot | null>(null);
+  const graphContainerRef = useRef<HTMLDivElement | null>(null);
 
   // 边优化器实例和防抖定时器
   const edgeOptimizerRef = useRef<EdgeOptimizer>(new EdgeOptimizer());
   const edgeOptimizeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { onNodeAdd, onGroupAdd, onDragOver, onDrop } = useNodeHandling();
+  const { onDragOver, onDrop } = useNodeHandling();
   const { onConnect } = useEdgeHandling();
-  const { onRecenter, onClear } = useViewportControls();
+  const { onRecenter } = useViewportControls();
   useKeyboardShortcuts(onRecenter, rfInstance);
 
-  // 边优化防抖函数：在拖拽结束后优化相关边的连接点
-  const optimizeEdgesAfterDrag = useCallback((draggedNodeId: string) => {
+  const lodMode = useMemo(() => resolveReactFlowLodMode(zoomValue), [zoomValue]);
+  const ontologyElementCount = useMemo(() => {
+    return Object.keys(ontologyDocument.graph.nodes).length +
+      Object.keys(ontologyDocument.graph.domains).length;
+  }, [ontologyDocument]);
+  const isViewportCullingEnabled =
+    ontologyElementCount > VIEWPORT_CULLING_NODE_THRESHOLD && projectionBounds !== null;
+
+  useEffect(() => {
+    if (isOntologyDocumentHydrated && ontologySourceCanvasId === currentCanvasId) {
+      return;
+    }
+
+    replaceOntologyDocument(
+      getActiveOntologyDocument({
+        canvasId: currentCanvasId || 'current-canvas',
+        fallbackName: 'Current Canvas',
+      }),
+      {
+        canvasId: currentCanvasId,
+        reason: 'graph-page-fallback-init',
+      }
+    );
+  }, [
+    currentCanvasId,
+    isOntologyDocumentHydrated,
+    ontologySourceCanvasId,
+    replaceOntologyDocument,
+  ]);
+
+  const updateProjectionViewport = useCallback((viewport: ReactFlowViewportSnapshot) => {
+    const container = graphContainerRef.current;
+    if (!container || viewport.zoom <= 0) {
+      setZoomValue(viewport.zoom || 1);
+      return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      setZoomValue(viewport.zoom);
+      return;
+    }
+
+    const nextBounds = {
+      minX: Math.round((-viewport.x) / viewport.zoom),
+      minY: Math.round((-viewport.y) / viewport.zoom),
+      maxX: Math.round((rect.width - viewport.x) / viewport.zoom),
+      maxY: Math.round((rect.height - viewport.y) / viewport.zoom),
+    };
+
+    setZoomValue(viewport.zoom);
+    setProjectionBounds(previousBounds => {
+      if (
+        previousBounds &&
+        previousBounds.minX === nextBounds.minX &&
+        previousBounds.minY === nextBounds.minY &&
+        previousBounds.maxX === nextBounds.maxX &&
+        previousBounds.maxY === nextBounds.maxY
+      ) {
+        return previousBounds;
+      }
+
+      return nextBounds;
+    });
+  }, []);
+
+  const scheduleProjectionViewportUpdate = useCallback((viewport: ReactFlowViewportSnapshot) => {
+    pendingViewportRef.current = viewport;
+
+    if (viewportFrameRef.current !== null) {
+      return;
+    }
+
+    viewportFrameRef.current = window.requestAnimationFrame(() => {
+      viewportFrameRef.current = null;
+      const nextViewport = pendingViewportRef.current;
+      pendingViewportRef.current = null;
+
+      if (nextViewport) {
+        updateProjectionViewport(nextViewport);
+      }
+    });
+  }, [updateProjectionViewport]);
+
+  useEffect(() => {
+    return () => {
+      if (viewportFrameRef.current !== null) {
+        window.cancelAnimationFrame(viewportFrameRef.current);
+      }
+    };
+  }, []);
+
+  const projectedNodes = useMemo(() => {
+    return projectOntologyDocumentToReactFlowNodes(ontologyDocument, {
+      selectedNodeId,
+      cullingEnabled: isViewportCullingEnabled,
+      viewportBounds: projectionBounds,
+      viewportPadding: VIEWPORT_CULLING_PADDING,
+      lodMode,
+    });
+  }, [isViewportCullingEnabled, lodMode, ontologyDocument, projectionBounds, selectedNodeId]);
+
+  const projectedNodeIds = useMemo(() => {
+    return new Set(projectedNodes.map(node => node.id));
+  }, [projectedNodes]);
+
+  const projectedEdges = useMemo(() => {
+    return projectOntologyDocumentToReactFlowEdges(ontologyDocument, {
+      edgeVisibility,
+      selectedEdgeId,
+      visibleNodeIds: projectedNodeIds,
+    });
+  }, [edgeVisibility, ontologyDocument, projectedNodeIds, selectedEdgeId]);
+
+  const syncLegacyDisplayCache = useCallback((document: OntologyDocumentState) => {
+    useGraphStore.setState({
+      nodes: projectOntologyDocumentToLegacyGraphNodes(document),
+      edges: projectOntologyDocumentToLegacyGraphEdges(document),
+    });
+  }, []);
+
+  const applyCanvasInteractionPatch = useCallback((
+    patch: OntologyInteractionPatch,
+    reason: string
+  ): OntologyDocumentState | null => {
+    const nextDocument = applyInteractionPatch(patch, {
+      canvasId: currentCanvasId,
+      reason,
+    });
+
+    if (nextDocument) {
+      syncLegacyDisplayCache(nextDocument);
+    }
+
+    return nextDocument;
+  }, [applyInteractionPatch, currentCanvasId, syncLegacyDisplayCache]);
+
+  // 边优化防抖函数：在拖拽/resize 结束后优化相关边的连接点
+  const optimizeEdgesAfterViewChange = useCallback((affectedViewIds: Iterable<string>) => {
     if (!EDGE_OPTIMIZATION_CONFIG.ENABLED) return;
+
+    const affectedNodeIds = new Set(affectedViewIds);
+    if (affectedNodeIds.size === 0) {
+      return;
+    }
 
     // 清除之前的定时器
     if (edgeOptimizeTimerRef.current) {
@@ -98,17 +266,14 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
     // 设置新的定时器（防抖）
     edgeOptimizeTimerRef.current = setTimeout(() => {
-      const { nodes, edges: allEdges, updateEdge } = useGraphStore.getState();
+      const { nodes, edges: allEdges } = useGraphStore.getState();
 
       // 找到与拖拽节点相关的边
-      const affectedNodeIds = new Set([draggedNodeId]);
       const affectedEdges = allEdges.filter(
-        (edge) => edge.source === draggedNodeId || edge.target === draggedNodeId
+        (edge) => affectedNodeIds.has(edge.source) || affectedNodeIds.has(edge.target)
       );
 
       if (affectedEdges.length === 0) return;
-
-      console.log(`🔗 优化 ${affectedEdges.length} 条受影响的边`);
 
       // 使用批量优化
       const optimizedEdges = edgeOptimizerRef.current.optimizeBatch(
@@ -117,73 +282,46 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         affectedNodeIds
       );
 
-      // 只更新受影响的边
+      const edgeViews: Record<string, { sourceHandle: string; targetHandle: string }> = {};
+
       affectedEdges.forEach((edge) => {
         const optimizedEdge = optimizedEdges.find((e) => e.id === edge.id);
         if (optimizedEdge && optimizedEdge.sourceHandle && optimizedEdge.targetHandle) {
-          updateEdge(edge.id, {
+          edgeViews[edge.id] = {
             sourceHandle: optimizedEdge.sourceHandle,
             targetHandle: optimizedEdge.targetHandle,
-          });
+          };
         }
       });
+
+      if (Object.keys(edgeViews).length > 0) {
+        applyCanvasInteractionPatch({ edgeViews }, 'edge-handle-optimize');
+      }
     }, EDGE_OPTIMIZATION_CONFIG.DEBOUNCE_DELAY);
+  }, [applyCanvasInteractionPatch]);
+
+  useEffect(() => {
+    return () => {
+      if (edgeOptimizeTimerRef.current) {
+        clearTimeout(edgeOptimizeTimerRef.current);
+      }
+    };
   }, []);
 
   // 同步store到ReactFlow
   useEffect(() => {
-    // 如果正在拖拽，跳过同步以避免覆盖用户操作
-    if (isDraggingRef.current) {
-      console.log('⏸️ 拖拽中，跳过同步');
+    // 如果正在拖拽或 resize，跳过同步以避免覆盖 ReactFlow 本地交互态。
+    if (isDraggingRef.current || isResizingRef.current) {
       return;
     }
 
-    const processedNodes = syncStoreToReactFlowNodes(storeNodes, selectedNodeId);
-
-    console.log('🔄 同步节点到ReactFlow:', processedNodes.length);
-    setReactFlowNodes(processedNodes as ReactFlowNode[]);
-  }, [storeNodes, selectedNodeId, setReactFlowNodes, isDraggingRef.current]);
+    setReactFlowNodes(projectedNodes as ReactFlowNode[]);
+  }, [projectedNodes, setReactFlowNodes]);
 
   // 同步边
   useEffect(() => {
-    const processedEdges = edges
-      .filter(edge => {
-        // ✅ 过滤掉被转换隐藏的边
-        if ((edge as any)._hiddenByConversion) {
-          return false;
-        }
-        // 根据可见性过滤
-        return visibleEdgeIds.length === 0 || visibleEdgeIds.includes(edge.id);
-      })
-      .map(edge => {
-        // 检查边的源节点和目标节点是否都在同一个群组内
-        const sourceNode = storeNodes.find(n => n.id === edge.source);
-        const targetNode = storeNodes.find(n => n.id === edge.target);
-        
-        // 如果源节点和目标节点都在同一个群组内，给边设置更高的zIndex
-        const isInSameGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
-                             sourceNode.groupId === targetNode.groupId;
-        
-        // 确定边的类型
-        const isCrossGroup = sourceNode && targetNode && 
-                             sourceNode.groupId && 
-                             targetNode.groupId && 
-                             sourceNode.groupId !== targetNode.groupId;
-        
-        // 设置边类型
-        const edgeType = isCrossGroup ? 'crossGroup' : 'default';
-        
-        return {
-          ...edge,
-          selected: edge.id === selectedEdgeId,
-          type: edgeType, // 设置边类型
-          zIndex: 1000, // 设置边的层级高于节点（默认节点zIndex为0，选中节点为1）
-        };
-      });
-    setReactFlowEdges(processedEdges as ReactFlowEdge[]);
-  }, [edges, selectedEdgeId, setReactFlowEdges, storeNodes, visibleEdgeIds]);
+    setReactFlowEdges(projectedEdges as ReactFlowEdge[]);
+  }, [projectedEdges, setReactFlowEdges]);
 
   // 监听缩放
   useEffect(() => {
@@ -191,11 +329,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
       return;
     }
 
-    const onZoom = () => {
-      if (rfInstance) {
-        setZoomValue(rfInstance.getZoom());
-      }
-    };
+    const onZoom = () => updateProjectionViewport(rfInstance.getViewport());
 
     if ('on' in rfInstance && typeof rfInstance.on === 'function') {
       rfInstance.on('zoom', onZoom);
@@ -205,7 +339,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         }
       };
     }
-  }, [rfInstance, setZoomValue]); // 添加 setZoomValue 依赖以确保一致性
+  }, [rfInstance, updateProjectionViewport]);
 
   // 节点点击
   const onNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
@@ -256,16 +390,12 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
   }, [setSelectedNodeId, setSelectedEdgeId]);
 
   // 拖拽开始
-  const onNodeDragStart = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
-    console.log('🚀 开始拖拽:', node.id);
+  const onNodeDragStart = useCallback(() => {
     isDraggingRef.current = true;
-    lastDraggedNodeRef.current = node.id;
   }, []);
 
   // ⚡ 优化版：拖拽结束处理（移除不必要的 setTimeout）
-  const onNodeDragStop = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
-    console.log('🎯 拖拽结束:', node.id);
-
+  const onNodeDragStop = useCallback((_event: React.MouseEvent, node: ReactFlowNode) => {
     try {
       const currentNode = reactFlowInstance?.getNode(node.id);
       if (!currentNode) {
@@ -273,92 +403,64 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
         return;
       }
 
-      if (currentNode.type === 'group') {
-        const storeGroup = storeNodes.find(n => n.id === node.id) as Group;
-        if (!storeGroup) {
-          isDraggingRef.current = false;
-          return;
-        }
-
-        // 🔧 计算绝对位置（如果是嵌套群组）
-        let absolutePosition = {
+      const legacyDisplayNode = projectOntologyDocumentToLegacyGraphNodes(ontologyDocument)
+        .find(displayNode => displayNode.id === node.id);
+      const persistedPosition = legacyDisplayNode
+        ? resolveReactFlowNodePersistedPosition(
+          legacyDisplayNode,
+          lodMode,
+          {
+            x: Number(currentNode.position.x),
+            y: Number(currentNode.position.y),
+          }
+        )
+        : {
           x: Number(currentNode.position.x),
-          y: Number(currentNode.position.y)
+          y: Number(currentNode.position.y),
         };
 
-        if (storeGroup.groupId) {
-          const parentGroup = storeNodes.find(n => n.id === storeGroup.groupId) as Group;
-          if (parentGroup) {
-            absolutePosition = {
-              x: Number(currentNode.position.x) + Number(parentGroup.position.x),
-              y: Number(currentNode.position.y) + Number(parentGroup.position.y)
-            };
-            console.log('📍 群组 相对→绝对:', currentNode.position, '→', absolutePosition);
-          }
-        }
+      if (currentNode.type === 'group') {
+        const dragPatch = commitDomainDrag(ontologyDocument, {
+          domainId: node.id,
+          reactFlowPosition: persistedPosition,
+        });
 
-        handleGroupMove(node.id, absolutePosition);
-
-        // 直接更新父群组边界（防抖已移除）
-        if (storeGroup.groupId) {
-          console.log('📐 更新父群组边界:', storeGroup.groupId);
-          updateGroupBoundary(storeGroup.groupId!);
-        }
+        applyCanvasInteractionPatch(dragPatch, 'domain-drag-stop');
 
         // ⚡ 优化边连接点
-        optimizeEdgesAfterDrag(node.id);
+        optimizeEdgesAfterViewChange([
+          ...Object.keys(dragPatch.domainViews ?? {}),
+          ...Object.keys(dragPatch.nodeViews ?? {}),
+        ]);
 
         // ⚡ 优化：立即重置拖拽状态
         isDraggingRef.current = false;
       } else {
-        const storeNode = storeNodes.find(n => n.id === node.id) as Node;
-        if (!storeNode) {
-          isDraggingRef.current = false;
-          return;
-        }
+        const dragPatch = commitNodeDrag(ontologyDocument, {
+          nodeId: node.id,
+          reactFlowPosition: persistedPosition,
+        });
 
-        let absolutePosition = {
-          x: Number(currentNode.position.x),
-          y: Number(currentNode.position.y)
-        };
-
-        if (storeNode.groupId) {
-          const parentGroup = storeNodes.find(n => n.id === storeNode.groupId) as Group;
-          if (parentGroup) {
-            // 使用同步函数中的转换逻辑
-            absolutePosition = {
-              x: Number(currentNode.position.x) + Number(parentGroup.position.x),
-              y: Number(currentNode.position.y) + Number(parentGroup.position.y)
-            };
-            console.log('📍 相对→绝对:', currentNode.position, '→', absolutePosition);
-            console.log('  父群组位置:', parentGroup.position);
-          }
-        }
-
-        console.log('💾 最终保存位置:', absolutePosition);
-
-        // 先更新位置
-        updateNodePosition(node.id, absolutePosition);
-
-        // 直接更新群组边界（防抖已移除）
-        if (storeNode.groupId) {
-          updateGroupBoundary(storeNode.groupId!);
-        }
+        applyCanvasInteractionPatch(dragPatch, 'node-drag-stop');
 
         // ⚡ 优化边连接点
-        optimizeEdgesAfterDrag(node.id);
+        optimizeEdgesAfterViewChange([node.id]);
 
         // ⚡ 优化：立即重置拖拽状态（不需要延迟）
         isDraggingRef.current = false;
-        lastDraggedNodeRef.current = null;
       }
     } catch (error) {
       console.error('处理节点拖拽停止时出错:', error);
       // 确保无论如何都重置拖拽状态以避免问题
       isDraggingRef.current = false;
-      lastDraggedNodeRef.current = null;
     }
-  }, [reactFlowInstance, storeNodes, handleGroupMove, updateNodePosition, updateGroupBoundary, optimizeEdgesAfterDrag]);
+  }, [
+    applyCanvasInteractionPatch,
+    lodMode,
+    ontologyDocument,
+    optimizeEdgesAfterViewChange,
+    reactFlowInstance,
+  ]);
 
   // MiniMap 节点颜色
   const nodeColor = useCallback((node: ReactFlowNode) => {
@@ -367,7 +469,7 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
 
   return (
     <div className={`flex w-full h-full ${className || ''}`}>
-      <div className="flex-1 relative">
+      <div ref={graphContainerRef} className="flex-1 relative">
         <ReactFlow
           nodes={reactFlowNodes}
           edges={reactFlowEdges}
@@ -390,12 +492,26 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           nodesDraggable={true}
           nodesConnectable={true}
           preventScrolling={false} // ✅ 允许节点内部滚动，配合 nowheel 类使用
+          onMove={(_event, viewport) => scheduleProjectionViewportUpdate(viewport)}
+          onMoveEnd={(_event, viewport) => {
+            updateProjectionViewport(viewport);
+            updateOntologyViewport(viewport, {
+              canvasId: currentCanvasId,
+              reason: 'viewport-move-end',
+            });
+          }}
           onEdgesChange={(changes) => {
             onEdgesChange(changes);
 
             requestAnimationFrame(() => {
               changes.forEach((change: EdgeChange) => {
                 if (change.type === 'remove') {
+                  deleteOntologyElements({
+                    ids: [change.id],
+                  }, {
+                    canvasId: currentCanvasId,
+                    reason: 'edge-remove',
+                  });
                   deleteEdge(change.id);
                   if (selectedEdgeId === change.id) {
                     setSelectedEdgeId(null);
@@ -413,43 +529,80 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
             requestAnimationFrame(() => {
               changes.forEach((change: NodeChange) => {
                 if (change.type === 'remove') {
+                  resizeCommitGateRef.current.clear(change.id);
+                  isResizingRef.current = resizeCommitGateRef.current.hasActiveResize();
+                  deleteOntologyElements({
+                    ids: [change.id],
+                  }, {
+                    canvasId: currentCanvasId,
+                    reason: 'node-remove',
+                  });
                   deleteNode(change.id);
                   if (selectedNodeId === change.id) {
                     setSelectedNodeId(null);
                   }
                 }
 
-                // 直接处理尺寸变化，移除防抖
+                if (change.type === 'dimensions' && change.resizing) {
+                  resizeCommitGateRef.current.markResizing(change.id);
+                  isResizingRef.current = true;
+                  return;
+                }
+
+                // resize 结束后一次性提交本体 view 尺寸。
                 if (change.type === 'dimensions' && change.dimensions && !change.resizing) {
+                  if (!resizeCommitGateRef.current.shouldCommitResizeEnd(change.id)) {
+                    return;
+                  }
+
                   const currentNode = reactFlowInstance?.getNode(change.id);
 
                   if (currentNode) {
+                    isResizingRef.current = resizeCommitGateRef.current.hasActiveResize();
                     const newWidth = Number(change.dimensions!.width);
                     const newHeight = Number(change.dimensions!.height);
+                    const nodeView = ontologyDocument.view.nodeViews[change.id];
+                    const customExpandedSize = currentNode.type === 'group' || !nodeView
+                      ? undefined
+                      : getCustomExpandedSizeToPersist(
+                        {
+                          ...nodeView,
+                          isExpanded: nodeView.expanded,
+                          width: newWidth,
+                          height: newHeight,
+                        },
+                        {
+                          collapsedSize: {
+                            width: ontologyNodeViewTokens.collapsedWidth,
+                            height: ontologyNodeViewTokens.collapsedHeight,
+                          },
+                          expandedSize: {
+                            width: ontologyNodeViewTokens.expandedWidth,
+                            height: ontologyNodeViewTokens.expandedHeight,
+                          },
+                        }
+                      ) ?? undefined;
 
-                    // 同时更新 width/height 和 style,确保 ReactFlow 正确渲染
-                    updateNode(change.id, {
-                      width: newWidth || 350,
-                      height: newHeight || 280,
-                      style: {
-                        ...(currentNode.style || {}),
+                    const resizePatch = currentNode.type === 'group'
+                      ? commitDomainResize(ontologyDocument, {
+                        domainId: change.id,
                         width: newWidth || 350,
                         height: newHeight || 280,
-                      }
-                    });
+                      })
+                      : commitNodeResize(ontologyDocument, {
+                        nodeId: change.id,
+                        width: newWidth || 350,
+                        height: newHeight || 280,
+                        customExpandedSize,
+                      });
 
-                    if (currentNode.type === 'group') {
-                      const storeGroup = storeNodes.find(n => n.id === change.id) as Group;
-
-                      // 直接更新边界（防抖已移除）
-                      updateGroupBoundary(change.id);
-
-                      // 直接更新父群组边界（防抖已移除）
-                      if (storeGroup?.groupId) {
-                        console.log('📐 调整大小后更新父群组边界:', storeGroup.groupId);
-                        updateGroupBoundary(storeGroup.groupId!);
-                      }
-                    }
+                    applyCanvasInteractionPatch(
+                      resizePatch,
+                      currentNode.type === 'group' ? 'domain-resize' : 'node-resize'
+                    );
+                    optimizeEdgesAfterViewChange([change.id]);
+                  } else {
+                    isResizingRef.current = resizeCommitGateRef.current.hasActiveResize();
                   }
                 }
               });
@@ -457,6 +610,11 @@ const GraphPageContent = ({ className }: GraphPageProps) => {
           }}
           onInit={(instance) => {
             setRfInstance(instance);
+            updateProjectionViewport(instance.getViewport());
+            updateOntologyViewport(instance.getViewport(), {
+              canvasId: currentCanvasId,
+              reason: 'react-flow-init',
+            });
           }}
         >
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />

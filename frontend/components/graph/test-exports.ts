@@ -8,8 +8,7 @@ import { GraphPageContent } from './core';
 import { 
   BaseNode, 
   NoteNode, 
-  GroupNode,
-  NoteNodeEdit
+  GroupNode
 } from './nodes';
 
 // 测试边组件导入
@@ -20,10 +19,7 @@ import {
 
 // 测试编辑器组件导入
 import { 
-  ContentEditor, 
-  NodeEditor, 
-  EdgeEditor, 
-  StructuredAttributeEditor 
+  EdgeEditor
 } from './editors';
 
 // 测试控制组件导入
@@ -54,17 +50,13 @@ const validateImports = () => {
   console.log('  - BaseNode:', typeof BaseNode);
   console.log('  - NoteNode:', typeof NoteNode);
   console.log('  - GroupNode:', typeof GroupNode);
-  console.log('  - NoteNodeEdit:', typeof NoteNodeEdit);
   
   console.log('✅ Edge components imported successfully');
   console.log('  - CustomEdge:', typeof CustomEdge);
   console.log('  - CrossGroupEdge:', typeof CrossGroupEdge);
   
   console.log('✅ Editor components imported successfully');
-  console.log('  - ContentEditor:', typeof ContentEditor);
-  console.log('  - NodeEditor:', typeof NodeEditor);
   console.log('  - EdgeEditor:', typeof EdgeEditor);
-  console.log('  - StructuredAttributeEditor:', typeof StructuredAttributeEditor);
   
   console.log('✅ Control components imported successfully');
   console.log('  - EdgeFilterControl:', typeof EdgeFilterControl);
@@ -90,13 +82,9 @@ export {
   BaseNode,
   NoteNode,
   GroupNode,
-  NoteNodeEdit,
   CustomEdge,
   CrossGroupEdge,
-  ContentEditor,
-  NodeEditor,
   EdgeEditor,
-  StructuredAttributeEditor,
   EdgeFilterControl,
   HistoryControl,
   Toolbar,

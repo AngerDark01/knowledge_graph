@@ -1,5 +1,13 @@
-import { create } from 'zustand';
-import { Node, Group, Edge } from '@/types/graph/models';
+import { Edge } from '@/types/graph/models';
+import {
+  addEdgeToVisibility,
+  createAllEdgeVisibility,
+  createCustomEdgeVisibility,
+  createNoEdgeVisibility,
+  removeEdgeIdsFromVisibility,
+  toggleEdgeInVisibility,
+  type EdgeVisibility,
+} from '@/domain/ontology';
 
 interface EdgesSlice {
   edges: Edge[];
@@ -13,27 +21,37 @@ interface EdgesSlice {
   getInternalGroupEdges: (groupId: string) => Edge[];
   filterEdges: (filterFn: (edge: Edge) => boolean) => Edge[];
   // 用于边的可见性控制
-  visibleEdgeIds: string[];
-  setVisibleEdgeIds: (ids: string[]) => void;
+  edgeVisibility: EdgeVisibility;
+  setCustomEdgeVisibility: (ids: string[]) => void;
   showAllEdges: () => void;
   hideAllEdges: () => void;
   toggleEdgeVisibility: (id: string) => void;
 }
 
-export const createEdgesSlice = (set: any, get: any): EdgesSlice => ({
+type EdgesStoreState = EdgesSlice & {
+  addHistorySnapshot?: () => void;
+};
+
+type EdgesStorePatch = Partial<EdgesStoreState>;
+type EdgesStoreSet = (
+  patch: EdgesStorePatch | EdgesStoreState | ((state: EdgesStoreState) => EdgesStorePatch | EdgesStoreState)
+) => void;
+type EdgesStoreGet = () => EdgesStoreState;
+
+export const createEdgesSlice = (set: EdgesStoreSet, get: EdgesStoreGet): EdgesSlice => ({
   edges: [],
-  visibleEdgeIds: [],
+  edgeVisibility: createAllEdgeVisibility(),
   addEdge: (edge) => {
     const state = get();
+    const nextEdges = [...state.edges, edge];
+    const nextVisibility = addEdgeToVisibility(state.edgeVisibility, edge.id);
     const newState = {
-      edges: [...state.edges, edge],
-      visibleEdgeIds: [...state.visibleEdgeIds, edge.id] // 新增的边默认可见
+      edges: nextEdges,
+      edgeVisibility: nextVisibility
     };
     set(newState);
     // 添加历史记录快照
-    if (get().addHistorySnapshot) {
-      get().addHistorySnapshot();
-    }
+    get().addHistorySnapshot?.();
     return newState;
   },
   updateEdge: (id, updates) => {
@@ -49,22 +67,20 @@ export const createEdgesSlice = (set: any, get: any): EdgesSlice => ({
     };
     set(newState);
     // 添加历史记录快照
-    if (get().addHistorySnapshot) {
-      get().addHistorySnapshot();
-    }
+    get().addHistorySnapshot?.();
     return newState;
   },
   deleteEdge: (id) => {
     const state = get();
+    const nextEdges = state.edges.filter((edge: Edge) => edge.id !== id);
+    const nextVisibility = removeEdgeIdsFromVisibility(state.edgeVisibility, [id]);
     const newState = {
-      edges: state.edges.filter((edge: Edge) => edge.id !== id),
-      visibleEdgeIds: state.visibleEdgeIds.filter((edgeId: string) => edgeId !== id)
+      edges: nextEdges,
+      edgeVisibility: nextVisibility
     };
     set(newState);
     // 添加历史记录快照
-    if (get().addHistorySnapshot) {
-      get().addHistorySnapshot();
-    }
+    get().addHistorySnapshot?.();
     return newState;
   },
   getEdges: () => get().edges,
@@ -88,38 +104,42 @@ export const createEdgesSlice = (set: any, get: any): EdgesSlice => ({
   filterEdges: (filterFn: (edge: Edge) => boolean) => {
     return get().edges.filter(filterFn);
   },
-  setVisibleEdgeIds: (ids: string[]) => set({ visibleEdgeIds: ids }),
-  showAllEdges: () => {
+  setCustomEdgeVisibility: (ids: string[]) => {
     const state = get();
-    const newState = { visibleEdgeIds: state.edges.map((edge: Edge) => edge.id) };
+    const nextVisibility = createCustomEdgeVisibility(ids, state.edges);
+    set({
+      edgeVisibility: nextVisibility
+    });
+  },
+  showAllEdges: () => {
+    const nextVisibility = createAllEdgeVisibility();
+    const newState = {
+      edgeVisibility: nextVisibility
+    };
     set(newState);
     // 添加历史记录快照
-    if (get().addHistorySnapshot) {
-      get().addHistorySnapshot();
-    }
+    get().addHistorySnapshot?.();
     return newState;
   },
   hideAllEdges: () => {
-    const newState = { visibleEdgeIds: [] };
+    const nextVisibility = createNoEdgeVisibility();
+    const newState = {
+      edgeVisibility: nextVisibility
+    };
     set(newState);
     // 添加历史记录快照
-    if (get().addHistorySnapshot) {
-      get().addHistorySnapshot();
-    }
+    get().addHistorySnapshot?.();
     return newState;
   },
   toggleEdgeVisibility: (id: string) => {
     const state = get();
+    const nextVisibility = toggleEdgeInVisibility(id, state.edges, state.edgeVisibility);
     const newState = {
-      visibleEdgeIds: state.visibleEdgeIds.includes(id)
-        ? state.visibleEdgeIds.filter((edgeId: string) => edgeId !== id)
-        : [...state.visibleEdgeIds, id]
+      edgeVisibility: nextVisibility
     };
     set(newState);
     // 添加历史记录快照
-    if (get().addHistorySnapshot) {
-      get().addHistorySnapshot();
-    }
+    get().addHistorySnapshot?.();
     return newState;
   },
 });

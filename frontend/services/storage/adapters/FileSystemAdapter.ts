@@ -84,7 +84,7 @@ export class FileSystemAdapter implements StorageAdapter, IFileSystemAdapter {
     }
   }
 
-  async remove(key: string): Promise<void> {
+  async remove(): Promise<void> {
     // 文件系统适配器暂不实现删除方法，因为需要额外的API路由
     console.warn('FileSystemAdapter.remove() 暂未实现');
   }
@@ -113,7 +113,7 @@ export class FileSystemAdapter implements StorageAdapter, IFileSystemAdapter {
     }
   }
 
-  async deleteFile(path: string): Promise<void> {
+  async deleteFile(): Promise<void> {
     console.warn('FileSystemAdapter.deleteFile() 暂未实现');
   }
 }

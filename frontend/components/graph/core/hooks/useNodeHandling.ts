@@ -1,418 +1,391 @@
 import { useCallback } from 'react';
+import type { DragEvent } from 'react';
 import { useReactFlow } from 'reactflow';
-import { useGraphStore } from '@/stores/graph';
 import { NODE_SIZES, PADDING_CONFIG } from '@/config/graph.config';
-import { Node, Group, BlockEnum } from '@/types/graph/models';
+import {
+  createOntologyClassNodeInDocument,
+  createOntologyDomainInDocument,
+  isLegacyOntologyClassDisplay,
+  isLegacyOntologyDomainDisplay,
+  projectOntologyDomainToLegacyGroup,
+  projectOntologyNodeToLegacyNode,
+  useOntologyDocumentStore,
+  type LegacyOntologyDisplayNode,
+} from '@/features/ontology-canvas';
+import { useGraphStore } from '@/stores/graph';
+import { useWorkspaceStore } from '@/stores/workspace';
+import { getActiveOntologyDocument } from '@/utils/workspace/canvasSync';
 
-// 从配置中获取群组内边距常量，确保与ELK布局和UI组件一致
 const GROUP_PADDING = PADDING_CONFIG.GROUP_PADDING;
+const ONTOLOGY_DOCUMENT_NAME = 'Current Canvas';
 
-// 安全的数值验证和默认值函数
-const safeNumber = (value: any, defaultValue: number = 0): number => {
-  const num = Number(value);
-  return typeof num === 'number' && !isNaN(num) && isFinite(num) ? num : defaultValue;
+type Position = { x: number; y: number };
+type Size = { width: number; height: number };
+
+const CLASS_NODE_SIZE: Size = {
+  width: NODE_SIZES.NOTE.DEFAULT_WIDTH,
+  height: NODE_SIZES.NOTE.DEFAULT_HEIGHT,
 };
 
-// 🆕 根据节点类型获取默认尺寸
-const getDefaultNodeSize = (nodeType: BlockEnum) => {
-  if (nodeType === BlockEnum.NODE) {
-    // NoteNode 的初始尺寸
+const DOMAIN_SIZE: Size = {
+  width: NODE_SIZES.GROUP.DEFAULT_WIDTH,
+  height: NODE_SIZES.GROUP.DEFAULT_HEIGHT,
+};
+
+const safeNumber = (value: unknown, defaultValue = 0): number => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : defaultValue;
+};
+
+const createElementId = (prefix: 'class' | 'domain'): string =>
+  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+
+const getViewportCenterPosition = (
+  reactFlowInstance: ReturnType<typeof useReactFlow>
+): Position => {
+  try {
+    const viewPort = reactFlowInstance?.getViewport();
+    const center = reactFlowInstance?.screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
+
     return {
-      width: NODE_SIZES.NOTE.DEFAULT_WIDTH,
-      height: NODE_SIZES.NOTE.DEFAULT_HEIGHT
+      x: safeNumber(center?.x, safeNumber(viewPort?.x, 0) + 200),
+      y: safeNumber(center?.y, safeNumber(viewPort?.y, 0) + 100),
     };
-  } else if (nodeType === BlockEnum.GROUP) {
-    return {
-      width: NODE_SIZES.GROUP.DEFAULT_WIDTH,
-      height: NODE_SIZES.GROUP.DEFAULT_HEIGHT
-    };
+  } catch (error) {
+    console.error('计算视图中心位置失败:', error);
+    return { x: 200, y: 100 };
   }
-  return { width: 150, height: 100 };
+};
+
+const clampPositionToDomain = (
+  position: Position,
+  domain: LegacyOntologyDisplayNode,
+  size: Size
+): Position => {
+  const domainPosition = {
+    x: safeNumber(domain.position?.x, 0),
+    y: safeNumber(domain.position?.y, 0),
+  };
+  const domainWidth = safeNumber(domain.width, DOMAIN_SIZE.width);
+  const domainHeight = safeNumber(domain.height, DOMAIN_SIZE.height);
+
+  const maxX = domainPosition.x + domainWidth - GROUP_PADDING.right - size.width;
+  const maxY = domainPosition.y + domainHeight - GROUP_PADDING.bottom - size.height;
+
+  return {
+    x: Math.max(
+      domainPosition.x + GROUP_PADDING.left,
+      Math.min(safeNumber(position.x, domainPosition.x + GROUP_PADDING.left), maxX)
+    ),
+    y: Math.max(
+      domainPosition.y + GROUP_PADDING.top,
+      Math.min(safeNumber(position.y, domainPosition.y + GROUP_PADDING.top), maxY)
+    ),
+  };
+};
+
+const getGridPositionInDomain = (
+  domain: LegacyOntologyDisplayNode,
+  itemIndex: number,
+  itemSize: Size,
+  spacing: Size
+): Position => {
+  const domainPosition = {
+    x: safeNumber(domain.position?.x, 0),
+    y: safeNumber(domain.position?.y, 0),
+  };
+  const columnCount = 2;
+  const row = Math.floor(itemIndex / columnCount);
+  const column = itemIndex % columnCount;
+
+  return clampPositionToDomain(
+    {
+      x: domainPosition.x + GROUP_PADDING.left + column * spacing.width,
+      y: domainPosition.y + GROUP_PADDING.top + row * spacing.height,
+    },
+    domain,
+    itemSize
+  );
+};
+
+const isPositionInsideDomain = (position: Position, domain: LegacyOntologyDisplayNode): boolean => {
+  const x = safeNumber(domain.position?.x, 0);
+  const y = safeNumber(domain.position?.y, 0);
+  const width = safeNumber(domain.width, DOMAIN_SIZE.width);
+  const height = safeNumber(domain.height, DOMAIN_SIZE.height);
+
+  return position.x >= x &&
+    position.x <= x + width &&
+    position.y >= y &&
+    position.y <= y + height;
+};
+
+const findContainingDomain = (
+  position: Position,
+  nodes: readonly LegacyOntologyDisplayNode[]
+): LegacyOntologyDisplayNode | undefined => {
+  return nodes
+    .filter(node => isLegacyOntologyDomainDisplay(node) && isPositionInsideDomain(position, node))
+    .sort((a, b) => {
+      const areaA = safeNumber(a.width, DOMAIN_SIZE.width) * safeNumber(a.height, DOMAIN_SIZE.height);
+      const areaB = safeNumber(b.width, DOMAIN_SIZE.width) * safeNumber(b.height, DOMAIN_SIZE.height);
+      return areaA - areaB;
+    })[0];
+};
+
+const createDocumentSnapshot = (canvasId: string) => {
+  return getActiveOntologyDocument({
+    canvasId: canvasId || 'current-canvas',
+    fallbackName: ONTOLOGY_DOCUMENT_NAME,
+  });
+};
+
+const getRootSubgraphId = (
+  document: ReturnType<typeof createDocumentSnapshot>
+): string | undefined => {
+  const rootSubgraph = Object.values(document.graph.subgraphs)
+    .find(subgraph => subgraph.name.toLowerCase() === 'root');
+  return rootSubgraph?.id ?? Object.keys(document.graph.subgraphs)[0];
 };
 
 export const useNodeHandling = () => {
   const reactFlowInstance = useReactFlow();
-  const { 
-    nodes, 
-    addNode, 
-    setSelectedNodeId, 
-    selectedNodeId,
-    updateGroupBoundary 
-  } = useGraphStore();
-  
+  const nodes = useGraphStore(state => state.nodes);
+  const addNode = useGraphStore(state => state.addNode);
+  const addNodeToGroup = useGraphStore(state => state.addNodeToGroup);
+  const setSelectedNodeId = useGraphStore(state => state.setSelectedNodeId);
+  const selectedNodeId = useGraphStore(state => state.selectedNodeId);
+  const currentCanvasId = useWorkspaceStore(state => state.currentCanvasId);
+  const applyOntologyCommandResult = useOntologyDocumentStore(state => state.applyCommandResult);
+
   const onNodeAdd = useCallback(() => {
-    console.log('➕ 创建新节点，当前选中:', selectedNodeId);
-    
-    // 检查当前是否有选中的群组
-    const selectedGroup = nodes.find((n: Node | Group) => 
-      n.id === selectedNodeId && n.type === BlockEnum.GROUP
-    ) as Group;
-    
-    let position;
-    let groupId;
-    
-    // 🆕 获取正确的节点尺寸
-    const defaultSize = getDefaultNodeSize(BlockEnum.NODE);
-    
-    if (selectedGroup) {
-      console.log('📦 在选中的群组内创建节点:', selectedGroup.id);
-      
-      // 确保群组位置有效，使用安全的数值转换
-      const safeGroupPosition = {
-        x: safeNumber(selectedGroup.position?.x, 0),
-        y: safeNumber(selectedGroup.position?.y, 0)
-      };
-      
-      // 确保群组尺寸有效
-      const safeGroupWidth = safeNumber(selectedGroup.width, 300);
-      const safeGroupHeight = safeNumber(selectedGroup.height, 200);
-      
-      console.log('  📍 群组安全位置:', safeGroupPosition);
-      console.log('  📏 群组安全尺寸:', { width: safeGroupWidth, height: safeGroupHeight });
-      
-      // 计算群组内当前已有节点的数量
-      const existingNodesInGroup = nodes.filter((n: Node | Group) => 
-        n.type === BlockEnum.NODE && (n as Node).groupId === selectedGroup.id
-      );
-      
-      // 使用网格布局避免节点重叠
-      const nodesPerRow = 2; // 🔧 从3改为2,因为节点变大了
-      const nodeIndex = existingNodesInGroup.length;
-      const row = Math.floor(nodeIndex / nodesPerRow);
-      const col = nodeIndex % nodesPerRow;
-      
-      const nodeSpacingX = 380; // 🔧 节点宽度(350) + 间距(30)
-      const nodeSpacingY = 310; // 🔧 节点高度(280) + 间距(30)
-      
-      // 计算节点在群组内的相对位置
-      const relativeX = GROUP_PADDING.left + (col * nodeSpacingX);
-      const relativeY = GROUP_PADDING.top + (row * nodeSpacingY);
-      
-      // 计算绝对位置：群组位置 + 相对位置
-      position = {
-        x: safeNumber(safeGroupPosition.x + relativeX, relativeX),
-        y: safeNumber(safeGroupPosition.y + relativeY, relativeY)
-      };
-      
-      // 确保节点不会超出群组边界
-      const maxX = safeGroupPosition.x + safeGroupWidth - GROUP_PADDING.right - defaultSize.width;
-      const maxY = safeGroupPosition.y + safeGroupHeight - GROUP_PADDING.bottom - defaultSize.height;
-      
-      // 如果超出边界，约束到边界内
-      position.x = Math.max(
-        safeGroupPosition.x + GROUP_PADDING.left,
-        Math.min(position.x, maxX)
-      );
-      position.y = Math.max(
-        safeGroupPosition.y + GROUP_PADDING.top,
-        Math.min(position.y, maxY)
-      );
-      
-      // 最后的安全检查
-      position.x = safeNumber(position.x, safeGroupPosition.x + GROUP_PADDING.left);
-      position.y = safeNumber(position.y, safeGroupPosition.y + GROUP_PADDING.top);
-      
-      groupId = selectedGroup.id;
-      
-      console.log('  📍 新节点位置（绝对坐标）:', position);
-      console.log('  📊 群组内已有节点数:', existingNodesInGroup.length);
-      console.log('  🎯 相对位置:', { x: relativeX, y: relativeY });
-    } else {
-      // 没有选中群组时，在当前视图中心创建节点
-      try {
-        const viewPort = reactFlowInstance?.getViewport();
-        const center = reactFlowInstance?.screenToFlowPosition({
-          x: window.innerWidth / 2,
-          y: window.innerHeight / 2
-        });
-        
-        position = {
-          x: safeNumber(center?.x, safeNumber(viewPort?.x, 0) + 200),
-          y: safeNumber(center?.y, safeNumber(viewPort?.y, 0) + 100)
-        };
-      } catch (error) {
-        console.error('计算视图中心位置失败:', error);
-        position = { x: 200, y: 100 };
-      }
-      
-      console.log('  📍 新节点位置（画布中心）:', position);
-    }
-    
-    // 最终验证位置有效性
-    if (!position || isNaN(position.x) || isNaN(position.y)) {
-      console.error('❌ 位置计算错误，使用默认值');
-      position = { x: 100, y: 100 };
-    }
-    
-    // 获取当前节点数量用于标题
-    const nodeCount = nodes.filter((n: Node | Group) => 
-      n.type === BlockEnum.NODE
-    ).length;
-    
-    // 创建新节点
-    const newNode: Node = {
-      id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: BlockEnum.NODE,
-      position: {
-        x: safeNumber(position.x),
-        y: safeNumber(position.y)
+    const selectedDomain = nodes.find(node =>
+      node.id === selectedNodeId && isLegacyOntologyDomainDisplay(node)
+    );
+
+    const classCount = nodes.filter(isLegacyOntologyClassDisplay).length;
+    const domainId = selectedDomain?.id;
+    const position = selectedDomain
+      ? getGridPositionInDomain(
+        selectedDomain,
+        nodes.filter(node =>
+          isLegacyOntologyClassDisplay(node) && node.groupId === selectedDomain.id
+        ).length,
+        CLASS_NODE_SIZE,
+        { width: CLASS_NODE_SIZE.width + 30, height: CLASS_NODE_SIZE.height + 30 }
+      )
+      : getViewportCenterPosition(reactFlowInstance);
+    const nodeId = createElementId('class');
+    const nodeName = `Class ${classCount + 1}`;
+    const document = createDocumentSnapshot(currentCanvasId);
+    const result = createOntologyClassNodeInDocument(document, {
+      id: nodeId,
+      name: nodeName,
+      type: 'Class',
+      description: 'Ontology class node',
+      domainId,
+      subgraphId: getRootSubgraphId(document),
+      position,
+      width: CLASS_NODE_SIZE.width,
+      height: CLASS_NODE_SIZE.height,
+      metadata: {
+        source: 'ontology-canvas-toolbar',
       },
-      data: { 
-        title: `Node ${nodeCount + 1}`, 
-        content: 'Double click to edit',
-        isExpanded: false, // 🆕 默认收缩状态
-      },
-      title: `Node ${nodeCount + 1}`,
-      content: 'Double click to edit',
-      width: defaultSize.width,   // 🔧 使用正确的尺寸 350
-      height: defaultSize.height, // 🔧 使用正确的尺寸 280
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      // 不在这里设置 groupId，而是通过 addNodeToGroup 来处理
-      // ...(groupId && { groupId })
-    };
-    
-    console.log('✅ 创建节点:', newNode);
+    });
 
-    // 添加节点到store
-    addNode(newNode);
-    setSelectedNodeId(newNode.id);
-
-    // 如果节点属于群组，将节点添加到父群组
-    if (groupId) {
-      console.log('🔗 将节点添加到父群组:', { childId: newNode.id, parentId: groupId });
-      // 使用 store 的 addNodeToGroup 方法，它会正确管理 nodeIds
-      const { addNodeToGroup } = useGraphStore.getState();
-      addNodeToGroup(newNode.id, groupId);
+    if (!result.changed) {
+      console.warn('创建本体节点失败:', result.warnings);
+      return;
     }
-  }, [addNode, nodes, selectedNodeId, setSelectedNodeId, reactFlowInstance, updateGroupBoundary]);
 
-  // 添加群组的处理函数
+    applyOntologyCommandResult(result, {
+      canvasId: currentCanvasId,
+      reason: 'toolbar-create-class',
+    });
+
+    const displayNode = projectOntologyNodeToLegacyNode(result.document, nodeId, {
+      includeMembership: false,
+    });
+    if (!displayNode) {
+      console.error('本体节点投影到当前画布运行态失败:', nodeId);
+      return;
+    }
+
+    addNode(displayNode);
+    setSelectedNodeId(displayNode.id);
+
+    if (domainId) {
+      addNodeToGroup(displayNode.id, domainId);
+    }
+  }, [
+    addNode,
+    addNodeToGroup,
+    applyOntologyCommandResult,
+    currentCanvasId,
+    nodes,
+    reactFlowInstance,
+    selectedNodeId,
+    setSelectedNodeId,
+  ]);
+
   const onGroupAdd = useCallback(() => {
-    console.log('➕ 创建新群组，当前选中:', selectedNodeId);
+    const selectedDomain = nodes.find(node =>
+      node.id === selectedNodeId && isLegacyOntologyDomainDisplay(node)
+    );
 
-    // 🔧 检查当前是否选中了群组（支持嵌套）
-    const selectedGroup = nodes.find((n: Node | Group) =>
-      n.id === selectedNodeId && n.type === BlockEnum.GROUP
-    ) as Group;
+    const domainCount = nodes.filter(isLegacyOntologyDomainDisplay).length;
+    const parentDomainId = selectedDomain?.id;
+    const position = selectedDomain
+      ? getGridPositionInDomain(
+        selectedDomain,
+        nodes.filter(node =>
+          isLegacyOntologyDomainDisplay(node) && node.groupId === selectedDomain.id
+        ).length,
+        DOMAIN_SIZE,
+        { width: DOMAIN_SIZE.width + 40, height: DOMAIN_SIZE.height + 40 }
+      )
+      : getViewportCenterPosition(reactFlowInstance);
+    const domainId = createElementId('domain');
+    const result = createOntologyDomainInDocument(createDocumentSnapshot(currentCanvasId), {
+      id: domainId,
+      name: `Domain ${domainCount + 1}`,
+      parentDomainId,
+      collapsed: false,
+      position,
+      width: DOMAIN_SIZE.width,
+      height: DOMAIN_SIZE.height,
+      metadata: {
+        source: 'ontology-canvas-toolbar',
+      },
+    });
 
-    let position;
-    let parentGroupId: string | undefined;
-    const defaultSize = getDefaultNodeSize(BlockEnum.GROUP);
-
-    try {
-      if (selectedGroup) {
-        console.log('📦 在选中的群组内创建子群组:', selectedGroup.id);
-
-        // 确保群组位置有效
-        const safeGroupPosition = {
-          x: safeNumber(selectedGroup.position?.x, 0),
-          y: safeNumber(selectedGroup.position?.y, 0)
-        };
-
-        const safeGroupWidth = safeNumber(selectedGroup.width, 300);
-        const safeGroupHeight = safeNumber(selectedGroup.height, 200);
-
-        console.log('  📍 父群组位置:', safeGroupPosition);
-        console.log('  📏 父群组尺寸:', { width: safeGroupWidth, height: safeGroupHeight });
-
-        // 计算父群组内已有的子群组数量
-        const existingGroupsInParent = nodes.filter((n: Node | Group) =>
-          n.type === BlockEnum.GROUP && (n as Group).groupId === selectedGroup.id
-        );
-
-        // 使用网格布局
-        const groupsPerRow = 2;
-        const groupIndex = existingGroupsInParent.length;
-        const row = Math.floor(groupIndex / groupsPerRow);
-        const col = groupIndex % groupsPerRow;
-
-        const groupSpacingX = 340; // 群组宽度(300) + 间距(40)
-        const groupSpacingY = 240; // 群组高度(200) + 间距(40)
-
-        // 计算子群组在父群组内的相对位置
-        const relativeX = GROUP_PADDING.left + (col * groupSpacingX);
-        const relativeY = GROUP_PADDING.top + (row * groupSpacingY);
-
-        // 计算绝对位置
-        position = {
-          x: safeNumber(safeGroupPosition.x + relativeX, relativeX),
-          y: safeNumber(safeGroupPosition.y + relativeY, relativeY)
-        };
-
-        // 约束到父群组边界内
-        const maxX = safeGroupPosition.x + safeGroupWidth - GROUP_PADDING.right - defaultSize.width;
-        const maxY = safeGroupPosition.y + safeGroupHeight - GROUP_PADDING.bottom - defaultSize.height;
-
-        position.x = Math.max(
-          safeGroupPosition.x + GROUP_PADDING.left,
-          Math.min(position.x, maxX)
-        );
-        position.y = Math.max(
-          safeGroupPosition.y + GROUP_PADDING.top,
-          Math.min(position.y, maxY)
-        );
-
-        // 安全检查
-        position.x = safeNumber(position.x, safeGroupPosition.x + GROUP_PADDING.left);
-        position.y = safeNumber(position.y, safeGroupPosition.y + GROUP_PADDING.top);
-
-        parentGroupId = selectedGroup.id;
-
-        console.log('  📍 子群组位置（绝对坐标）:', position);
-        console.log('  📊 父群组内已有子群组数:', existingGroupsInParent.length);
-      } else {
-        // 没有选中群组时，在视图中心创建顶层群组
-        const viewPort = reactFlowInstance?.getViewport();
-        const center = reactFlowInstance?.screenToFlowPosition({
-          x: window.innerWidth / 2,
-          y: window.innerHeight / 2
-        });
-
-        position = {
-          x: safeNumber(center?.x, safeNumber(viewPort?.x, 0) + 200),
-          y: safeNumber(center?.y, safeNumber(viewPort?.y, 0) + 100)
-        };
-
-        console.log('  📍 顶层群组位置（画布中心）:', position);
-      }
-
-      // 最终验证位置有效性
-      if (!position || isNaN(position.x) || isNaN(position.y)) {
-        console.error('❌ 位置计算错误，使用默认值');
-        position = { x: 200, y: 200 };
-      }
-
-      const groupCount = nodes.filter((n: Node | Group) =>
-        n.type === BlockEnum.GROUP
-      ).length;
-
-      const newGroup: Group = {
-        id: `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: BlockEnum.GROUP,
-        position: {
-          x: safeNumber(position.x),
-          y: safeNumber(position.y)
-        },
-        data: {
-          title: `Group ${groupCount + 1}`,
-          content: parentGroupId
-            ? 'Nested group - add nodes or groups inside'
-            : 'Select this group and click "Add Node/Group" to add inside'
-        },
-        title: `Group ${groupCount + 1}`,
-        content: parentGroupId
-          ? 'Nested group - add nodes or groups inside'
-          : 'Select this group and click "Add Node/Group" to add inside',
-        collapsed: false,
-        nodeIds: [],
-        boundary: { minX: 0, minY: 0, maxX: 300, maxY: 200 },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        width: defaultSize.width,
-        height: defaultSize.height,
-        // 不在这里设置 groupId，而是通过 addNodeToGroup 来处理
-        // ...(parentGroupId && { groupId: parentGroupId })
-      };
-
-      console.log('✅ 创建群组:', newGroup);
-
-      addNode(newGroup);
-      setSelectedNodeId(newGroup.id);
-
-      // 如果是嵌套群组，需要将新群组添加到父群组中
-      if (parentGroupId) {
-        console.log('🔗 将群组添加到父群组:', { childId: newGroup.id, parentId: parentGroupId });
-        // 使用 store 的 addNodeToGroup 方法，它会正确管理 nodeIds
-        const { addNodeToGroup } = useGraphStore.getState();
-        addNodeToGroup(newGroup.id, parentGroupId);
-      }
-    } catch (error) {
-      console.error('创建群组失败:', error);
+    if (!result.changed) {
+      console.warn('创建本体 Domain 失败:', result.warnings);
+      return;
     }
-  }, [addNode, nodes, selectedNodeId, setSelectedNodeId, reactFlowInstance, updateGroupBoundary]);
 
-  // 处理节点拖拽
-  const onDragOver = useCallback((event: React.DragEvent) => {
+    applyOntologyCommandResult(result, {
+      canvasId: currentCanvasId,
+      reason: 'toolbar-create-domain',
+    });
+
+    const displayDomain = projectOntologyDomainToLegacyGroup(result.document, domainId, {
+      includeMembership: false,
+    });
+    if (!displayDomain) {
+      console.error('本体 Domain 投影到当前画布运行态失败:', domainId);
+      return;
+    }
+
+    addNode(displayDomain);
+    setSelectedNodeId(displayDomain.id);
+
+    if (parentDomainId) {
+      addNodeToGroup(displayDomain.id, parentDomainId);
+    }
+  }, [
+    addNode,
+    addNodeToGroup,
+    applyOntologyCommandResult,
+    currentCanvasId,
+    nodes,
+    reactFlowInstance,
+    selectedNodeId,
+    setSelectedNodeId,
+  ]);
+
+  const onDragOver = useCallback((event: DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // 处理节点放置
   const onDrop = useCallback(
-    (event: React.DragEvent) => {
+    (event: DragEvent) => {
       event.preventDefault();
 
       const type = event.dataTransfer.getData('application/reactflow');
-      
-      if (typeof type === 'undefined' || !type) {
+      if (!type) {
         return;
       }
 
       try {
-        let position = reactFlowInstance.screenToFlowPosition({
+        const rawPosition = reactFlowInstance.screenToFlowPosition({
           x: event.clientX,
           y: event.clientY,
         });
-
-        // 确保位置坐标有效
-        position = {
-          x: safeNumber(position?.x, 0),
-          y: safeNumber(position?.y, 0)
+        const position = {
+          x: safeNumber(rawPosition?.x, 0),
+          y: safeNumber(rawPosition?.y, 0),
         };
-
-        // 🆕 获取正确的节点尺寸
-        const defaultSize = getDefaultNodeSize(BlockEnum.NODE);
-
-        const newNode: Node = {
-          id: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: BlockEnum.NODE,
-          position,
-          data: { 
-            title: `New Node`, 
-            content: 'Double click to edit',
-            isExpanded: false, // 🆕 默认收缩状态
+        const targetDomain = findContainingDomain(position, nodes);
+        const domainId = targetDomain?.id;
+        const classCount = nodes.filter(isLegacyOntologyClassDisplay).length;
+        const nodeId = createElementId('class');
+        const document = createDocumentSnapshot(currentCanvasId);
+        const result = createOntologyClassNodeInDocument(document, {
+          id: nodeId,
+          name: `Class ${classCount + 1}`,
+          type: 'Class',
+          description: 'Ontology class node',
+          domainId,
+          subgraphId: getRootSubgraphId(document),
+          position: targetDomain
+            ? clampPositionToDomain(position, targetDomain, CLASS_NODE_SIZE)
+            : position,
+          width: CLASS_NODE_SIZE.width,
+          height: CLASS_NODE_SIZE.height,
+          metadata: {
+            source: 'ontology-canvas-drop',
+            dragType: type,
           },
-          title: 'New Node',
-          content: 'Double click to edit',
-          width: defaultSize.width,   // 🔧 使用正确的尺寸 350
-          height: defaultSize.height, // 🔧 使用正确的尺寸 280
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+        });
 
-        addNode(newNode);
-        setSelectedNodeId(newNode.id);
+        if (!result.changed) {
+          console.warn('拖放创建本体节点失败:', result.warnings);
+          return;
+        }
 
-        // 检查放置位置是否在某个群组内
-        const targetGroup = nodes.find((node: Node | Group) => {
-          if (node.type === BlockEnum.GROUP && 
-              position.x >= node.position.x && 
-              position.x <= node.position.x + (node.width || 300) &&
-              position.y >= node.position.y && 
-              position.y <= node.position.y + (node.height || 200)) {
-            return true;
-          }
-          return false;
-        }) as Group;
+        applyOntologyCommandResult(result, {
+          canvasId: currentCanvasId,
+          reason: 'drop-create-class',
+        });
 
-        // 如果在某个群组内放置，将节点添加到该群组
-        if (targetGroup) {
-          console.log('🔗 将拖放节点添加到群组:', { childId: newNode.id, parentId: targetGroup.id });
-          const { addNodeToGroup } = useGraphStore.getState();
-          addNodeToGroup(newNode.id, targetGroup.id);
+        const displayNode = projectOntologyNodeToLegacyNode(result.document, nodeId, {
+          includeMembership: false,
+        });
+        if (!displayNode) {
+          console.error('拖放本体节点投影到当前画布运行态失败:', nodeId);
+          return;
+        }
+
+        addNode(displayNode);
+        setSelectedNodeId(displayNode.id);
+
+        if (domainId) {
+          addNodeToGroup(displayNode.id, domainId);
         }
       } catch (error) {
-        console.error('放置节点失败:', error);
+        console.error('放置本体节点失败:', error);
       }
     },
-    [reactFlowInstance, addNode, setSelectedNodeId, nodes]
+    [
+      addNode,
+      addNodeToGroup,
+      applyOntologyCommandResult,
+      currentCanvasId,
+      nodes,
+      reactFlowInstance,
+      setSelectedNodeId,
+    ]
   );
 
   return {
     onNodeAdd,
     onGroupAdd,
     onDragOver,
-    onDrop
+    onDrop,
   };
 };

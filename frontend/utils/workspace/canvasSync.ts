@@ -1,15 +1,91 @@
 import { useGraphStore } from '@/stores/graph';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { Canvas } from '@/types/workspace/models';
+import { loadOntologyCanvas, saveOntologyCanvas } from '@/data-layer/workspace';
+import {
+  createPersistedOntologyCanvas,
+  createOntologyDocumentFromLegacyGraph,
+  projectOntologyDocumentToLegacyGraphEdges,
+  projectOntologyDocumentToLegacyGraphNodes,
+  restoreOntologyDocumentFromPersistedCanvas,
+  useOntologyDocumentStore,
+  type OntologyDocumentState,
+} from '@/features/ontology-canvas';
+import { persistWorkspace } from './persistence';
+
+const createEmptyLegacyGraphData = (): Canvas['graphData'] => ({
+  nodes: [],
+  edges: [],
+});
+
+const projectDocumentToLegacyGraphData = (
+  document: OntologyDocumentState
+): Canvas['graphData'] => ({
+  nodes: projectOntologyDocumentToLegacyGraphNodes(document),
+  edges: projectOntologyDocumentToLegacyGraphEdges(document),
+});
+
+const createDocumentFromCanvas = (canvas: Canvas): OntologyDocumentState => {
+  const persistedCanvas = loadOntologyCanvas(canvas);
+
+  if (persistedCanvas) {
+    return restoreOntologyDocumentFromPersistedCanvas(persistedCanvas, {
+      id: canvas.id,
+      name: canvas.name,
+      viewport: canvas.viewportState,
+    });
+  }
+
+  const graphData = canvas.graphData ?? createEmptyLegacyGraphData();
+
+  return createOntologyDocumentFromLegacyGraph({
+    id: canvas.id,
+    name: canvas.name,
+    nodes: graphData.nodes,
+    edges: graphData.edges,
+    view: {
+      viewport: canvas.viewportState,
+    },
+  });
+};
+
+export const getActiveOntologyDocument = (
+  input: {
+    canvasId: string;
+    fallbackName?: string;
+  }
+): OntologyDocumentState => {
+  const ontologyState = useOntologyDocumentStore.getState();
+
+  if (ontologyState.hydrated && ontologyState.sourceCanvasId === input.canvasId) {
+    return ontologyState.document;
+  }
+
+  const workspaceStore = useWorkspaceStore.getState();
+  const workspaceCanvas = workspaceStore.canvases.find(canvas => canvas.id === input.canvasId);
+  if (workspaceCanvas) {
+    return createDocumentFromCanvas(workspaceCanvas);
+  }
+
+  const graphStore = useGraphStore.getState();
+  return createOntologyDocumentFromLegacyGraph({
+    id: input.canvasId || 'current-canvas',
+    name: input.fallbackName ?? 'Current Canvas',
+    nodes: graphStore.nodes,
+    edges: graphStore.edges,
+    view: {
+      viewport: graphStore.viewport,
+    },
+  });
+};
 
 /**
  * 保存当前画布数据到 workspaceStore
  */
 export const saveCurrentCanvasData = () => {
-  const graphStore = useGraphStore.getState();
   const workspaceStore = useWorkspaceStore.getState();
 
-  const { currentCanvasId, canvases, updateCanvasViewport } = workspaceStore;
+  const { currentCanvasId, canvases } = workspaceStore;
 
   // 获取当前画布
   const currentCanvas = canvases.find((c) => c.id === currentCanvasId);
@@ -18,22 +94,23 @@ export const saveCurrentCanvasData = () => {
     return;
   }
 
-  // 从 graphStore 获取数据
-  const nodes = graphStore.nodes || [];
-  const edges = graphStore.edges || [];
+  const ontologyState = useOntologyDocumentStore.getState();
+  const shouldPersistOntologyDocument =
+    ontologyState.hydrated &&
+    ontologyState.sourceCanvasId === currentCanvasId;
 
-  // 获取视口状态（如果 graphStore 有提供）
-  const viewport = (graphStore as any).viewport || { x: 0, y: 0, zoom: 1 };
+  const document = shouldPersistOntologyDocument
+    ? ontologyState.document
+    : createDocumentFromCanvas(currentCanvas);
+  const graphData = projectDocumentToLegacyGraphData(document);
 
   // 更新 workspaceStore 中的画布数据
   const updatedCanvas: Canvas = {
-    ...currentCanvas,
-    graphData: {
-      nodes: nodes as any,  // Type assertion for compatibility
-      edges: edges as any,
-    },
-    viewportState: viewport,
-    updatedAt: new Date(),
+    ...saveOntologyCanvas(
+      currentCanvas,
+      createPersistedOntologyCanvas(document)
+    ),
+    graphData,
   };
 
   // 更新画布列表
@@ -48,7 +125,6 @@ export const saveCurrentCanvasData = () => {
     currentCanvasId
   );
 
-  console.log('✅ 画布数据已保存:', currentCanvasId);
 };
 
 /**
@@ -64,21 +140,22 @@ export const loadCanvasData = (canvasId: string) => {
     return;
   }
 
-  console.log('🔄 加载画布数据:', canvasId);
+  const ontologyDocument = createDocumentFromCanvas(targetCanvas);
+  const graphData = projectDocumentToLegacyGraphData(ontologyDocument);
+
+  useOntologyDocumentStore.getState().replaceDocument(ontologyDocument, {
+    canvasId,
+    reason: 'workspace-load',
+  });
 
   // 直接替换 graphStore 的数据（使用 Zustand 的 setState）
   useGraphStore.setState({
-    nodes: targetCanvas.graphData.nodes as any,
-    edges: targetCanvas.graphData.edges as any,
+    nodes: graphData.nodes,
+    edges: graphData.edges,
     selectedNodeId: null,
     selectedEdgeId: null,
   });
 
-  console.log('✅ 画布数据已加载:', {
-    canvasId,
-    nodes: targetCanvas.graphData.nodes.length,
-    edges: targetCanvas.graphData.edges.length,
-  });
 };
 
 /**
@@ -90,11 +167,8 @@ export const switchToCanvas = async (targetCanvasId: string) => {
 
   // 如果是同一个画布，不需要切换
   if (currentCanvasId === targetCanvasId) {
-    console.log('已在当前画布:', targetCanvasId);
     return;
   }
-
-  console.log('🔄 切换画布:', { from: currentCanvasId, to: targetCanvasId });
 
   // 1. 保存当前画布数据
   saveCurrentCanvasData();
@@ -107,29 +181,8 @@ export const switchToCanvas = async (targetCanvasId: string) => {
 
   // 4. 持久化到文件
   try {
-    const workspace = useWorkspaceStore.getState();
-    await fetch('/api/workspace/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data: {
-          version: '1.0.0',
-          workspace: {
-            userId: workspace.user?.id || 'user_0',
-            currentCanvasId: workspace.currentCanvasId,
-            canvases: workspace.canvases,
-            canvasTree: workspace.canvasTree,
-          },
-          timestamp: new Date(),
-        },
-      }),
-    });
-    console.log('💾 画布切换已保存');
+    await persistWorkspace();
   } catch (error) {
     console.error('❌ 保存画布切换失败:', error);
   }
-
-  console.log('✅ 画布切换完成');
 };

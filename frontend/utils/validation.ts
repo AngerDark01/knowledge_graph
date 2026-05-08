@@ -46,7 +46,7 @@ export const validateNodeContent = (node: Node): ValidationResult => {
     if (node.attributes) {
       JSON.stringify(node.attributes);
     }
-  } catch (e) {
+  } catch {
     errors.push('结构化属性格式不正确');
   }
 

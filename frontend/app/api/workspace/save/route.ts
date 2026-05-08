@@ -7,7 +7,6 @@ import { getProjectRoot } from '@/lib/utils';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('接收到的请求体:', JSON.stringify(body, null, 2)); // 调试日志
 
     // 检查 body.data 是否存在
     if (!body || body.data === undefined || body.data === null) {
@@ -20,9 +19,6 @@ export async function POST(request: NextRequest) {
     }
 
     const key = body.key || 'kg-editor:workspace.json';
-    console.log('提取的key:', key); // 调试日志
-
-    console.log('要验证的数据:', JSON.stringify(body.data, null, 2)); // 调试日志
 
     // 验证数据格式 - 首先解析为 unknown，再逐步验证
     const parseResult = StorageDataSchema.safeParse(body.data);

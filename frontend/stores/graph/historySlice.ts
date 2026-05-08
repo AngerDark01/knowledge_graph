@@ -20,7 +20,7 @@ export const createHistorySlice: StateCreator<
   [],
   [],
   HistoryState
-> = (set, get, _api) => ({
+> = (set, get) => ({
   history: [],
   historyIndex: -1,
   maxSize: 50, // 最多保存50个历史记录

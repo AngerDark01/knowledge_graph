@@ -8,5 +8,5 @@ export interface LayoutNode {
   parentId?: string;
   children?: LayoutNode[];
   isGroup: boolean;
-  data: any;
+  data: Record<string, unknown>;
 }

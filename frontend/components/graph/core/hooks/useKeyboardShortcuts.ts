@@ -1,8 +1,12 @@
 import { useEffect } from 'react';
 import { ReactFlowInstance } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
+import { createCanvasSelectionDeletionPlan, useOntologyDocumentStore } from '@/features/ontology-canvas';
+import { useWorkspaceStore } from '@/stores/workspace';
 
 export const useKeyboardShortcuts = (onRecenter: () => void, reactFlowInstance: ReactFlowInstance | null) => {
+  const currentCanvasId = useWorkspaceStore(state => state.currentCanvasId);
+
   // 处理键盘快捷键
   useEffect(() => {
     const keyHandler = (e: KeyboardEvent) => {
@@ -51,34 +55,25 @@ export const useKeyboardShortcuts = (onRecenter: () => void, reactFlowInstance: 
           !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
         // 只有当焦点不在输入框或文本域中时才执行删除操作
         if (reactFlowInstance) {
-          // 删除选中的节点
-          const selectedNodes = reactFlowInstance.getNodes().filter((node: any) => node.selected);
-          selectedNodes.forEach((node: any) => {
-            // 需要同时删除关联的边
-            const { getEdges } = useGraphStore.getState();
-            const edges = getEdges();
-            edges.forEach((edge: any) => {
-              if (edge.source === node.id || edge.target === node.id) {
-                const { deleteEdge } = useGraphStore.getState();
-                deleteEdge(edge.id);
-              }
-            });
-            // 删除节点
-            const { deleteNode } = useGraphStore.getState();
-            deleteNode(node.id);
+          const deletionPlan = createCanvasSelectionDeletionPlan(
+            reactFlowInstance.getNodes(),
+            reactFlowInstance.getEdges()
+          );
+          const { deleteNode, deleteEdge } = useGraphStore.getState();
+          useOntologyDocumentStore.getState().deleteElements({
+            ids: [...deletionPlan.nodeIds, ...deletionPlan.edgeIds],
+          }, {
+            canvasId: currentCanvasId,
+            reason: 'keyboard-delete',
           });
-          
-          // 删除选中的边
-          const selectedEdges = reactFlowInstance.getEdges().filter((edge: any) => edge.selected);
-          selectedEdges.forEach((edge: any) => {
-            const { deleteEdge } = useGraphStore.getState();
-            deleteEdge(edge.id);
-          });
+
+          deletionPlan.nodeIds.forEach(deleteNode);
+          deletionPlan.edgeIds.forEach(deleteEdge);
         }
       }
     };
 
     window.addEventListener('keydown', keyHandler);
     return () => window.removeEventListener('keydown', keyHandler);
-  }, [onRecenter, reactFlowInstance]);
+  }, [currentCanvasId, onRecenter, reactFlowInstance]);
 };

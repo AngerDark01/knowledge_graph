@@ -28,7 +28,6 @@ export const DeleteCanvasDialog: React.FC<DeleteCanvasDialogProps> = ({
   const canvases = useWorkspaceStore((state) => state.canvases);
   const deleteCanvas = useWorkspaceStore((state) => state.deleteCanvas);
   const currentCanvasId = useWorkspaceStore((state) => state.currentCanvasId);
-  const switchCanvas = useWorkspaceStore((state) => state.switchCanvas);
 
   const canvasInfo = useMemo(() => {
     if (!canvasId) return null;
@@ -106,7 +105,7 @@ export const DeleteCanvasDialog: React.FC<DeleteCanvasDialogProps> = ({
           <AlertDialogTitle>确认删除画布</AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
             <p>
-              你确定要删除画布 <strong>"{canvasInfo.name}"</strong> 吗？
+              你确定要删除画布 <strong>“{canvasInfo.name}”</strong> 吗？
             </p>
             {canvasInfo.childCount > 0 && (
               <p className="text-destructive font-medium">

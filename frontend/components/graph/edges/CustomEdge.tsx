@@ -1,6 +1,13 @@
-import React, { memo, useState, useCallback } from 'react';
-import { BaseEdge, EdgeLabelRenderer, Position, getBezierPath, EdgeProps, MarkerType } from 'reactflow';
+import React, { memo, useCallback } from 'react';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, EdgeProps, MarkerType } from 'reactflow';
 import { useGraphStore } from '@/stores/graph';
+import {
+  projectOntologyEdgeToLegacyEdge,
+  updateOntologyRelationInDocument,
+  useOntologyDocumentStore,
+} from '@/features/ontology-canvas';
+import { useWorkspaceStore } from '@/stores/workspace';
+import { getActiveOntologyDocument } from '@/utils/workspace/canvasSync';
 
 interface CustomEdgeData {
   label?: string;
@@ -13,7 +20,7 @@ interface CustomEdgeData {
   strength?: number;             // 关系强度
   direction?: 'unidirectional' | 'bidirectional' | 'undirected'; // 方向性
   // 自定义属性
-  customProperties?: Record<string, any>;
+  customProperties?: Record<string, unknown>;
 }
 
 const CustomEdge = ({
@@ -25,10 +32,11 @@ const CustomEdge = ({
   sourcePosition,
   targetPosition,
   data,
-  markerEnd,
   style,
 }: EdgeProps<CustomEdgeData>) => {
   const { updateEdge } = useGraphStore();
+  const currentCanvasId = useWorkspaceStore(state => state.currentCanvasId);
+  const applyOntologyCommandResult = useOntologyDocumentStore(state => state.applyCommandResult);
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -116,7 +124,10 @@ const CustomEdge = ({
   const labelBackground = isCrossGroup ? 'white' : 'rgba(255, 255, 255, 0.8)';
 
   // 确定标签文本
-  const labelText = data?.label || (data?.customProperties?.relationship || '');
+  const relationshipLabel = typeof data?.customProperties?.relationship === 'string'
+    ? data.customProperties.relationship
+    : '';
+  const labelText = data?.label || relationshipLabel;
 
   // 状态管理 - 使用局部状态处理双击编辑
   const [isEditing, setIsEditing] = React.useState(false);
@@ -142,21 +153,51 @@ const CustomEdge = ({
   };
 
   const handleBlur = useCallback(() => {
-    // 更新边的标签 - 同时更新边的label字段和data.customProperties.relationship字段
     const updatedData = {
       ...data,
       customProperties: {
         ...(data?.customProperties || {}),
+        relation: labelValue,
         relationship: labelValue
       }
     };
-
-    updateEdge(id, {
-      ...updatedData,
-      label: labelValue  // 直接更新边的label属性
+    const document = getActiveOntologyDocument({
+      canvasId: currentCanvasId || 'current-canvas',
+      fallbackName: 'Current Canvas',
     });
+    const relationResult = updateOntologyRelationInDocument(document, {
+      edgeId: id,
+      relation: labelValue,
+      direction: data?.direction,
+      metadata: {
+        source: 'ontology-inline-edge-label',
+      },
+    });
+
+    if (!relationResult.changed) {
+      console.warn('内联关系标签保存失败:', relationResult.warnings);
+      setIsEditing(false);
+      return;
+    }
+
+    applyOntologyCommandResult(relationResult, {
+      canvasId: currentCanvasId,
+      reason: 'inline-edge-label',
+    });
+
+    const projectedEdge = projectOntologyEdgeToLegacyEdge(relationResult.document, id, {
+      data: updatedData,
+    });
+
+    if (!projectedEdge) {
+      console.warn('内联关系标签保存后投影失败:', id);
+      setIsEditing(false);
+      return;
+    }
+
+    updateEdge(id, projectedEdge);
     setIsEditing(false);
-  }, [id, data, labelValue, updateEdge]);
+  }, [applyOntologyCommandResult, currentCanvasId, id, data, labelValue, updateEdge]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
